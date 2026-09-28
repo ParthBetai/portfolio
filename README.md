@@ -47,6 +47,11 @@ each change in the [Changelog](#15-changelog) with its date.
   Changelog, seventh round).
   The site is **not deployed yet**. The contact email is configured locally but
   a real test message has not been sent (see [section 12](#12-the-contact-email-resend)).
+- **Repository:** https://github.com/ParthBetai/portfolio (branch `main`), set up on
+  29 Sep 2026. Commits are made as ParthBetai <parthbetai007@gmail.com>, with no
+  assistant or tool co-author lines. `.env.local` is ignored by `.gitignore`,
+  and the local tool settings folder is kept out through `.git/info/exclude`
+  (repeat that line after a fresh clone if the folder exists there).
 - **How changes have been verified every time:**
   1. `npx tsc --noEmit --incremental false` (typecheck)
   2. `npm run build` (must pass)
@@ -60,8 +65,9 @@ each change in the [Changelog](#15-changelog) with its date.
   5. `npm audit --omit=dev` must report 0 vulnerabilities.
 - **After every change:** update the matching section here and add a line to
   the Changelog.
-- **Moving machines (Windows to Linux):** copy the whole folder, including the
-  hidden `.env.local` (it holds the email key and is deliberately not in git).
+- **Moving machines (Windows to Linux):** `git clone https://github.com/ParthBetai/portfolio.git`,
+  then copy `.env.local` over by hand (it holds the email key and is
+  deliberately not in git; without it the chat falls back to the mail app).
   Then `npm install` and `npm run dev`. The helper scripts find Chrome, Chromium
   or Edge on Linux automatically, or use `BROWSER_PATH`.
 
@@ -494,9 +500,11 @@ the thin accent style. The `socials` label also chooses the icon.
   `content.ts` at build time with every `<` escaped;
   all user text renders as React text; the `mailto:` fallback encodes every part
   and has a fixed recipient; external links use `rel="noopener noreferrer"`.
-- When initialising git later, keep local tool folders (anything like a hidden
-  settings folder for an editor or assistant) out of the repository by listing
-  them in `.git/info/exclude`.
+- Git: local tool folders (anything like a hidden settings folder for an
+  editor or assistant) stay out of the repository through
+  `.git/info/exclude`, not `.gitignore`, so the public ignore file names no
+  tool. Before every commit, check `git status` for `.env.local` and scan the
+  staged files for keys (`git grep --cached -nE 're_[A-Za-z0-9_]{16,}'`).
 
 ## 12. The contact email (Resend)
 
@@ -547,8 +555,8 @@ to `package.json`) and a Chromium-based browser (found automatically, or set
 
 Planned host: Vercel.
 
-1. Push the project to a GitHub repository (without `.env.local`).
-2. Import it at vercel.com/new.
+1. The project is already on GitHub (ParthBetai/portfolio), without `.env.local`.
+2. Import that repository at vercel.com/new.
 3. In Project Settings > Environment Variables add `RESEND_API_KEY` (and
    optionally `CONTACT_TO_EMAIL`, `CONTACT_FROM_EMAIL`), plus
    `NEXT_PUBLIC_SITE_URL` set to the live address (with a custom domain this
@@ -631,6 +639,10 @@ Dates are 2026.
   cards". The Accessibility page said the focus outline was lime; it is
   copper. Unused `identity.location` and `identity.availability` removed, and
   old colour names (lime, green, globe) cleaned out of code comments.
+- **29 Sep, git.** Repository created and pushed to
+  https://github.com/ParthBetai/portfolio (`main`, 75 files in the first
+  commit). Checked before pushing: no `.env.local`, no `node_modules` or build
+  output, no local tool folder, no real key in any file.
 
 ## 16. Open items and known limitations
 
