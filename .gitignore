@@ -1,0 +1,19 @@
+node_modules
+.next
+out
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+.DS_Store
+*.log
+
+# Local editor settings. They only matter on this machine.
+.vscode/
+.idea/
+
+# Environment files can hold secrets. Only an example file is ever
+# committed. Never put a secret in a NEXT_PUBLIC_* variable: those are
+# compiled into the JavaScript every visitor downloads.
+.env
+.env.*
+!.env.example

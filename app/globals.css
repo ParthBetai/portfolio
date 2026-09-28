@@ -1,0 +1,338 @@
+@import "tailwindcss";
+
+/* ============================================================
+   TOKENS
+   Every colour, size and duration in this project resolves here.
+   ============================================================ */
+@theme {
+  /* --- surface ---------------------------------------------- */
+  --color-void: #050505;      /* page canvas. deliberately not #000:
+                                 true black flattens the metal gradients */
+  --color-carbon: #0d0d0f;    /* raised surfaces: cards, fields, accordion */
+  --color-carbon-2: #141417;  /* hover state for carbon */
+  --color-hairline: #1f1f24;  /* 1px rules */
+
+  /* --- ink -------------------------------------------------- */
+  --color-bone: #edede6;      /* warm white. pure #fff glares on void */
+  --color-ash: #7a7a82;       /* body copy, secondary. about 4.6:1 on
+                                 void, so small labels stay readable */
+  --color-ash-dim: #3d3d44;   /* tertiary, disabled, ghost type */
+
+  /* --- accent ----------------------------------------------- */
+  /* A warm copper, taken from the rim light in Parth's portrait. It
+     replaced a neon lime that read as generic "tech" and fought with the
+     chrome. The token keeps its old name so every utility
+     (bg-acid, text-acid) follows the change. Rationed: interactive
+     affordances and one highlight per object, never glows, never a
+     blinking light. */
+  --color-acid: #e0895a;
+  --color-acid-dim: #a8653f;
+
+  /* --- type ------------------------------------------------- */
+  --font-display: var(--f-archivo), "Helvetica Neue", Arial, sans-serif;
+  --font-body: var(--f-archivo), "Helvetica Neue", Arial, sans-serif;
+  --font-serif: var(--f-instrument), Georgia, serif;
+  --font-mono: var(--f-jetbrains), ui-monospace, "SF Mono", monospace;
+
+  /* --- motion ----------------------------------------------- */
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+@layer base {
+  * {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  html {
+    background: var(--color-void);
+    /* Lenis drives scrolling; native smooth would fight it */
+    scroll-behavior: auto;
+    /* The display type is deliberately wider than the screen. Sections
+       clip it, but the guarantee has to be at the root: `clip` on body
+       alone only reaches the viewport by propagation, which browsers
+       apply inconsistently, and the leak shows up as a sideways scroll
+       on phones. `clip` rather than `hidden` so this does not become a
+       scroll container and break the fixed nav and ScrollTrigger. */
+    overflow-x: clip;
+  }
+
+  body {
+    background: var(--color-void);
+    color: var(--color-bone);
+    font-family: var(--font-body);
+    font-synthesis-weight: none;
+    overflow-x: clip;
+  }
+
+  /* Keyboard focus must stay visible everywhere. Quality floor. */
+  :focus-visible {
+    outline: 2px solid var(--color-acid);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  ::selection {
+    background: var(--color-acid);
+    color: #000;
+  }
+
+  /* Hide the native cursor only where the custom one is active
+     and only for devices that actually have a pointer. */
+  @media (hover: hover) and (pointer: fine) {
+    body[data-cursor="on"],
+    body[data-cursor="on"] * {
+      cursor: none;
+    }
+    /* Typing needs the real I-beam: it shows where the caret will land,
+       which no custom cursor can do. The reticle steps aside over fields. */
+    body[data-cursor="on"] :is(input, textarea, select, [contenteditable="true"]) {
+      cursor: text;
+    }
+  }
+}
+
+/* ============================================================
+   TYPE ROLES
+
+   These live in @layer components on purpose. Unlayered CSS outranks
+   everything Tailwind emits, so defining .t-display at the top level
+   would make its line-height and tracking unbeatable, every
+   leading-[0.8] in the components would silently do nothing.
+   ============================================================ */
+@layer components {
+
+/* Display, Archivo at its widest + heaviest. The width axis is the
+   thing most sites never touch; here it's animated on load. */
+.t-display {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-variation-settings: "wdth" 125;
+  letter-spacing: -0.03em;
+  line-height: 0.84;
+  text-transform: uppercase;
+}
+
+/* One-word accent in a heading ("Get in touch", "Selected work"). It used
+   to be a serif italic, which felt borrowed rather than ours. Now the
+   contrast comes from the display face itself: the same Archivo, thin,
+   normal width and lower case against the heavy, wide caps beside it. */
+.t-serif {
+  font-family: var(--font-display);
+  font-weight: 250;
+  font-style: normal;
+  font-variation-settings: "wdth" 100;
+  text-transform: none;
+  letter-spacing: -0.02em;
+}
+
+/* Indices, eyebrows, form labels, nav. Set in the body sans with modest
+   tracking: wide-spaced mono micro-labels everywhere were another tell
+   of a busy, over-styled page. Mono stays only where a machine would print it
+   (the cursor readout, the drawing sheet, the disk readout), through the
+   font-mono utility. */
+.t-mono {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 0.6875rem;
+  font-variation-settings: "wdth" 100;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   SIGNATURE: CHROME
+   The display type is a lit metal object, not a gradient fill.
+   Three stacked ramps do the work:
+     1. base ramp     , the body of the metal
+     2. specular band , a narrow hot highlight, position driven by
+                         --shine (set from cursor X + scroll velocity)
+     3. bevel         , a hairline top edge so letters catch light
+   ============================================================ */
+.chrome {
+  --shine: 50%;
+  background-image:
+    /* specular band */
+    linear-gradient(
+      100deg,
+      transparent calc(var(--shine) - 22%),
+      rgba(255, 255, 255, 0.92) calc(var(--shine) - 4%),
+      #ffffff var(--shine),
+      rgba(255, 255, 255, 0.92) calc(var(--shine) + 4%),
+      transparent calc(var(--shine) + 22%)
+    ),
+    /* base metal ramp */
+    linear-gradient(
+      177deg,
+      #fdfdff 0%,
+      #d6d6de 17%,
+      #8e8e99 33%,
+      #55555f 46%,
+      #3a3a44 52%,
+      #6e6e79 62%,
+      #b4b4bf 76%,
+      #ededf3 88%,
+      #9c9ca6 100%
+    );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  /* the bevel: a hairline of light on the top edge of every letter */
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+/* Fallback: if background-clip:text is unsupported, show solid bone
+   rather than invisible text. */
+@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
+  .chrome {
+    color: var(--color-bone);
+    background: none;
+  }
+}
+
+/* ============================================================
+   GRAIN
+   A single tiling noise layer over the whole page. Keeps the flat
+   blacks from banding and gives the metal something to sit against.
+   ============================================================ */
+.grain {
+  position: fixed;
+  inset: -12%;
+  width: 124%;
+  height: 124%;
+  pointer-events: none;
+  z-index: 60;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: var(--grain-src);
+  background-size: 180px 180px;
+  will-change: transform;
+  animation: grain-shift 6s steps(6) infinite;
+}
+
+@keyframes grain-shift {
+  0%   { transform: translate(0, 0); }
+  17%  { transform: translate(-3%, -4%); }
+  34%  { transform: translate(-6%, 2%); }
+  51%  { transform: translate(2%, -5%); }
+  68%  { transform: translate(5%, 3%); }
+  85%  { transform: translate(-2%, 6%); }
+  100% { transform: translate(0, 0); }
+}
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+
+/* Page gutter. One value, used by every section, so the grid stays
+   honest and only the display type is allowed to break it. */
+.gutter {
+  padding-inline: 1.25rem;
+}
+@media (min-width: 768px) {
+  .gutter { padding-inline: 2.5rem; }
+}
+@media (min-width: 1280px) {
+  .gutter { padding-inline: 4rem; }
+}
+
+/* Masks a line of type so it can be revealed by translating upward. */
+.line-mask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+/* Hairline rule that matches the token, at true 1 device pixel. */
+.rule {
+  border-top: 1px solid var(--color-hairline);
+}
+
+}
+
+/* Nothing on this page is hidden by CSS before its animation runs, every
+   reveal starts from a GSAP `fromTo`, so the markup is fully visible if
+   JS never executes. That is the progressive-enhancement contract here;
+   do not add a rule that pre-hides content, or a failed script leaves the
+   page blank. */
+
+/* ============================================================
+   MARQUEE
+   Pure CSS loops, like the reference: they run even before hydration and
+   cannot be stalled by a busy main thread. JS only adds a velocity boost
+   on top in full-motion mode (see Marquee.tsx).
+   ============================================================ */
+@keyframes marquee {
+  from { transform: translate3d(0, 0, 0); }
+  to   { transform: translate3d(-50%, 0, 0); }
+}
+@keyframes marquee-reverse {
+  from { transform: translate3d(-50%, 0, 0); }
+  to   { transform: translate3d(0, 0, 0); }
+}
+
+/* The page-change bar in app/loading.tsx: a short copper segment sweeping
+   across a hairline, like a scanner, until the next page is ready. */
+@keyframes route-scan {
+  from { transform: translate3d(-100%, 0, 0); }
+  to   { transform: translate3d(300%, 0, 0); }
+}
+
+/* Slow, low-amplitude breathing for the footer horizon glow. */
+@keyframes breathe {
+  0%, 100% { opacity: 0.85; transform: translate3d(0, 0, 0) scale(1); }
+  50%      { opacity: 1;    transform: translate3d(0, -1.5%, 0) scale(1.02); }
+}
+
+/* ============================================================
+   GLASS
+   The frosted surface the reference uses for the intro card and the
+   form fields, white at 5%, a hairline of white at 10%, blur behind.
+   ============================================================ */
+@layer components {
+  .glass {
+    background: rgba(255, 255, 255, 0.045);
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    backdrop-filter: blur(14px) saturate(1.2);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+}
+
+/* ============================================================
+   MOTION OFF
+   Only the explicit footer toggle lands here. The OS reduced-motion
+   preference maps to soft, which keeps the design alive, a blanket
+   @media (prefers-reduced-motion) kill used to zero every keyframe on the
+   page, marquees included, for anyone whose Windows had animation
+   effects switched off.
+   ============================================================ */
+html[data-motion="off"] .grain { animation: none; }
+html[data-motion="off"] *,
+html[data-motion="off"] *::before,
+html[data-motion="off"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* ============================================================
+   INTRO START STATE
+   The hero doubles as the loading screen. Its pieces start hidden, but
+   only once the boot script has run (it sets data-motion), so a page
+   without JavaScript still shows everything. With motion off there is
+   no intro, everything starts in place.
+   ============================================================ */
+html[data-motion="full"] [data-intro-hide],
+html[data-motion="soft"] [data-intro-hide] {
+  opacity: 0;
+}
+html[data-motion="full"] [data-intro-rise],
+html[data-motion="soft"] [data-intro-rise] {
+  transform: translate3d(0, 100vh, 0);
+}
