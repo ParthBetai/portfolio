@@ -293,7 +293,7 @@ export default function Work() {
                   )}
                 </h3>
 
-                <p className="mb-8 text-sm font-light leading-relaxed text-ash md:text-base">
+                <p className="mb-8 text-sm font-light leading-relaxed text-pretty text-ash md:text-base">
                   {p.body}
                 </p>
 

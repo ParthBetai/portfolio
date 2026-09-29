@@ -84,7 +84,7 @@ const person = {
   email: `mailto:${identity.email}`,
   address: { "@type": "PostalAddress", addressLocality: identity.locations.primary.split(",")[0], addressCountry: "IN" },
   sameAs: socials.map((s) => s.href),
-  knowsAbout: ["Android development", "Robotics", "Embedded systems", "Web development"],
+  knowsAbout: ["Android development", "React Native", "Bluetooth Low Energy", "Robotics", "Embedded systems", "Web development"],
 };
 const personJson = JSON.stringify(person).replace(/</g, "\\u003c");
 

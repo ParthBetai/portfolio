@@ -106,11 +106,23 @@ Everything the site says about Parth comes from his resume
 - **Projects (all four on the site, with his own photos).** Facts below are the
   resume plus what Parth confirmed on 29 Sep 2026. **Never add a number nobody
   counted** (no servo count, no test count, no percentages, no panel wattage).
-  - **Android App Suite** (shown first: software before robotics, on request):
-    Java apps built in Android Studio with XML layouts. The one to **highlight**
-    is the **Domino's-style ordering UI replica** (product carousels, ratings, a
-    review section, per the resume). The calculator app is **never** mentioned;
-    the quiz app (with score tracking) only in passing; "many more apps like it".
+  - **Android App Suite** (shown first: software before robotics, on request).
+    Two highlights, in this order:
+    - **Offline SOS app** (added 29 Sep, confirmed by Parth; not in the resume
+      PDF yet): built in **React Native**. With no signal, a phone sends an SOS
+      over **Bluetooth Low Energy**; every phone that hears it **re-broadcasts it
+      hop by hop** to phones in range. The SOS carries the sender's **GPS
+      location** and an optional **short text message**; receiving phones
+      **alert** (sound or vibration) and show it; each SOS has an **ID so phones
+      never relay the same one forever**. Not confirmed, so never claimed: the
+      Bluetooth SIG "Mesh" standard, TypeScript, iOS, range, number of phones or
+      hops tested, library names.
+    - **Domino's-style ordering UI replica** in Java with XML layouts, built in
+      Android Studio (product carousels, ratings, a review section, per the
+      resume). The calculator app is **never** mentioned; the quiz app (with
+      score tracking) only in passing; "many more apps like it".
+  - **Stack status (29 Sep):** **React and React Native are in his stack**;
+    **Flutter is still being learned** (stays in the Learning row).
   - **Mini Humanoid Robot:** **8 or more servos** (exact count unknown) driven
     through a **PWM servo driver board on an Arduino**; motion code in **C++**;
     **5+ motion sequences built from hand-tuned poses, with the servos eased
@@ -329,8 +341,9 @@ the current section underlined. On phones it becomes a Menu overlay.
   the rest of the page inert while open.
 
 ### Tech stack band (`Marquee.tsx`)
-Four rows drifting in alternating directions: **Stack**, **AI**, **Hardware**,
-**Learning** (tools still being learned, labelled honestly). The **AI** row names
+Four rows drifting in alternating directions: **Stack** (now including React
+Native, React and Bluetooth LE), **AI**, **Hardware**, **Learning** (tools still
+being learned, labelled honestly; Flutter leads it, React left it on 29 Sep). The **AI** row names
 practices, not products: AI-assisted development, LLM APIs, Prompt engineering,
 Automation, AI workflows, Model testing (the old list of twelve model names was
 removed on request). Labels are copper in equal-width dark pills (each pill
@@ -363,8 +376,10 @@ screen they pause; fast scrolling surges and skews them.
 ### Selected work (`Work.tsx`)
 The heading, blurb and "Work with me" button rise in together (on phones the
 heading used to slide up through the blurb). Four project cards with Parth's
-own photos (`public/work/`), **software first**: 01 Android App Suite (badge
-"Domino's-style ordering UI"), 02 Mini Humanoid Robot ("1st place in Robotics ·
+own photos (`public/work/`), **software first**: 01 Android App Suite (kind
+"Mobile", badge "Offline SOS, relayed phone to phone": the SOS app first, then
+the Domino's replica; "mesh" only ever lower case and generic, never "Bluetooth
+mesh", which would suggest the Bluetooth SIG standard), 02 Mini Humanoid Robot ("1st place in Robotics ·
 IIT Hyderabad"), 03 Obstacle-Avoiding Autonomous Car ("Looks both ways before it
 turns"), 04 Wireless Charging EV Model ("Solar-charged cells power the track").
 Each card's text explains how the build works (see section 2). Badges are 38
@@ -700,6 +715,16 @@ Dates are 2026.
   site was blank; it was replaced by `RouteProgress.tsx`, which watches link
   clicks instead. Done as a multi-agent pass with independent fact, photo,
   copy, visual and code reviewers, then a final check by hand.
+- **29 Sep, ninth round (SOS app).** Added Parth's offline SOS app (React
+  Native, Bluetooth Low Energy relay hop by hop, GPS location, short message,
+  alerts, duplicate IDs) as the lead of the Android App Suite card, ahead of the
+  Domino's replica. React and React Native joined the Stack row and left
+  Learning; Flutter stays in Learning. Mobile Development and Full-Stack service
+  text updated to match ("Mobile apps in React Native", never "cross-platform",
+  since iOS is not confirmed). schema.org knowsAbout gained React Native and
+  Bluetooth Low Energy. Card and service bodies use `text-pretty` so no single
+  word sits alone on the last line. Checked by a fact skeptic, a visual pass and
+  an editor.
 - **29 Sep, eighth round pushed** as commit "v2" on top of four GitHub-side
   commits that created and deleted a `CNAME` file (no net change). Before the
   push, the real email key was found in `.env.example` and removed from the
@@ -713,12 +738,15 @@ Dates are 2026.
 
 - **Deploy** to Vercel and set `RESEND_API_KEY` and `NEXT_PUBLIC_SITE_URL` there.
 - **Send one real test message** through the chat once Parth agrees.
-- **Resume PDF** still contains em dashes and his phone number, and it is out
-  of date against the site: "100%" detection, "sensor arrays", the humanoid
+- **Resume PDF** still contains em dashes and his phone number, does not list
+  the offline SOS app or React, and it is out of date against the site: "100%" detection, "sensor arrays", the humanoid
   "selected for presentation" (it won) and Afferex "Present". Parth has to edit
   the source, then re-render the preview (section 13).
-- **Android photo** is a code close-up; a screenshot of the ordering UI would
-  suit the first card better.
+- **Android photo** is a code close-up from one of the Java apps; a screenshot of
+  the SOS app receiving an alert (or of the ordering UI) would suit the first
+  card better.
+- **JavaScript / TypeScript** are not listed anywhere although React and React
+  Native are; ask Parth which he writes before adding either.
 - **Accessibility:** with the Motion button gone there is no way to stop the
   drifting tech-stack rows (WCAG 2.2.2). Hover slows them; the Accessibility page
   says so honestly.

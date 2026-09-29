@@ -8,7 +8,12 @@
    won at IIT Hyderabad, how the humanoid is built (eight or more servos,
    the exact count unknown, on a servo driver board run by an Arduino,
    with C++ that eases between hand-tuned poses), how the car decides
-   where to turn, and how the EV model is powered and switched.
+   where to turn, how the EV model is powered and switched, and the
+   offline SOS app (React Native; each phone re-broadcasts an SOS over
+   Bluetooth Low Energy, carrying GPS location, an optional short message
+   and an ID so it is not relayed forever). React is part of his stack;
+   he is still learning Flutter. Not confirmed, so never claimed: iOS,
+   TypeScript, the Bluetooth SIG mesh standard, range or test counts.
    Nothing here should claim more than those do, and no number goes in
    that nobody counted. Where the resume and his project photos disagree,
    the photos win (the car has one ultrasonic sensor on a servo, not an
@@ -97,7 +102,7 @@ export const intro = {
 export const stacks = [
   {
     label: "Stack",
-    items: ["Java", "Kotlin", "Android Studio", "C++", "Python", "HTML", "CSS", "Spring", "REST APIs", "SQL", "Git", "GitHub"],
+    items: ["Java", "Kotlin", "React Native", "React", "Android Studio", "Bluetooth LE", "C++", "Python", "HTML", "CSS", "Spring", "REST APIs", "SQL", "Git", "GitHub"],
   },
   {
     label: "Intelligent systems",
@@ -109,7 +114,7 @@ export const stacks = [
   },
   {
     label: "Learning",
-    items: ["React", "Next.js", "TypeScript", "Node.js", "Tailwind CSS", "Flutter", "Firebase", "Docker", "MongoDB", "PostgreSQL", "Linux", "AWS", "TensorFlow", "PyTorch", "ROS", "Raspberry Pi", "Figma", "Three.js"],
+    items: ["Flutter", "Next.js", "TypeScript", "Node.js", "Tailwind CSS", "Firebase", "Docker", "MongoDB", "PostgreSQL", "Linux", "AWS", "TensorFlow", "PyTorch", "ROS", "Raspberry Pi", "Figma", "Three.js"],
   },
 ];
 
@@ -120,12 +125,14 @@ export const services = {
       title: "Mobile Development",
       points: [
         "Native Android in Java and Kotlin",
+        /* Non-breaking spaces keep "React Native" and "Bluetooth LE"
+           from splitting across lines in the narrow points column. */
+        "Mobile apps in React\u00a0Native",
+        "Offline SOS relay over Bluetooth\u00a0LE",
         "Android Studio and XML layouts",
-        "Food-ordering screens",
-        "Carousels, ratings and reviews",
-        "REST APIs",
+        "Flutter (learning)",
       ],
-      body: "Android is where I started. I build native apps in Java and Kotlin, and the one I'm proudest of is a replica of the Domino's ordering UI, with product carousels, ratings and reviews.",
+      body: "I started on Android in Java and Kotlin, and now I build in React Native too. Among my apps are an offline SOS app that relays alerts from phone to phone over Bluetooth, and a replica of the Domino's ordering UI.",
     },
     {
       title: "Robotics & Embedded Systems",
@@ -152,13 +159,13 @@ export const services = {
     {
       title: "Full-Stack Development",
       points: [
-        "HTML and CSS front ends",
+        "React, HTML and CSS front ends",
         "Spring Framework and REST APIs",
         "SQL databases",
         "Message queues and build tools",
-        "React and Node.js (learning)",
+        "Node.js (learning)",
       ],
-      body: "Through Afferex I offered small businesses websites and admin panels. On the back end I work with Spring, REST APIs and SQL, and I'm adding React and Node so I can take a project from idea to launch on my own.",
+      body: "Through Afferex I offered small businesses websites and admin panels. I build front ends in React, and on the back end I work with Spring, REST APIs and SQL. Next I'm learning Node.js, so I can take a project from idea to launch on my own.",
     },
     {
       title: "Cybersecurity",
@@ -230,12 +237,12 @@ export const work: { heading: [string, string]; blurb: string; projects: Project
     {
       index: "01",
       title: "Android *App* Suite",
-      kind: "Android",
-      badge: "Domino's-style ordering UI",
-      body: "A series of native Android apps built in Android Studio. The one I'd show first is a replica of the Domino's ordering UI, with product carousels, ratings and a review section. I laid out the screens in XML and wrote their behaviour in Java. There are many more like it, among them a quiz app with score tracking.",
-      tags: ["Java", "XML layouts", "Android Studio", "UI design"],
+      kind: "Mobile",
+      badge: "Offline SOS, relayed phone to phone",
+      body: "A React Native SOS app that works with no internet or signal. A phone sends an SOS, with its GPS location and an optional short message, over Bluetooth Low Energy. Each phone running the app that picks it up sounds or vibrates and passes it on, so the phones form an offline mesh. An ID on each SOS stops it being relayed forever. In Java and XML I've built many more apps, including a replica of the Domino's ordering UI with carousels, ratings and reviews.",
+      tags: ["React Native", "Bluetooth LE", "Java", "XML layouts"],
       image: "/work/android-app-suite.jpg",
-      alt: "The XML layout of one of the apps open in a code editor: a scroll view holding a label and a number input, with two of its attributes highlighted",
+      alt: "The XML layout of one of the Java apps open in a code editor: a scroll view holding a label and a number input, with two of its attributes highlighted",
     },
     {
       index: "02",

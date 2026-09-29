@@ -358,7 +358,7 @@ export default function Services() {
 
                       <div>
                         <p
-                          className={`max-w-xl text-base leading-relaxed font-light text-ash transition-colors duration-300 md:text-lg ${FLOOD_INK_SOFT}`}
+                          className={`max-w-xl text-base leading-relaxed font-light text-pretty text-ash transition-colors duration-300 md:text-lg ${FLOOD_INK_SOFT}`}
                         >
                           {item.body}
                         </p>
