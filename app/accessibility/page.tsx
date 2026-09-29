@@ -48,8 +48,8 @@ export default function AccessibilityPage() {
           technology so they don&apos;t get in the way.
         </LI>
         <LI>
-          <Strong>The tech stack.</Strong> The scrolling rows of tools also exist as a plain list for
-          screen readers, so nothing is only available as moving text.
+          <Strong>The tech stack.</Strong> The scrolling rows of skills and tools also exist as a plain
+          list for screen readers, so nothing is only available as moving text.
         </LI>
         <LI>
           <Strong>Contact chat.</Strong> New messages are announced to screen readers as they arrive,

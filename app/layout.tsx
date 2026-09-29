@@ -4,6 +4,7 @@ import { identity, meta, socials } from "@/lib/content";
 import { SITE_URL, xHandle } from "@/lib/site";
 import Cursor from "@/components/Cursor";
 import Grain from "@/components/Grain";
+import RouteProgress from "@/components/RouteProgress";
 import { motionBootScript } from "@/lib/motionBoot";
 import "./globals.css";
 
@@ -116,6 +117,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         {/* Site-wide, so the policy pages get the same cursor and texture. */}
         <Cursor />
         <Grain />
+        <RouteProgress />
         {children}
       </body>
     </html>

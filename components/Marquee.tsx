@@ -7,7 +7,8 @@ import { stacks } from "@/lib/content";
 /* How many times each row's list is laid end to end. The loop translates
    by exactly -50%, so half the track (two copies) has to be wider than the
    widest screen we support. At 2560px two copies of the shortest row
-   (eight names) still clear the edge, and nothing needs measuring. */
+   (the six AI practices, about 1700px a copy at desktop size) still
+   clear the edge, and nothing needs measuring. */
 const COPIES = 4;
 
 /* Hovering the band slows every row to this fraction of its base speed,
@@ -26,12 +27,16 @@ const STEP = 0.08;
 const lap = (items: string[], i: number) =>
   ((items.join("").length + items.length * 7) * PACE * (1 + i * STEP)).toFixed(1);
 
-/* Every label is given the width of the longest one, so the four chips
-   end at the same point down the band instead of four pills of four
-   different lengths. In a mono face each letter is one advance (1ch) plus
-   the t-mono tracking, so this needs no measuring and holds before the
-   webfont arrives. A minimum, so a longer label added later still fits. */
-const LABEL_W = `calc(${Math.max(...stacks.map((r) => r.label.length))} * (1ch + 0.18em))`;
+/* Every chip is as wide as the widest label, so the four chips end at the
+   same point down the band instead of four pills of four different
+   lengths. Each chip stacks all the labels in one grid cell and shows only
+   its own, so the cell takes the widest of them in whatever font is on
+   screen: nothing needs measuring, and it holds before the webfont
+   arrives. Counting letters is not enough, because t-mono is not a
+   monospace face ("HARDWARE" runs wider than eight zeros). The other
+   labels are drawn with ::before content, so they take their width but
+   text readers see only the row's own. */
+const LABELS = stacks.map((r) => r.label);
 
 /* Four labelled rows of tech names drifting in alternating directions, in
    a band directly under the intro.
@@ -280,11 +285,15 @@ export default function Marquee() {
                     caps, and baseline alignment drops them about 2px below
                     its centre, so the chip is nudged down to meet them. Nothing animates the chip, so a Tailwind
                     translate is safe here. */}
-                <span
-                  className="t-mono whitespace-nowrap rounded-full border border-white/10 bg-carbon px-3 py-1.5 text-[9px] leading-none text-acid md:translate-y-0.5 md:text-[11px]"
-                  style={{ minWidth: `calc(${LABEL_W} + 1.5rem)` }}
-                >
-                  {row.label}
+                <span className="t-mono grid whitespace-nowrap rounded-full border border-white/10 bg-carbon px-3 py-1.5 text-[9px] leading-none text-acid md:translate-y-0.5 md:text-[11px]">
+                  <span className="col-start-1 row-start-1">{row.label}</span>
+                  {LABELS.filter((label) => label !== row.label).map((label) => (
+                    <span
+                      key={label}
+                      data-label={label}
+                      className="invisible col-start-1 row-start-1 before:content-[attr(data-label)]"
+                    />
+                  ))}
                 </span>
               </div>
               <div className="w-6 bg-linear-to-r from-[#030303] to-transparent md:w-10" />

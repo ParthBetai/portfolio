@@ -756,10 +756,17 @@ export default function ResumeDisk({
           type="application/pdf"
           data-cursor="PREVIEW"
           aria-haspopup="dialog"
-          aria-label={`Preview ${identity.fullName}'s resume, PDF, ${resume.size}. Opens a preview you can download from.`}
           draggable={false}
           className="relative block aspect-[90/94] w-40 select-none rounded-[6px] outline-offset-[6px] [-webkit-tap-highlight-color:transparent] [perspective:900px] sm:w-44 lg:w-[210px]"
         >
+          {/* The link's name, as text rather than an aria-label, so the
+              parts about the preview can step aside without scripts
+              (data-js-only), when the disk is a plain download. */}
+          <span className="sr-only">
+            <span data-js-only>Preview </span>
+            {`${identity.fullName}'s resume, PDF, ${resume.size}.`}
+            <span data-js-only> Opens a preview you can download from.</span>
+          </span>
           {/* Shadows on the desk. They stay flat while the disk moves above
               them: a tight dark one where it touches, a wide soft one that
               takes over as it lifts. */}
@@ -784,9 +791,11 @@ export default function ResumeDisk({
 
       {/* The hint under the disk. Hover-only on a mouse; always shown on
           touch, where there is no hover to reveal it. While the preview
-          has the disk the hint steps out of the way. */}
+          has the disk the hint steps out of the way. Without scripts the
+          disk is a plain download, so there is no preview to promise. */}
       <span
         aria-hidden
+        data-js-only
         data-phase={phase === "idle" || phase === "read" ? undefined : phase}
         className={`t-mono relative mt-6 flex h-4 [@media(hover:hover)]:mt-10 items-center gap-2 whitespace-nowrap text-[10px] text-ash opacity-0 transition-opacity duration-300 data-[phase]:opacity-100 ${
           phase === "read" ? "" : "[@media(hover:none)]:opacity-100"

@@ -3,10 +3,17 @@
    Every word, link and project on the site is in this one file.
    Edit here, never in the components.
 
-   Source: Parth's resume (PB_RESUME.pdf). Nothing here should claim more
-   than that document does. Where the site needs something the resume
-   does not give (the GitHub, Instagram and X handles), it came from Parth
-   directly.
+   Source: Parth's resume (public/Parth-Betai-Resume.pdf) and what Parth
+   has confirmed directly: the GitHub, Instagram and X handles, which robot
+   won at IIT Hyderabad, how the humanoid is built (eight or more servos,
+   the exact count unknown, on a servo driver board run by an Arduino,
+   with C++ that eases between hand-tuned poses), how the car decides
+   where to turn, and how the EV model is powered and switched.
+   Nothing here should claim more than those do, and no number goes in
+   that nobody counted. Where the resume and his project photos disagree,
+   the photos win (the car has one ultrasonic sensor on a servo, not an
+   array). Afferex was still finding its first clients when he wound it
+   down, so the copy says what it offered, not work it delivered.
    ============================================================ */
 
 export const identity = {
@@ -56,7 +63,7 @@ export const socials = [
 export const intro = {
   eyebrow: "About",
   heading: "Intro",
-  body: "Hi, I'm Parth Betai, a software developer from Kolkata, now based in Jaipur for my undergraduate degree. I started out building Android apps in Java and Kotlin, and that curiosity soon led me into robotics, where I spend my time with Arduino boards, servo motors, sensors and a fair amount of trial and error. Along the way I founded and ran two small ventures, an online store and a digital studio for local businesses, which taught me how to work with real clients and real deadlines. The work I enjoy most sits where software meets the physical world. If you need an app, a website or an extra pair of hands on a hardware build, I would be glad to help.",
+  body: "Hi, I'm Parth Betai, a software developer from Kolkata, now based in Jaipur for my undergraduate degree. I started out building Android apps in Java and Kotlin, and that curiosity soon led me into robotics, where I spend my time with Arduino boards, servo motors, sensors and a fair amount of trial and error. Along the way I founded and ran two ventures, an online store and a digital studio for small businesses, which taught me the business side: vendors, marketing and finding clients. The work I enjoy most sits where software meets the physical world. If you need an app, a website or an extra pair of hands on a hardware build, I would be glad to help.",
 
   /* The card beside the paragraph. Plain facts, in the order someone
      skimming would want them. */
@@ -85,15 +92,16 @@ export const intro = {
 /* Marquee rows, each with the label shown pinned at its left edge.
    "Learning" is deliberately labelled: listing a tool as a skill invites
    an interview question about it, so the page says which ones are in
-   progress rather than claiming them. */
+   progress rather than claiming them. The AI row names practices, not
+   products: a list of model names says nothing about what he can build. */
 export const stacks = [
   {
     label: "Stack",
     items: ["Java", "Kotlin", "Android Studio", "C++", "Python", "HTML", "CSS", "Spring", "REST APIs", "SQL", "Git", "GitHub"],
   },
   {
-    label: "AI models",
-    items: ["GPT", "Gemini", "Llama", "Mistral", "DeepSeek", "Grok", "Qwen", "Perplexity", "Whisper", "Stable Diffusion", "Midjourney", "Copilot"],
+    label: "Intelligent systems",
+    items: ["AI-assisted development", "LLM APIs", "Prompt engineering", "Automation", "AI workflows", "Model testing"],
   },
   {
     label: "Hardware",
@@ -112,12 +120,12 @@ export const services = {
       title: "Mobile Development",
       points: [
         "Native Android in Java and Kotlin",
-        "Android Studio, from layout to release",
-        "Ordering screens and menu cards",
+        "Android Studio and XML layouts",
+        "Food-ordering screens",
         "Carousels, ratings and reviews",
-        "REST APIs to connect it all",
+        "REST APIs",
       ],
-      body: "Android is where I started. I build native apps in Java and Kotlin, and the one I'm proudest of is a full food-ordering experience modelled on Domino's, with product carousels, ratings and reviews.",
+      body: "Android is where I started. I build native apps in Java and Kotlin, and the one I'm proudest of is a replica of the Domino's ordering UI, with product carousels, ratings and reviews.",
     },
     {
       title: "Robotics & Embedded Systems",
@@ -128,18 +136,18 @@ export const services = {
         "Motor control and circuit design",
         "Hardware prototyping",
       ],
-      body: "I like it when code has to deal with the real world. I've built an obstacle-avoiding car, a wireless charging EV model and a mini humanoid with programmable moves, and I took first place in robotics at a national-level competition at IIT Hyderabad.",
+      body: "I like it when code has to deal with the real world. I've built a mini humanoid, an obstacle-avoiding car and a wireless charging EV model. The humanoid took first place in Robotics at a national-level interstate competition at IIT Hyderabad.",
     },
     {
       title: "AI & Automation",
       points: [
-        "AI-assisted workflows for client work",
-        "Prompting and testing different models",
-        "Automating the repetitive parts of a business",
-        "ChatGPT, Gemini and Copilot every day",
+        "AI-assisted development",
+        "Prompt engineering and model testing",
+        "Automating repetitive business tasks",
+        "LLM APIs and AI workflows",
         "Chatbots and assistants (learning)",
       ],
-      body: "At Afferex I used AI to move faster on real client work: drafting, designing and automating the boring bits so the time went into what mattered. Next I'm learning to build AI features straight into apps.",
+      body: "At Afferex, the studio I ran for small businesses, I worked with AI-assisted workflows for websites, admin panels, business systems, logos and social media. That meant writing prompts, trying different models and automating the repetitive parts. Next I'm learning to build chatbots and assistants into apps.",
     },
     {
       title: "Full-Stack Development",
@@ -150,7 +158,7 @@ export const services = {
         "Message queues and build tools",
         "React and Node.js (learning)",
       ],
-      body: "I built websites and admin panels for small businesses through Afferex, with Spring and SQL behind them. I'm adding React and Node so I can take a project from idea to launch on my own.",
+      body: "Through Afferex I offered small businesses websites and admin panels. On the back end I work with Spring, REST APIs and SQL, and I'm adding React and Node so I can take a project from idea to launch on my own.",
     },
     {
       title: "Cybersecurity",
@@ -196,7 +204,10 @@ export type Project = {
   index: string;
   title: string;
   kind: string;
-  /* A short proof point shown as a badge. Optional. */
+  /* A short proof point or standout detail shown as a badge. Optional.
+     No bare percentages: a number goes in only if it was counted, with
+     what was counted. Keep it to 38 characters or fewer so it stays on
+     one line on a 360px phone. */
   badge?: string;
   body: string;
   tags: string[];
@@ -211,47 +222,50 @@ export type Project = {
 export const work: { heading: [string, string]; blurb: string; projects: Project[] } = {
   heading: ["Selected", "work"],
   blurb:
-    "A few things I've built. Some of them move, and some of them run on your phone.",
+    "A few things I've built. Some of them run on a phone, and some of them move.",
+  /* Software first, then the hardware builds. `index` is the number shown
+     on the card and also its React key and heading id, so renumber it
+     (01, 02, ...) whenever the order changes. */
   projects: [
     {
       index: "01",
-      title: "Mini *Humanoid* Robot",
-      kind: "Robotics",
-      badge: "National level · IIT Hyderabad",
-      body: "A multi-servo humanoid with more than five programmable motion sequences. I designed it, wired it and wrote the motion code, and it was selected for the National-Level Robotics Competition at IIT Hyderabad.",
-      tags: ["Arduino", "Servo motors", "C++", "Motion sequencing"],
-      image: "/work/mini-humanoid-robot.jpg",
-      alt: "Hands wiring the servos of the mini humanoid robot on a workbench, with colourful jumper wires and a pencil marking the base board",
+      title: "Android *App* Suite",
+      kind: "Android",
+      badge: "Domino's-style ordering UI",
+      body: "A series of native Android apps built in Android Studio. The one I'd show first is a replica of the Domino's ordering UI, with product carousels, ratings and a review section. I laid out the screens in XML and wrote their behaviour in Java. There are many more like it, among them a quiz app with score tracking.",
+      tags: ["Java", "XML layouts", "Android Studio", "UI design"],
+      image: "/work/android-app-suite.jpg",
+      alt: "The XML layout of one of the apps open in a code editor: a scroll view holding a label and a number input, with two of its attributes highlighted",
     },
     {
       index: "02",
-      title: "Obstacle-Avoiding *Autonomous* Car",
-      kind: "Embedded",
-      badge: "100% detection in tests",
-      body: "An Arduino car that finds its own way around. A set of ultrasonic sensors watches the path ahead and the car steers around whatever is in the way. It caught every obstacle in controlled tests.",
-      tags: ["Arduino", "Ultrasonic sensors", "C++", "Motor drivers"],
-      image: "/work/obstacle-avoiding-car.jpg",
-      alt: "The obstacle-avoiding car: a four-wheeled Arduino chassis with an ultrasonic sensor on a servo at the front, a motor driver board and a battery pack",
+      title: "Mini *Humanoid* Robot",
+      kind: "Robotics",
+      badge: "1st place in Robotics · IIT Hyderabad",
+      body: "A mini humanoid driven by 8+ servos through a PWM servo driver board on an Arduino. I designed it and wrote the motion code in C++: 5+ sequences built from hand-tuned poses, with every servo eased gradually from one pose to the next so the robot moves without jerking. It won first place in Robotics at a national-level interstate competition at IIT Hyderabad.",
+      tags: ["Arduino", "C++", "PWM servo driver", "Motion easing"],
+      image: "/work/mini-humanoid-robot.jpg",
+      alt: "Building the mini humanoid: hands wiring its blue servos with coloured jumper wires, while a second pair of hands marks out the white base board in pencil",
     },
     {
       index: "03",
-      title: "Wireless Charging *EV* Model",
-      kind: "Hardware",
-      badge: "100% solar powered",
-      body: "A working electric vehicle prototype that charges without a cable, and the whole system runs on solar panels. I built the wireless charging circuit, the solar power stage and the embedded motor control, then showed it at two institutional exhibitions.",
-      tags: ["Solar power", "Wireless charging", "Circuit design", "Motor control"],
-      image: "/work/wireless-charging-ev.jpg",
-      alt: "The wireless charging EV model: a charging pad with its coil in the middle of a road track, relay and regulator boards on either side, a yellow model car at the end and a row of 18650 lithium cells along the front",
+      title: "Obstacle-Avoiding *Autonomous* Car",
+      kind: "Embedded",
+      badge: "Looks both ways before it turns",
+      body: "An Arduino car that finds its own way around obstacles. A single ultrasonic sensor sits at the front on a servo. When something is close ahead, my C++ code stops the car, turns the sensor to check left and right, and steers toward the side with more room, driving four geared motors through a motor driver board. In controlled tests it detected obstacles reliably.",
+      tags: ["Arduino", "Ultrasonic sensor", "Motor drivers", "C++"],
+      image: "/work/obstacle-avoiding-car.jpg",
+      alt: "The obstacle-avoiding car: a four-wheeled chassis carrying an Arduino under a motor driver board, with an ultrasonic sensor on a servo at the front and a battery pack",
     },
     {
       index: "04",
-      title: "Android *App* Suite",
-      kind: "Android",
-      badge: "Domino's-style ordering app",
-      body: "The centrepiece is a food-ordering app modelled on Domino's: swipeable product carousels, menu cards with prices, star ratings and a full customer review section, laid out by hand in XML and brought to life in Java. I built it to feel like the real thing, right down to the small details. Around it sit many more apps I made while learning Android properly, a quiz app among them, each one a little more ambitious than the last.",
-      tags: ["Java", "XML layouts", "Android Studio", "UI design"],
-      image: "/work/android-app-suite.jpg",
-      alt: "Android Studio with the XML layout of one of the apps open, a text field and its attributes highlighted",
+      title: "Wireless Charging *EV* Model",
+      kind: "Hardware",
+      badge: "Solar-charged cells power the track",
+      body: "A working EV model that charges without a cable. A solar panel charges three 18650 Li-ion cells, which power the track. When a sensor spots the car arriving, a relay switches on the transmitter coil set into the track. I built the wireless charging circuit and the embedded motor control, then showed it at two institutional exhibitions.",
+      tags: ["Wireless charging", "Solar charging", "Relay", "Motor control"],
+      image: "/work/wireless-charging-ev.jpg",
+      alt: "The wireless charging EV model: the charging coil set into the middle of a model road, a relay module and a small sensor on the left, a board of heatsinked parts on the right with a yellow model car behind the clear wall beside it, and three 18650 Li-ion cells along the front",
     },
   ],
 };
@@ -261,7 +275,7 @@ export const work: { heading: [string, string]; blurb: string; projects: Project
 export const ventures = {
   eyebrow: "Entrepreneurship journey",
   heading: ["Founder", "journey"],
-  blurb: "Two small businesses so far. The first taught me how to sell online, the second how to build for clients.",
+  blurb: "Two small businesses so far. The first taught me how to sell online, the second how to set up a service business and go after its first clients.",
   items: [
     {
       name: "Psquare Online",
@@ -277,10 +291,10 @@ export const ventures = {
       name: "Afferex",
       role: "Founder",
       period: "Mar 2026 to 2026",
-      kind: "AI-powered digital studio",
+      kind: "Digital studio · Small businesses",
       status: "Wrapped up",
       live: false,
-      body: "A studio that gave small businesses what they need online: websites, admin panels, business systems, logos and social media, built faster with AI-assisted workflows. I have since wound it down.",
+      body: "A studio that offered small businesses what they need online: websites, admin panels, business systems, logos and social media, built faster with AI-assisted workflows. I have since wound it down.",
       facts: ["5 services", "AI-assisted workflows", "Wound down in 2026"],
     },
   ],
@@ -318,6 +332,12 @@ export const contact = {
       topic: "Pick one or type your own",
       message: "Type a message",
     },
+    /* What the phone shows when the page runs without scripts: the
+       greeting and the resume as usual, then this line, with Parth's
+       email address as a link where the input bar would be. */
+    noscript: {
+      closing: "Easiest way to reach me is email. Drop me a line below and I'll write back.",
+    },
   },
 };
 
@@ -325,7 +345,7 @@ export const contact = {
    changes, so visitors can see how current it is. */
 export const legal = {
   owner: "Parth Betai",
-  updated: "28 September 2026",
+  updated: "29 September 2026",
   pages: [
     { label: "Privacy policy", href: "/privacy" },
     { label: "Terms of use", href: "/terms" },

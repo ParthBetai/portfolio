@@ -100,22 +100,39 @@ Everything the site says about Parth comes from his resume
   - **Afferex**, Founder, Mar 2026 to 2026. A studio giving small businesses web
     development, admin panels, business systems, logo design and social media
     management with AI-assisted workflows. **It has been wound down.** Talk about
-    it in the past tense everywhere.
-- **Projects (all four on the site, with his own photos):**
-  - **Mini Humanoid Robot:** multi-servo humanoid with 5+ programmable motion
-    sequences; selected for presentation at the National-Level Robotics
-    Competition, IIT Hyderabad.
-  - **Obstacle-Avoiding Autonomous Car:** Arduino vehicle with ultrasonic sensor
-    arrays; 100% obstacle detection in controlled tests.
-  - **Wireless Charging EV Model:** working EV prototype with wireless charging
-    circuitry and embedded motor control, **completely powered by solar panels**;
-    shown at two institutional exhibitions.
-  - **Android App Suite:** Java apps built while learning Android. The one to
-    **highlight** is the **Domino's-style food-ordering app** (product carousels,
-    menu cards with prices, star ratings, a review section, hand-built XML
-    layouts). He asked for the calculator app **not** to be mentioned and the quiz
-    app not to be highlighted (a passing mention is fine), with the idea that
-    there are many more apps like these.
+    it in the past tense everywhere. **It never delivered client work** (Parth
+    confirmed on 29 Sep that it was still finding its first clients), so the copy
+    says what it *offered*, never "real clients" or delivered projects.
+- **Projects (all four on the site, with his own photos).** Facts below are the
+  resume plus what Parth confirmed on 29 Sep 2026. **Never add a number nobody
+  counted** (no servo count, no test count, no percentages, no panel wattage).
+  - **Android App Suite** (shown first: software before robotics, on request):
+    Java apps built in Android Studio with XML layouts. The one to **highlight**
+    is the **Domino's-style ordering UI replica** (product carousels, ratings, a
+    review section, per the resume). The calculator app is **never** mentioned;
+    the quiz app (with score tracking) only in passing; "many more apps like it".
+  - **Mini Humanoid Robot:** **8 or more servos** (exact count unknown) driven
+    through a **PWM servo driver board on an Arduino**; motion code in **C++**;
+    **5+ motion sequences built from hand-tuned poses, with the servos eased
+    gradually between poses so it moves without jerking**. It is the robot that
+    **won 1st place in Robotics at the national-level interstate competition at
+    IIT Hyderabad** (confirmed; the resume's "selected for presentation" line is
+    out of date).
+  - **Obstacle-Avoiding Autonomous Car:** Arduino, C++; **one ultrasonic sensor
+    on a servo** at the front (the photo shows one sensor; the resume's "sensor
+    arrays" is wrong); when something is close ahead the code **stops, turns the
+    sensor to check left and right and steers toward the side with more room**;
+    four geared motors through a motor driver board, two 18650 cells. Controlled
+    tests: it detected obstacles reliably, but **the runs were not counted**, so
+    the site gives no "100%" and no count.
+  - **Wireless Charging EV Model:** a **solar panel charges three 18650 Li-ion
+    cells, which power the track**; when a **sensor spots the car arriving, a
+    relay switches on the transmitter coil** set into the track; he built the
+    wireless charging circuit and the embedded motor control; shown at two
+    institutional exhibitions.
+  - **Resume PDF is out of date** on these points (it still says "100%",
+    "sensor arrays", "selected for presentation" and Afferex "Present"). Only
+    Parth can fix the source document.
 - **Achievements (from the resume):** 1st place in Robotics at IIT Hyderabad
   (national-level, interstate); Abacus all-India 1st and 2nd round winner;
   shooting 1st place zonals, regionals qualified; karate brown belt (2 kyu);
@@ -124,8 +141,8 @@ Everything the site says about Parth comes from his resume
   at Yuvakarshan, 3rd Shark Tank at X-Celsior, finalist at Cathcon; student
   representative at Relativity 2024, Logique 2025 and X-Celsior 2025 (won).
   **He does not want wins or competitions in the intro paragraph.** The IIT
-  Hyderabad first place is mentioned only in the Robotics service text and the
-  humanoid's project badge.
+  Hyderabad first place is mentioned only in the Robotics service text and on
+  the humanoid's card (badge "1st place in Robotics · IIT Hyderabad").
 - **Leadership:** Director, Tech Club (Mar 2024 on, mentored 50+ students);
   Secretary, Interact Club (Rotary); Student Captain, Outreach; VP of Cresco
   Scientiam 2025; IT Head of Cresco Scientiam 2024; Vice Captain, Discipline;
@@ -158,6 +175,10 @@ These came up again and again. Treat them as rules.
 - **No em dashes (U+2014) anywhere**, in page text, code comments or docs. Use a
   comma, colon or full stop.
 - **Copy should sound like a person**, plain and specific, not marketing.
+- **Credibility over volume** (his feedback on 29 Sep): no lists of AI product
+  names, no bare percentages, and every project should show implementation
+  depth (parts, how they work together, what he built). Depth must come from
+  facts he has confirmed; when a detail is missing, ask him rather than guess.
 - **Animation is wanted and must be visible**, including in reduced-motion mode,
   because that is what his own PC shows.
 - **Security matters a lot to him:** no open ports, no loopholes, nothing
@@ -183,8 +204,8 @@ npm run audit    # npm audit for runtime dependencies
 ```
 
 The dev server compiles each page the first time it is opened, which can take
-several seconds on a slow laptop; `app/loading.tsx` shows a loading bar
-meanwhile. The production build has every page prebuilt.
+several seconds on a slow laptop; `components/RouteProgress.tsx` shows a
+"Loading" screen meanwhile (only when a page change takes longer than 160 ms). The production build has every page prebuilt.
 
 Environment variables live in `.env.local` (not committed). See `.env.example`.
 
@@ -198,7 +219,6 @@ app/
                         Marquee, Services, Work, Ventures, Contact, Footer
   globals.css           tokens, type roles (.t-display .t-serif .t-mono),
                         .chrome, .glass, .gutter, keyframes, motion rules
-  loading.tsx           loading bar shown while another page loads
   not-found.tsx         404 page (with the site footer)
   icon.svg              favicon: white "P" with a copper dot
   apple-icon.png        the same mark, 180x180, for iPhone home screens
@@ -232,6 +252,7 @@ components/
   Footer.tsx            the footer on every page (sunrise horizon, wordmark)
   LegalPage.tsx         shell and prose helpers for the info pages
   Cursor.tsx            the engineering-reticle cursor
+  RouteProgress.tsx     "Loading" screen between pages (replaced app/loading.tsx)
   SmoothScroll.tsx      Lenis smooth scroll and keyboard scrolling
   Magnetic.tsx          magnetic hover for buttons
   SocialIcon.tsx        GitHub, LinkedIn, Instagram, X icons
@@ -308,9 +329,13 @@ the current section underlined. On phones it becomes a Menu overlay.
   the rest of the page inert while open.
 
 ### Tech stack band (`Marquee.tsx`)
-Four rows drifting in alternating directions: **Stack**, **AI models**,
-**Hardware**, **Learning** (tools still being learned, labelled honestly). Labels
-are copper in equal-width dark pills; every name is plain grey upper case,
+Four rows drifting in alternating directions: **Stack**, **AI**, **Hardware**,
+**Learning** (tools still being learned, labelled honestly). The **AI** row names
+practices, not products: AI-assisted development, LLM APIs, Prompt engineering,
+Automation, AI workflows, Model testing (the old list of twelve model names was
+removed on request). Labels are copper in equal-width dark pills (each pill
+stacks all four labels invisibly so every pill takes the widest one's width;
+the extra labels are drawn with CSS so text readers only get the real one); every name is plain grey upper case,
 separated by a tiny grey square at mid-height (it used to be a full stop on the
 baseline). Both edges of the band fade into the dark. Hover slows the rows; off
 screen they pause; fast scrolling surges and skews them.
@@ -319,7 +344,11 @@ screen they pause; fast scrolling surges and skews them.
 - Right-aligned chrome heading and seven full-width rows (Mobile Development,
   Robotics and Embedded Systems, AI and Automation, Full-Stack Development,
   Cybersecurity, Web Design and Branding, DevOps and Tooling). Hover or open floods
-  a row edge to edge in copper; open rows show points and a paragraph.
+  a row edge to edge in copper; open rows show points and a paragraph. The AI
+  and Automation row lists practices (AI-assisted development, prompt
+  engineering and model testing, LLM APIs), not tool names. Without JavaScript
+  every row shows open and readable (`inert` and `aria-expanded` only apply
+  after mount).
 - The signature is a **blueprint plotter**: a dark drafting sheet with grid, zone
   frame, notes, parts list and title block (DWG NO., title, SCALE 1:1, SHEET, DRAWN
   P. BETAI, REV A). A small pen plots a technical drawing for the selected
@@ -334,10 +363,14 @@ screen they pause; fast scrolling surges and skews them.
 ### Selected work (`Work.tsx`)
 The heading, blurb and "Work with me" button rise in together (on phones the
 heading used to slide up through the blurb). Four project cards with Parth's
-own photos (`public/work/`): Mini Humanoid Robot,
-Obstacle-Avoiding Autonomous Car, Wireless Charging EV Model (100% solar
-powered badge), Android App Suite (Domino's-style ordering app badge). A "Work
-with me" button jumps to the contact section. A project can set an optional
+own photos (`public/work/`), **software first**: 01 Android App Suite (badge
+"Domino's-style ordering UI"), 02 Mini Humanoid Robot ("1st place in Robotics ·
+IIT Hyderabad"), 03 Obstacle-Avoiding Autonomous Car ("Looks both ways before it
+turns"), 04 Wireless Charging EV Model ("Solar-charged cells power the track").
+Each card's text explains how the build works (see section 2). Badges are 38
+characters or fewer so they stay on one line on a 360px phone. `index` is also
+the React key and heading id, so renumber when reordering. A "Work with me"
+button jumps to the contact section. A project can set an optional
 `focus` (CSS object-position, for example `"85% 50%"`) in `content.ts` to choose
 which part of a wide photo stays in frame. The Android photo is currently a
 close-up of an XML layout (780x440, swapped in by Parth on 29 Sep); a screenshot
@@ -362,6 +395,16 @@ text and three facts. No pulses or blinking lights (removed on request).
   `/api/contact`, which emails Parth (see [section 12](#12-the-contact-email-resend)).
   If that fails, Parth "replies" that it didn't go through and offers
   **Use my email app** (a prefilled `mailto:`) and **Start over**.
+- **Without JavaScript** (crawlers, text extractors, reader modes, JS off) the
+  phone shows a finished conversation instead of an error: the greeting, the
+  resume as a download link, a closing line from `contact.chat.noscript`, and
+  his email as a `mailto:` bar where the input sits. It is inside `<noscript>`,
+  so it never renders with JS on. A rule in `globals.css`,
+  `html:not([data-motion]) [data-js-only]`, hides controls that need scripts
+  (the chat form, the hero loader readout, the phone Menu button, the floppy's
+  "preview" hint); the boot script always sets `data-motion`, so it never
+  matches for JS visitors. Deliberately **no plain HTML form**: a static form
+  invites spam bots. The old line "The chat needs JavaScript..." is gone.
 - Behind it, `PinField.tsx` is a WebGL wall of thousands of metal pins that push
   out under the cursor, ripple when someone types or sends, breathe when idle
   and rise in a sweep as the section scrolls in. Copper light from behind shows
@@ -639,6 +682,21 @@ Dates are 2026.
   cards". The Accessibility page said the focus outline was lime; it is
   copper. Unused `identity.location` and `identity.availability` removed, and
   old colour names (lime, green, globe) cleaned out of code comments.
+- **29 Sep, eighth round (credibility).** From an outside review Parth passed
+  on: the AI models row became an **AI** row of practices; Selected work now
+  starts with the Android App Suite; every project write-up was rebuilt with
+  implementation depth from facts Parth confirmed (humanoid: 8+ servos, PWM
+  servo driver on an Arduino, C++ easing between hand-tuned poses, and it WON
+  1st place at IIT Hyderabad; car: one servo-mounted ultrasonic sensor that
+  looks left and right before turning, no "100%"; EV: solar panel charges three
+  cells that power the track, a sensor and relay switch the coil on); unsupported
+  details (menu cards with prices, "real client work" at Afferex) removed; the
+  no-JavaScript view of the chat became a finished conversation; service panels
+  readable without JS. Also found that `app/loading.tsx` made Next wrap every
+  page in a hidden block revealed by script, so with JavaScript off the whole
+  site was blank; it was replaced by `RouteProgress.tsx`, which watches link
+  clicks instead. Done as a multi-agent pass with independent fact, photo,
+  copy, visual and code reviewers, then a final check by hand.
 - **29 Sep, git.** Repository created and pushed to
   https://github.com/ParthBetai/portfolio (`main`, 75 files in the first
   commit). Checked before pushing: no `.env.local`, no `node_modules` or build
@@ -648,8 +706,12 @@ Dates are 2026.
 
 - **Deploy** to Vercel and set `RESEND_API_KEY` and `NEXT_PUBLIC_SITE_URL` there.
 - **Send one real test message** through the chat once Parth agrees.
-- **Resume PDF** still contains em dashes and his phone number (it is his own
-  document); edit the source, then re-render the preview.
+- **Resume PDF** still contains em dashes and his phone number, and it is out
+  of date against the site: "100%" detection, "sensor arrays", the humanoid
+  "selected for presentation" (it won) and Afferex "Present". Parth has to edit
+  the source, then re-render the preview (section 13).
+- **Android photo** is a code close-up; a screenshot of the ordering UI would
+  suit the first card better.
 - **Accessibility:** with the Motion button gone there is no way to stop the
   drifting tech-stack rows (WCAG 2.2.2). Hover slows them; the Accessibility page
   says so honestly.
@@ -658,8 +720,10 @@ Dates are 2026.
 - **Chat email check** is strict (rejects addresses with non-Latin characters).
 - Optional: a second cut-out photo (set `intro.photo`) would replace the facts card.
 - After the first deploy, check the link preview with LinkedIn's Post Inspector.
-- Open question from earlier: which robot won the IIT Hyderabad first place. The
-  humanoid card only says it was selected for the national-level competition.
+- Settled on 29 Sep: the humanoid is the robot that won at IIT Hyderabad.
+- Still unknown (ask before using): the humanoid's exact servo count and which
+  servo driver board, how many obstacle-test runs the car did, the solar panel's
+  rating.
 
 ## 17. Hard-won lessons (read before editing)
 
@@ -679,5 +743,10 @@ Dates are 2026.
 - **Soft mode is Parth's view.** Test with reduced motion on.
 - **Dev server speed:** the first visit to each page compiles it; that delay is
   not a bug in the built site.
+- **Never add `app/loading.tsx` (or any `loading.tsx`).** Next then wraps the
+  pages in a Suspense boundary, and even prebuilt pages ship their content in
+  `<div hidden id="S:0">` for an inline script to reveal: with JavaScript off
+  the site is blank and text readers see a hidden fragment. Check with
+  `grep -c 'hidden id="S:' .next/server/app/index.html` after a build (must be 0).
 - **next/font/google** failed intermittently at build time, so fonts are
   self-hosted with `next/font/local`.

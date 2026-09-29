@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { gsap, ScrollTrigger, reduced, parseAccent } from "@/lib/motion";
 import { services } from "@/lib/content";
 import ServiceDrum from "@/components/ServiceDrum";
@@ -80,6 +80,13 @@ export default function Services() {
   const [hover, setHover] = useState<number | null>(null);
   const [focus, setFocus] = useState<number | null>(null);
   const list = useRef<HTMLDivElement>(null);
+  /* False in the server HTML and while hydrating, true once React runs.
+     Without scripts globals.css shows every panel open, so until then the
+     panels are not inert and the rows say they are expanded: an inert
+     panel would be visible but unreadable to a screen reader, and its
+     link dead. Set after mount, so the first client render matches. */
+  const [live, setLive] = useState(false);
+  useEffect(() => setLive(true), []);
 
   useEffect(() => {
     const el = root.current;
@@ -169,18 +176,24 @@ export default function Services() {
           data-svc-head
           className="t-display chrome text-right text-[13vw] leading-[0.88] md:text-[7.5vw]"
         >
-          {services.heading.map((line) => (
-            <span key={line} className="block">
-              {parseAccent(line).map((seg, j) =>
-                seg.accent ? (
-                  <span key={j} className="t-serif">
-                    {seg.text}
-                  </span>
-                ) : (
-                  <span key={j}>{seg.text}</span>
-                )
-              )}
-            </span>
+          {/* The space between the lines is never drawn (it sits between
+              two blocks), but text readers get "What I can do", not
+              "What Ican do". */}
+          {services.heading.map((line, i) => (
+            <Fragment key={line}>
+              {i > 0 && " "}
+              <span className="block">
+                {parseAccent(line).map((seg, j) =>
+                  seg.accent ? (
+                    <span key={j} className="t-serif">
+                      {seg.text}
+                    </span>
+                  ) : (
+                    <span key={j}>{seg.text}</span>
+                  )
+                )}
+              </span>
+            </Fragment>
           ))}
         </h2>
       </div>
@@ -239,7 +252,7 @@ export default function Services() {
                      not the render this handler was created in, so two
                      clicks batched into one render can't disagree. */
                   onClick={() => setOpen((cur) => (cur === i ? null : i))}
-                  aria-expanded={isOpen}
+                  aria-expanded={live ? isOpen : true}
                   aria-controls={panelId}
                   /* Keyboard focus moves the picture too. A mouse click also
                      focuses the button, and that should not. */
@@ -303,12 +316,16 @@ export default function Services() {
               </h3>
 
               {/* Closed panels are inert, not just collapsed: at 0fr the
-                  links inside would otherwise stay tabbable and announced. */}
+                  links inside would otherwise stay tabbable and announced.
+                  Without scripts no row can open, so globals.css shows
+                  every panel open (data-svc-panel) and `live` keeps them
+                  out of inert. */}
               <div
+                data-svc-panel
                 id={panelId}
                 role="region"
                 aria-labelledby={btnId}
-                inert={!isOpen}
+                inert={live && !isOpen}
                 className="relative z-10 grid transition-[grid-template-rows,opacity] duration-600"
                 style={{
                   gridTemplateRows: isOpen ? "1fr" : "0fr",
@@ -346,8 +363,8 @@ export default function Services() {
                           {item.body}
                         </p>
 
-                        {/* The first service is the umbrella for all the
-                            others, so it is the one that points at proof.
+                        {/* The first service is the one Selected work opens
+                            with, so it is the one that points at proof.
                             A real link to #work: it still works with no JS. */}
                         {i === 0 && (
                           <a

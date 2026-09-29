@@ -20,7 +20,9 @@ import { PREVIEW_EVENT, warmResumePreview } from "./ResumePreview";
    Parth asks fills one field; the last step sends the message straight
    to his inbox through /api/contact (app/api/contact/route.ts). If that
    fails for any reason, the visitor's own mail app is offered instead,
-   with everything filled in.
+   with everything filled in. Without scripts nothing can run, so the
+   screen shows a short conversation already written and Parth's email
+   address where the input bar would be.
 
    The device is DOM and CSS 3D rather than a render or a canvas, so the
    field on its screen is a real input: autofill, the mobile keyboard,
@@ -846,6 +848,30 @@ From: ${name} (${email})`;
                     Today{stamp ? ` ${stamp}` : ""}
                   </p>
 
+                  {/* Without scripts the conversation never starts, so the
+                      page arrives with it already written: the greeting,
+                      the resume and a line pointing at the email below.
+                      React never renders what is inside a noscript in the
+                      browser, so none of these pieces mount there and the
+                      live chat is untouched. */}
+                  <noscript>
+                    {chat.greeting.map((text, i) => (
+                      <Rise key={text} mine={false} className={i ? "mt-[3px]" : "mt-2.5"}>
+                        <Bubble mine={false} tail={false}>
+                          {text}
+                        </Bubble>
+                      </Rise>
+                    ))}
+                    <Rise mine={false} className="mt-[3px]">
+                      <FileCard still />
+                    </Rise>
+                    <Rise mine={false} className="mt-[3px]">
+                      <Bubble mine={false} tail>
+                        {chat.noscript.closing}
+                      </Bubble>
+                    </Rise>
+                  </noscript>
+
                   {msgs.map((m, i) => {
                     const prev = msgs[i - 1];
                     const next = msgs[i + 1];
@@ -895,7 +921,26 @@ From: ${name} (${email})`;
                   )}
                 </div>
 
-                {/* ---- composer ------------------------------------ */}
+                {/* ---- composer ------------------------------------
+                    Without scripts the form cannot work, so it steps aside
+                    (data-js-only, see globals.css) and the bar holds Parth's
+                    address instead, as a link to the visitor's mail app.
+                    With scripts on, browsers never draw a noscript, so none
+                    of this shows then. 13px so the whole address fits the
+                    280px phone. */}
+                <noscript>
+                  <a
+                    href={`mailto:${identity.email}`}
+                    className={`group ${COMPOSER_BAR} focus-visible:outline-offset-[-3px]`}
+                  >
+                    <span className="min-w-0 flex-1 rounded-[20px] border border-white/10 bg-[#121215] px-3.5 py-2 transition-colors duration-300 group-hover:border-acid/70">
+                      <span className="block text-[13px] leading-[1.35] text-bone [overflow-wrap:anywhere]">{identity.email}</span>
+                    </span>
+                    <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full bg-acid text-void">
+                      <SendArrow />
+                    </span>
+                  </a>
+                </noscript>
                 <Composer
                   api={composer}
                   fieldRef={field}
@@ -939,16 +984,6 @@ From: ${name} (${email})`;
       </div>
 
       <Honeypot inputRef={honey} />
-
-      <noscript>
-        <p className="mt-6 text-center text-sm text-ash">
-          The chat needs JavaScript. You can email me at{" "}
-          <a href={`mailto:${identity.email}`} className="text-bone underline">
-            {identity.email}
-          </a>
-          .
-        </p>
-      </noscript>
     </div>
   );
 }
@@ -1020,6 +1055,7 @@ const Composer = memo(function Composer({
   return (
     <form
       ref={form}
+      data-js-only
       onSubmit={(e) => {
         e.preventDefault();
         /* Cleared before the send, not after: with motion off the reply
@@ -1032,7 +1068,7 @@ const Composer = memo(function Composer({
       /* The chat checks the answers itself and says so in a reply; the
          browser's own bubble would pop out of the phone and block the send. */
       noValidate
-      className="flex items-end gap-2 border-t border-white/[0.06] bg-[#0b0b0d] px-[3.4cqw] pb-1 pt-2.5"
+      className={COMPOSER_BAR}
     >
       <label htmlFor={id} className="sr-only">
         {f.label}
@@ -1090,13 +1126,23 @@ const Composer = memo(function Composer({
           canSend ? "bg-acid text-void" : "bg-white/[0.07] text-ash"
         }`}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
-          <path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" />
-        </svg>
+        <SendArrow />
       </button>
     </form>
   );
 });
+
+/* The input bar's row and its send arrow, shared with the address bar
+   the phone shows without scripts, so a restyle reaches both. */
+const COMPOSER_BAR = "flex items-end gap-2 border-t border-white/[0.06] bg-[#0b0b0d] px-[3.4cqw] pb-1 pt-2.5";
+
+function SendArrow() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+      <path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" />
+    </svg>
+  );
+}
 
 /* The spam trap. A bot that fills in every input it finds fills this one
    too, and the server quietly drops the message (route.ts). People never
@@ -1312,8 +1358,12 @@ function TypingDots() {
 /* Tapping the file opens it, like an attachment in a real chat app: the
    same preview the floppy opens, grown out of this card. It asks through
    a window event (see ResumePreview); if nothing answers, the link just
-   downloads, and so does a click with a modifier or without JavaScript. */
-function FileCard() {
+   downloads, and so does a click with a modifier.
+   `still` is the card in the conversation shown without scripts: there
+   is no preview to open, so it says what it does, a plain download. It
+   only ever renders inside a noscript, which the browser never mounts,
+   so the handlers and the warm-up below never run for it. */
+function FileCard({ still = false }: { still?: boolean }) {
   const onClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
     const el = e.currentTarget;
@@ -1352,7 +1402,7 @@ function FileCard() {
       href={resume.href}
       download={resume.fileName}
       data-cursor="PREVIEW"
-      aria-haspopup="dialog"
+      aria-haspopup={still ? undefined : "dialog"}
       onClick={onClick}
       onPointerEnter={warm}
       onFocus={warm}
@@ -1378,13 +1428,20 @@ function FileCard() {
         aria-hidden
         className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full border border-white/10 text-bone transition-colors duration-300 group-hover:border-acid group-hover:bg-acid group-hover:text-void"
       >
-        {/* An eye rather than a download arrow: it opens for a look. */}
+        {/* An eye rather than a download arrow: it opens for a look.
+            The still card only downloads, so it gets the arrow. */}
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" focusable="false">
-          <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z" />
-          <circle cx="12" cy="12" r="2.75" />
+          {still ? (
+            <path d="M12 5v14M5.5 12.5 12 19l6.5-6.5" />
+          ) : (
+            <>
+              <path d="M2.5 12s3.5-6.5 9.5-6.5 9.5 6.5 9.5 6.5-3.5 6.5-9.5 6.5S2.5 12 2.5 12Z" />
+              <circle cx="12" cy="12" r="2.75" />
+            </>
+          )}
         </svg>
       </span>
-      <span className="sr-only">, opens a preview you can download from</span>
+      <span className="sr-only">{still ? ", downloads the PDF" : ", opens a preview you can download from"}</span>
     </a>
   );
 }

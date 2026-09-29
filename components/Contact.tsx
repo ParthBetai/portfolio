@@ -153,6 +153,9 @@ export default function Contact() {
             <span data-contact-head className="chrome block">
               {contact.heading[0]}
             </span>
+            {/* Never drawn between two blocks; it keeps "Get in touch"
+                one phrase for text readers. */}
+            {" "}
             <span className="t-serif block text-ash">{contact.heading[1]}</span>
           </h2>
 

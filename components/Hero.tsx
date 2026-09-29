@@ -313,6 +313,8 @@ export default function Hero({ onDone }: { onDone: () => void }) {
                 <span className="t-display text-[1.35rem] leading-none text-bone md:text-[clamp(1.25rem,2.1vw,2.1rem)]">
                   Software
                 </span>
+                {/* A flex row draws no space; this one is for text readers. */}
+                {" "}
                 <span className="t-serif text-[1.7rem] leading-none text-ash md:text-[clamp(1.6rem,2.7vw,2.7rem)]">
                   Developer
                 </span>
@@ -400,8 +402,11 @@ export default function Hero({ onDone }: { onDone: () => void }) {
         style={{ background: "linear-gradient(to top, #050505 10%, transparent)" }}
       />
 
-      {/* ---- loader readout -------------------------------------------- */}
-      <div data-loader-ui className="pointer-events-none absolute inset-x-0 bottom-0 z-30 gutter pb-7">
+      {/* ---- loader readout --------------------------------------------
+          Decoration, so hidden from screen readers: after the outro it is
+          only faded out, and would still read "Loading 100". Without
+          scripts it never moves, so it is not shown at all. */}
+      <div data-loader-ui data-js-only aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 z-30 gutter pb-7">
         <div className="t-mono flex items-end justify-between text-ash">
           <span>Loading</span>
           <span ref={pct} className="tabular-nums text-bone">

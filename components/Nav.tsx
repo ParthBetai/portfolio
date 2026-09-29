@@ -434,6 +434,8 @@ export default function Nav({ show }: { show: boolean }) {
             aria-controls={SHEET_ID}
             data-nav-item
             data-hover
+            /* Hidden without scripts, when it could not open the sheet. */
+            data-js-only
             /* Negative margin grows the hit area without moving the label
                off the gutter line. */
             className="t-mono -m-3 p-3 text-bone md:hidden"

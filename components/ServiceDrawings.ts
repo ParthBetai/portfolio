@@ -1115,7 +1115,7 @@ export function sheetOps(layout: Layout = "portrait"): Op[] {
   cells.forEach((cx) => (tb += `M${cx} ${r1}V${y + h}`));
   k.p(tb, "frame");
   k.t(x + 5, y + 11.5, "PARTH BETAI", { size: 7, anchor: "start", tone: "bone", bold: true });
-  k.t(x + 5, y + 20, "ROBOTICS / SOFTWARE", { size: 4.2, anchor: "start", tone: "dim" });
+  k.t(x + 5, y + 20, "SOFTWARE / ROBOTICS", { size: 4.2, anchor: "start", tone: "dim" });
   k.t(x + 87, y + 7, "TITLE", { size: 4.2, anchor: "start", tone: "dim" });
   k.t(x + 87, y + 19.5, "", { size: 7.6, anchor: "start", tone: "bone", slot: "title" });
   const fields: [number, string, string, string?][] = [

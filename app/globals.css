@@ -336,3 +336,26 @@ html[data-motion="full"] [data-intro-rise],
 html[data-motion="soft"] [data-intro-rise] {
   transform: translate3d(0, 100vh, 0);
 }
+
+/* ============================================================
+   WITHOUT JAVASCRIPT
+   The boot script writes data-motion on every path, before the body is
+   parsed, so a page without it is one where no script ran. There the
+   controls that only scripts can drive step aside (the chat's input bar,
+   the loader readout, the phone Menu button, the floppy's hint) and the
+   service rows show their panels open, since nothing could open them,
+   with each row's arrow turned to its open angle.
+   With scripts these rules never match, so nothing moves or flashes.
+   Unlayered, to beat the display and rotate utilities on the same
+   elements, and !important where an inline style has to give way.
+   ============================================================ */
+html:not([data-motion]) [data-js-only] {
+  display: none;
+}
+html:not([data-motion]) [data-svc-panel] {
+  grid-template-rows: 1fr !important;
+  opacity: 1 !important;
+}
+html:not([data-motion]) [data-svc-row] h3 svg {
+  rotate: -45deg;
+}
