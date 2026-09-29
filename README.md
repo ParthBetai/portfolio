@@ -536,7 +536,10 @@ the thin accent style. The `socials` label also chooses the icon.
   10 s and refuses redirects; plain-text email only; provider errors and the key
   never reach the browser; responses are `no-store`. `robots.txt` disallows `/api/`.
 - **Secrets:** only in `.env.local` locally and in the host's environment settings
-  in production. `.env*` is git-ignored except `.env.example`. Never put a secret
+  in production. **`.env.example` is public and must only ever hold the
+  placeholder `re_xxxxxxxxxxxxxxxxxxxxxxxx`**; Next.js never reads it. (On
+  29 Sep the real key was typed into it in a local commit; it was caught
+  before pushing and removed from that commit, so it never reached GitHub.) `.env*` is git-ignored except `.env.example`. Never put a secret
   in a `NEXT_PUBLIC_*` variable. Never write a key into this README.
 - **Content:** no `dangerouslySetInnerHTML` except two constants in the layout:
   the motion boot script and the schema.org JSON, which is built from
@@ -697,6 +700,10 @@ Dates are 2026.
   site was blank; it was replaced by `RouteProgress.tsx`, which watches link
   clicks instead. Done as a multi-agent pass with independent fact, photo,
   copy, visual and code reviewers, then a final check by hand.
+- **29 Sep, eighth round pushed** as commit "v2" on top of four GitHub-side
+  commits that created and deleted a `CNAME` file (no net change). Before the
+  push, the real email key was found in `.env.example` and removed from the
+  unpushed commit.
 - **29 Sep, git.** Repository created and pushed to
   https://github.com/ParthBetai/portfolio (`main`, 75 files in the first
   commit). Checked before pushing: no `.env.local`, no `node_modules` or build
