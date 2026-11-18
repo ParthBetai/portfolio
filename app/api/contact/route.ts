@@ -30,7 +30,9 @@ import { identity } from "@/lib/content";
    it, so this endpoint cannot be used to mail anyone but Parth.
    ============================================================ */
 
-export const runtime = "nodejs";
+/* Edge, because Cloudflare Pages (@cloudflare/next-on-pages) runs every
+   dynamic route on Workers. Only web APIs below: fetch, streams, TextDecoder. */
+export const runtime = "edge";
 export const dynamic = "force-dynamic";
 
 const RESEND_URL = "https://api.resend.com/emails";
@@ -123,16 +125,21 @@ function takeGlobal(now: number): number {
   return 0;
 }
 
-/* The client's address, as the host reports it. Vercel and most proxies
-   overwrite x-forwarded-for with the real peer; behind a proxy that
-   appends instead, the first entry is whatever the client claimed, so
-   this is a best-effort key, not an identity. With neither header,
+/* The client's address, as the host reports it. On Cloudflare that is
+   cf-connecting-ip, which the client cannot set; Cloudflare appends to an
+   existing x-forwarded-for, so its first entry could be forged there.
+   Vercel and most proxies overwrite x-forwarded-for with the real peer;
+   behind a proxy that appends instead, the first entry is whatever the
+   client claimed, so this is a best-effort key, not an identity. With none,
    everyone shares one "unknown" bucket, which errs on the strict side.
    IPv6 is bucketed to its /64, since one household or server usually
    holds a whole /64 and can rotate through it freely. */
 function clientKey(req: Request): string {
   const raw =
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || req.headers.get("x-real-ip")?.trim() || "";
+    req.headers.get("cf-connecting-ip")?.trim() ||
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip")?.trim() ||
+    "";
   let ip = raw.replace(/^\[|\](?::\d+)?$/g, "").replace(/%.*$/, "");
   if (/^\d{1,3}(?:\.\d{1,3}){3}:\d+$/.test(ip)) ip = ip.slice(0, ip.lastIndexOf(":"));
   if (!ip || ip.length > 64 || !/^[0-9A-Fa-f:.]+$/.test(ip)) return "unknown";
@@ -396,8 +403,11 @@ export async function POST(req: Request) {
          HTML in the inbox. */
       body: JSON.stringify({ from, to: [to], subject, text: textBody, reply_to: fields.email }),
       signal: AbortSignal.timeout(10_000),
-      redirect: "error",
-      cache: "no-store",
+      /* Never follow a redirect (it would carry the key elsewhere). Workers
+         reject "error", so "manual": a 3xx is not ok and fails below. No
+         `cache` option either: Workers can reject it, and a POST is never
+         cached anyway. */
+      redirect: "manual",
     });
     if (!res.ok) {
       /* Only the provider's short error name is logged, for debugging.
