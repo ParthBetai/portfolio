@@ -5,17 +5,16 @@ import { identity, socials } from "@/lib/content";
    robots.txt, canonical links, the link preview tags and the structured
    data.
 
-   Set NEXT_PUBLIC_SITE_URL to the real domain (for example in the Vercel
-   project settings). Without it, a Vercel build uses the project's own
-   production address, which Vercel provides to every build, and a local
-   build uses localhost, so nothing ever points at somebody else's site.
+   NEXT_PUBLIC_SITE_URL overrides it (read at build time). Without it, a
+   Vercel build uses the project's own production address, and every
+   other build (Cloudflare Pages, a local build) uses Parth's domain.
    `||` rather than `??` so an empty variable falls back too; the
    trailing slash is trimmed so paths never double up. */
 const vercel = process.env.VERCEL_PROJECT_PRODUCTION_URL;
 export const SITE_URL = (
   process.env.NEXT_PUBLIC_SITE_URL ||
   (vercel ? `https://${vercel}` : "") ||
-  "http://localhost:3000"
+  "https://parthcodz.ext.io"
 ).replace(/\/+$/, "");
 
 /* The X handle, taken from the profile link, for link preview credits. */
@@ -23,8 +22,8 @@ export const xHandle = socials.find((s) => s.label === "X")?.href.split("/").fil
 
 /* Metadata for an info page. A page that sets its own openGraph or
    twitter block replaces the layout's whole block rather than merging
-   into it, and that includes the preview image Next would otherwise add
-   from app/opengraph-image.jpg. So each page gets complete ones here: its
+   into it, and that includes the layout's preview image
+   (public/opengraph-image.jpg). So each page gets complete ones here: its
    own title in the link preview, its own address, and the shared image. */
 export function pageMeta(title: string, description: string, path: string): Metadata {
   const full = `${title} · ${identity.fullName}`;

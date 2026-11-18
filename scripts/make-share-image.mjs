@@ -1,9 +1,9 @@
 // Makes the link preview images and the icons:
-//   app/opengraph-image.jpg and app/twitter-image.jpg (1200x630, the card
+//   public/opengraph-image.jpg and public/twitter-image.jpg (1200x630, the card
 //   LinkedIn, WhatsApp, X and others show when someone shares the site),
-//   app/apple-icon.png (180x180, "Add to Home Screen" on an iPhone) and
-//   app/icon.svg (the favicon).
-// Next.js picks all four up from app/ by their file names.
+//   public/apple-icon.png (180x180, "Add to Home Screen" on an iPhone) and
+//   public/icon.svg (the favicon).
+// They are plain public/ files linked from app/layout.tsx metadata.
 //
 // It draws them from the site's own pieces: the self-hosted Archivo, the
 // drawing set's tokens (copied below as constants), the name, role and
@@ -19,8 +19,8 @@
 // The icons are the colour taxi with a cream roof rack on a navy tile.
 //
 // Run it again after changing the name, the role, the ribbon, the taxi
-// or the palette. If the card's words change, update the two .alt.txt
-// files next to the images, which describe it.
+// or the palette. If the card's words change, update SHARE_ALT in
+// app/layout.tsx, which describes it.
 //
 // One-off setup (nothing is added to package.json):
 //   npm i --no-save playwright-core
@@ -159,7 +159,7 @@ const iconSvg = (size, radius) => {
 
 /* The favicon: rounded like the tiles in the mockup. The iPhone icon is
    full bleed, since iOS rounds the corners itself. */
-fs.writeFileSync(path.join(ROOT, "app/icon.svg"), iconSvg(32, 7) + "\n");
+fs.writeFileSync(path.join(ROOT, "public/icon.svg"), iconSvg(32, 7) + "\n");
 
 const browser = await chromium.launch({ executablePath: BROWSER, headless: true });
 try {
@@ -168,18 +168,18 @@ try {
   await page.evaluate(() => document.fonts.ready);
   /* JPEG: some apps give up on large preview images, and a JPEG of this
      card is a fraction of the PNG. */
-  const og = path.join(ROOT, "app/opengraph-image.jpg");
+  const og = path.join(ROOT, "public/opengraph-image.jpg");
   await page.screenshot({ path: og, type: "jpeg", quality: 90 });
-  fs.copyFileSync(og, path.join(ROOT, "app/twitter-image.jpg"));
+  fs.copyFileSync(og, path.join(ROOT, "public/twitter-image.jpg"));
 
   await page.setViewportSize({ width: 180, height: 180 });
   await page.setContent(`<!doctype html><style>*{margin:0}body{width:180px;height:180px}body>svg{display:block;width:180px;height:180px}</style>${iconSvg(180, 0)}`, {
     waitUntil: "load",
   });
-  await page.screenshot({ path: path.join(ROOT, "app/apple-icon.png") });
+  await page.screenshot({ path: path.join(ROOT, "public/apple-icon.png") });
 
   for (const f of ["opengraph-image.jpg", "twitter-image.jpg", "apple-icon.png", "icon.svg"]) {
-    console.log(`Wrote app/${f}: ${(fs.statSync(path.join(ROOT, "app", f)).size / 1024).toFixed(1)} KB`);
+    console.log(`Wrote public/${f}: ${(fs.statSync(path.join(ROOT, "public", f)).size / 1024).toFixed(1)} KB`);
   }
 } finally {
   await browser.close();

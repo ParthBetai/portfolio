@@ -43,13 +43,17 @@ const jetbrains = localFont({
   variable: "--f-jetbrains",
 });
 
-/* The preview images themselves are files: app/opengraph-image.jpg and
-   app/twitter-image.jpg (made by scripts/make-share-image.mjs). Next adds
-   their tags, sizes and alt text on its own, as absolute URLs built from
-   metadataBase. No og:url or canonical here: this layout wraps every page,
-   and each page would inherit the home page's address. */
+/* The icons and preview images are plain files in public/ (made by
+   scripts/make-share-image.mjs), not app/ metadata files: on Cloudflare
+   Pages every app/ metadata route would have to run on the Edge runtime.
+   Next turns these paths into absolute URLs from metadataBase. No og:url
+   or canonical here: this layout wraps every page, and each page would
+   inherit the home page's address. */
+const SHARE_ALT = `${identity.fullName}, ${identity.role}, on a cream drafting sheet beside a yellow Kolkata taxi whose front half is drawn as a blueprint.`;
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
+  icons: { icon: "/icon.svg", apple: "/apple-icon.png" },
   title: { default: meta.title, template: "%s · Parth Betai" },
   description: meta.description,
   applicationName: identity.fullName,
@@ -63,11 +67,13 @@ export const metadata: Metadata = {
     locale: "en_IN",
     title: meta.title,
     description: meta.description,
+    images: [{ url: "/opengraph-image.jpg", width: 1200, height: 630, alt: SHARE_ALT }],
   },
   twitter: {
     card: "summary_large_image",
     title: meta.title,
     description: meta.description,
+    images: [{ url: "/twitter-image.jpg", width: 1200, height: 630, alt: SHARE_ALT }],
     ...(xHandle ? { creator: `@${xHandle}` } : {}),
   },
 };
