@@ -263,6 +263,7 @@
   font-size: 23px;
   font-weight: 700;
   letter-spacing: -0.015em;
+  text-wrap: balance; /* Robotics & / Embedded Systems, not a lone Systems */
   /* No line-height here: the title inherits the sheet's 1.55 like the
      mockup's, which sets the row height the fixed station top is tuned to. */
   color: var(--color-nline);

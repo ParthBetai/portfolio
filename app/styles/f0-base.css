@@ -100,6 +100,8 @@
 /* Weight contrast on three headings (What I / can do, Selected / work,
    Founder / journey) and the project titles: the bold word in <b>, the
    light one in <span>. */
+/* Balanced, so a narrow column breaks What I / can do, never What I can / do. */
+.wc { text-wrap: balance; }
 .wc b { font-weight: 800; }
 .wc span { font-weight: 280; letter-spacing: -0.03em; }
 

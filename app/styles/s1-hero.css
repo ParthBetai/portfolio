@@ -460,6 +460,8 @@ html[data-motion="full"] .sheet-stack:has(.hero:not([data-landed])) > .sheet-slo
 .bb-name { position: absolute; inset: 0; pointer-events: none; color: var(--ink-deep); text-shadow: none; letter-spacing: 0; }
 .bb-nl { position: absolute; white-space: pre; }
 .bb-rig { position: absolute; inset: 0; z-index: 0; }
+/* The ink copy (z 8) comes after the "01 Home" chip (z 8), so the cables would cross it: lift the chip while the rig is up. */
+.hero:has(.bb-name) > .sheet-tab.is-inner { z-index: 9; }
 .bb-cab { position: absolute; width: 1.5px; margin-left: -0.75px; background: var(--ink); transform-origin: 50% 0; }
 .bb-cab i { position: absolute; bottom: 0; left: 50%; height: 0.032em; transform: translateX(-50%); background: var(--brick); border-radius: 1px; } /* the girder it carries */
 .bb-cab i::before { content: ""; position: absolute; left: 50%; bottom: 100%; width: 0.05em; height: 0.03em; margin-left: -0.025em; border: 1.5px solid var(--ink); border-bottom: 0; border-radius: 50% 50% 0 0 / 100% 100% 0 0; box-sizing: border-box; } /* its shackle */

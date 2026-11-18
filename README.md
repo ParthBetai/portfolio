@@ -76,9 +76,9 @@ each change in the [Changelog](#15-changelog) with its date.
     following the scroll, the ticket's rolling role, the stack ticker,
     the phone chat's clock). The loader (Span closed with the craned
     name) was recorded frame by frame on that build with reduced motion
-    on. **Pushed to GitHub on 18 Nov 2026** (`main`), at Parth's request;
-    not deployed. The polish pass and the closing reviews of the
-    sixteenth round were still running at the time of the push.
+    on. **Pushed to GitHub on 18 Nov 2026** (`main`), at Parth's request,
+    and the polish pass on 19 Nov; not deployed. The closing three-lens
+    review of the sixteenth round was skipped to ship fast.
   - **Open before committing: dependency advisories.** On 13 Oct
     `npm audit --omit=dev` reported 3 advisories published since the last
     clean audit: next 15.5.26 (moderate, SSG and ISR cache poisoning in
@@ -732,13 +732,18 @@ floats at the foot of the screen.
   are an overlay inside the h1 (`.bb-name`, on the h1's own layer), one
   span per character on its measured origin (a Range per character, the
   baseline from a zero box), measured again on a resize and once the
-  fonts are in. As the progress reaches letter i (p 0.02 + 0.78 i / 9,
-  so the last at the 0.8 hold) a cable lowers it from above the sheet
+  fonts are in. As the progress reaches letter i (p 0.02 + 0.58 i / 9,
+  so the last at p 0.6 and, even on a fast load, the name is down, navy
+  and shaded as SPAN CLOSED lands) a cable lowers it from above the sheet
   with a small brick girder on it: it comes down in red primer over
   0.34s, braking, swings a little (gone by 0.56s), gives a small bounce
-  on landing, two rivets go in red-hot under it and cool, it is painted
-  navy by 0.3s after landing and the cable runs back up. Line 2 is
-  lowered behind line 1. Each line's shade steps in once its last letter
+  on landing, two rivets go in red-hot under it and cool, it keeps the
+  primer while they are hot and is painted navy from 0.12 to 0.22s after
+  landing (an oklab mix, so it never passes through plum), and the cable
+  runs back up. Line 2 is lowered behind line 1. The "01 Home" chip and
+  the overlay share z 8 and the ink copy comes later, so while
+  `.bb-name` is in the hero the chip is lifted to z 9 and the cables pass
+  under it (s1-hero.css). Each line's shade steps in once its last letter
   is down (`data-sh` 0 to 9 on the line span, step 9 being
   `--shade-hero`). Births use the wall clock, like the rivets, and every
   letter is still, navy and fully shaded by 0.64s after its birth,
@@ -2147,6 +2152,33 @@ Dates are 2026.
   time in full and soft motion, the hand-back pixel compare, the no-JS
   and pre-hydration paint, 4x throttled pacing at 390 with the overlay
   shown and hidden (no measurable difference in dev), and the tour.
+
+- **18 Nov, the craned name, refined.** Three small changes in the name
+  block. The letters start sooner (the last at p 0.6, was 0.8), so on a
+  fast load the name is navy and fully shaded when SPAN CLOSED lands
+  instead of still brick with hot rivets. The paint holds the primer
+  while the rivets are hot and then goes to navy in 0.1s in oklab (was a
+  0.28s sRGB mix that showed maroon and plum letters). The "01 Home" chip
+  is lifted over the cables while the overlay is up (at 1024 and below
+  they crossed it). Nothing else moved: fall, swing, give, rivets,
+  girder, outline, shade steps, bridge, stamp, crossing and push are as
+  they were. Checked: per-frame probe at 1440x900, 1366x768, 1280x720,
+  1024x768, 768x1024, 390x844 and 360x780 in soft mode, and at 1440 and
+  390 in full motion and with 4x CPU throttling (name navy with shade 9
+  on both lines at the stamp in every warm run), a hit test that the
+  chip is on top wherever a cable crosses it, the hand-back pixel compare
+  (no change over 24 inside the name at 1440 and 390, full and soft), and
+  the tour (only the known noise plus the Services item 4 change).
+
+- **19 Nov, polish pass, pushed.** Small refinements, nothing removed:
+  the weight-contrast headings, Services row titles, project titles and
+  the footer sign-off use `text-wrap: balance` so no word is left alone
+  on a line; the two venture cards are flex columns so their facts rows
+  sit on the card foot and line up; on phones under about 400px the
+  hanging sign's role line shrinks to clear the corner flourishes at the
+  same sign height. Production build checked as on 18 Nov (42 runs
+  clean) and pushed. The closing three-lens review of the sixteenth
+  round was skipped at Parth's "do everything fast"; see section 16.
 
 ## 16. Open items and known limitations
 

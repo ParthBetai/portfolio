@@ -118,8 +118,8 @@ export function createSpan(hero: HTMLElement, inkBack: HTMLElement, name: HTMLEl
         rig.append(d);
         return d;
       });
-      /* "P" comes in at once, the last at p .8 (the hold), so it is still before the span closes */
-      return { el, cab, rv, len, drop: sheetY + c.base + 0.15 * em + 40, thr: 0.02 + (0.78 * i) / (n - 1), dir: i % 2 ? -1 : 1, at: at[i] ?? -1 };
+      /* "P" comes in at once, the last at p .6, so even a fast load has the name down, navy and shaded as SPAN CLOSED lands */
+      return { el, cab, rv, len, drop: sheetY + c.base + 0.15 * em + 40, thr: 0.02 + (0.58 * i) / (n - 1), dir: i % 2 ? -1 : 1, at: at[i] ?? -1 };
     });
     name.append(ov);
     N = { ov, em, L, ends: lines.map((_, li) => raw.reduce((k, c, i) => (c.line === li ? i : k), -1)) };
@@ -414,8 +414,8 @@ export function createSpan(hero: HTMLElement, inkBack: HTMLElement, name: HTMLEl
         /* the swing, picked up on the way down and gone by .56 s */
         const dx = F.dir * 0.05 * em * Math.sin(13 * a) * Math.pow(1 - lin(a, 0.05, 0.56), 2) * lin(a, 0, 0.12);
         set(F.el, "visibility", "visible");
-        /* red-oxide primer on the way down (it reads apart from the navy it passes), painted navy once riveted */
-        set(F.el, "color", r > 0.3 ? "" : `color-mix(in srgb, var(--color-ink-deep) ${f1(100 * lin(r, 0.02, 0.3))}%, var(--color-stamp))`);
+        /* red-oxide primer on the way down and while the rivets are hot, then painted navy in .1 s (oklab, so no plum on the way) */
+        set(F.el, "color", r > 0.22 ? "" : `color-mix(in oklab, var(--color-ink-deep) ${f1(100 * lin(r, 0.12, 0.22))}%, var(--color-stamp))`);
         set(F.el, "transform", a > 0.6 ? "" : `translate(${dx.toFixed(2)}px, ${dy.toFixed(2)}px) rotate(${((-dx / em) * 26).toFixed(2)}deg)`);
         /* the cable follows, then lets go and runs back up */
         const gone = r > LET + 0.22;

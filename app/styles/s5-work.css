@@ -143,6 +143,7 @@
   color: var(--color-ink-deep);
   margin: 20px 0 22px;
   overflow-wrap: anywhere;
+  text-wrap: balance; /* no last word left alone on a line */
 }
 .work .ptitle span { font-weight: 280; letter-spacing: -0.03em; }
 
@@ -336,13 +337,14 @@
 
 /* The venture cards, drawn as title blocks. */
 .journey .vcards { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 30px 0 0; padding: 0; list-style: none; }
-.journey .vcard { height: 100%; border: 1.2px solid rgb(226 235 255 / 0.45); background: rgb(26 58 124 / 0.55); }
+/* A column, so the facts row sits on the card's foot and both cards' rows line up. */
+.journey .vcard { display: flex; flex-direction: column; height: 100%; border: 1.2px solid rgb(226 235 255 / 0.45); background: rgb(26 58 124 / 0.55); }
 .journey .vcard header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 16px 20px; border-bottom: 1px solid rgb(226 235 255 / 0.3); }
 .journey .vcard h3 { margin: 0; font-size: 27px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
 .journey .vcard header span { font-size: 14px; color: var(--color-bline-2); text-align: right; }
 .journey .vst { margin: 0; padding: 12px 20px 0; font-size: 14px; color: var(--color-bline-2); }
 .journey .vbody { margin: 0; padding: 6px 20px 18px; font-size: 15.5px; line-height: 1.6; }
-.journey .vfacts { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding: 0; list-style: none; border-top: 1px solid rgb(226 235 255 / 0.3); }
+.journey .vfacts { display: grid; grid-template-columns: repeat(3, 1fr); margin: auto 0 0; padding: 0; list-style: none; border-top: 1px solid rgb(226 235 255 / 0.3); }
 .journey .vfacts li { padding: 12px 16px; font-weight: 650; font-size: 14.5px; line-height: 1.4; border-right: 1px solid rgb(226 235 255 / 0.3); }
 .journey .vfacts li:last-child { border-right: 0; }
 
