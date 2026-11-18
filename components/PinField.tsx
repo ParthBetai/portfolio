@@ -3,7 +3,7 @@
 import { useEffect, useRef, type RefObject } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { gsap, ScrollTrigger, reduced } from "@/lib/motion";
+import { gsap, ScrollTrigger } from "@/lib/motion";
 
 /* ============================================================
    PIN FIELD
@@ -14,8 +14,10 @@ import { gsap, ScrollTrigger, reduced } from "@/lib/motion";
    is happening they breathe.
 
    Same window trick as the globe it replaced: the host is position:fixed
-   and viewport-sized, and Contact's clip-path turns the section into a
-   window onto it. So this renders the whole viewport, not a box.
+   and viewport-sized, and the clip-path on Contact's .pinwin box (behind
+   the phone) turns that box into a window onto it. So this renders the
+   whole viewport, not a box, and only the window's share of it shows.
+   The ground round the pins is the night navy of Sheet 06.
 
    One InstancedMesh, one draw call. Every pin's height is worked out in
    the vertex shader from a handful of uniforms (pointer, its wake, a
@@ -26,6 +28,13 @@ import { gsap, ScrollTrigger, reduced } from "@/lib/motion";
    ============================================================ */
 
 const FOV = 32;
+/* The ground the pins stand in: the window's own colour (.pinwin in
+   styles/s6-contact.css), so the clear colour, the fog and the vignette
+   all fade into the printed dots round the window's edge, not to black. */
+const GROUND = 0x11163a;
+/* The light behind the board and the far rim: the taxi yellow, taken
+   deeper and warmer so it reads as a lamp behind metal, not a sign. */
+const BACKLIGHT = 0xc99200;
 /* How far the board leans back from the viewer. Enough that the pins'
    sides show when they rise, not so much that the far half is a smear. */
 const TILT = THREE.MathUtils.degToRad(34);
@@ -82,7 +91,7 @@ const SWAY_Y = THREE.MathUtils.degToRad(1.0);
    grows until it fits: an ultrawide gets the full column count with
    fewer rows, a phone gets fewer, larger pins. Software GL runs the
    vertex shader on the CPU and only ever draws the wall once (see
-   holdStill), so it gets a coarse board that draws quickly. */
+   `still`), so it gets a coarse board that draws quickly. */
 const CAP_GPU = 8800;
 /* When the wall is built ahead of time: comfortably after the intro
    (about five seconds) has handed the page over. */
@@ -324,7 +333,7 @@ if (vPinTop > 0.5) {
 }
 `;
 
-/* The copper is light from behind the board. Pins at rest seal it in;
+/* The yellow is light from behind the board. Pins at rest seal it in;
    push them out and it spills up their exposed sides, brightest low down
    near the board, so a rise reads as a gap opening onto something lit
    rather than a painted blob. Tops stay bare metal, with only a hint of
@@ -361,8 +370,9 @@ gl_FragColor.rgb = mix(gl_FragColor.rgb, uVoid, pinVig * uVignette);
 `;
 
 type PinFieldProps = {
-  /* The section acting as the window. Pointer input and the render loop
-     are both gated on it; the fixed host always covers the viewport. */
+  /* The box acting as the window (Contact's .pinwin). Pointer input, the
+     scroll reveal and the render loop are all gated on it; the fixed
+     host always covers the viewport. */
   windowRef: RefObject<HTMLElement | null>;
 };
 
@@ -418,7 +428,35 @@ export default function PinField({ windowRef }: PinFieldProps) {
     };
   }, [windowRef]);
 
-  return <div ref={host} aria-hidden className="pointer-events-none fixed inset-0" />;
+  /* The window contract, checked in development: the host is fixed to
+     the viewport, so its box must be the viewport's. If anything between
+     it and the viewport gains a transform, filter, will-change, contain
+     or content-visibility, the host is pinned to that box instead, the
+     wall scrolls with the page, and this says so. */
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    const el = host.current;
+    if (!el) return;
+    const check = () => {
+      const r = el.getBoundingClientRect();
+      const ok =
+        Math.abs(r.left) < 1 &&
+        Math.abs(r.top) < 1 &&
+        Math.abs(r.width - document.documentElement.clientWidth) < 2 &&
+        Math.abs(r.height - document.documentElement.clientHeight) < 2;
+      if (!ok) console.warn("Pin wall: its fixed host is not the viewport, so an ancestor is transformed or contained.", r);
+    };
+    const t = window.setTimeout(check, 1500);
+    window.addEventListener("resize", check);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("resize", check);
+    };
+  }, []);
+
+  /* data-pin-wall marks it for canTransform() in lib/motion.ts, which
+     refuses a transform on any box that holds it. */
+  return <div ref={host} aria-hidden data-pin-wall="" className="pointer-events-none fixed inset-0" />;
 }
 
 /* ------------------------------------------------------------
@@ -439,9 +477,16 @@ function build(el: HTMLDivElement, section: HTMLElement): (() => void) | null {
   } catch {
     return null;
   }
-  renderer.setClearColor(0x050505, 1);
+  /* A production build skips three's read of each program's compile log:
+     the read stalls the first draw, and on Windows the D3D shader
+     compiler logs harmless precision notes about three's own packing
+     constants (255/256), which three then prints as console warnings.
+     Development keeps the check, so a real shader error still shows. */
+  renderer.debug.checkShaderErrors = process.env.NODE_ENV !== "production";
+  renderer.setClearColor(GROUND, 1);
   /* Neutral rather than ACES: ACES pulls the mid-bright accent toward
-     brown, and the glow has to read as the site's copper, not mud. */
+     brown, and the light behind the pins has to read as the taxi yellow,
+     not mud. */
   renderer.toneMapping = THREE.NeutralToneMapping;
   renderer.toneMappingExposure = 1.0;
   const canvas = renderer.domElement;
@@ -449,7 +494,7 @@ function build(el: HTMLDivElement, section: HTMLElement): (() => void) | null {
   el.appendChild(canvas);
 
   const scene = new THREE.Scene();
-  const fog = new THREE.Fog(0x050505, 8, 14);
+  const fog = new THREE.Fog(GROUND, 8, 14);
   scene.fog = fog;
 
   /* Studio reflections at low strength: enough that the metal has
@@ -486,11 +531,14 @@ function build(el: HTMLDivElement, section: HTMLElement): (() => void) | null {
     uSweep: { value: new THREE.Vector4(0, 0, 0.01, 0.01) },
     uIdle: { value: 0.8 },
     uScan: { value: new THREE.Vector2(-1000, 0) },
-    uAcid: { value: new THREE.Color(0xe0895a) },
-    uGlow: { value: 0.75 },
+    /* A deeper, warmer yellow than the page's accent, and at modest
+       strength: this is light seen through gaps in metal, and at the full
+       accent it read as neon. */
+    uAcid: { value: new THREE.Color(BACKLIGHT) },
+    uGlow: { value: 0.5 },
     uResolution: { value: new THREE.Vector2(1, 1) },
-    /* Output space, after the sRGB conversion: 5/255. */
-    uVoid: { value: new THREE.Vector3(5 / 255, 5 / 255, 5 / 255) },
+    /* Output space, after the sRGB conversion: the ground as written. */
+    uVoid: { value: new THREE.Vector3(((GROUND >> 16) & 255) / 255, ((GROUND >> 8) & 255) / 255, (GROUND & 255) / 255) },
     uVignette: { value: 0.72 },
   };
 
@@ -506,8 +554,10 @@ function build(el: HTMLDivElement, section: HTMLElement): (() => void) | null {
     geo.setIndex(Array.from(boxIndex.array).slice(0, boxIndex.count - 6));
     geo.clearGroups();
   }
+  /* Gunmetal with a little of the night's blue in it, so the pins sit in
+     the navy ground instead of reading as a grey patch on it. */
   const mat = new THREE.MeshStandardMaterial({
-    color: 0x616366,
+    color: 0x5e6584,
     metalness: 0.9,
     roughness: 0.32,
     envMap: envRT.texture,
@@ -536,13 +586,13 @@ function build(el: HTMLDivElement, section: HTMLElement): (() => void) | null {
   board.add(pins);
 
   /* ---- lights (positions in board space) -------------------------------
-     A cool key from the viewer's upper left for form, a copper rim from
+     A cool key from the viewer's upper left for form, a yellow rim from
      beyond the far edge kept faint enough that it only tints the far
      bevels, and a warm-white lamp that hovers over the cursor: the
      brightest thing on the wall is always wherever the visitor is. */
   const key = new THREE.DirectionalLight(0xe2e5e9, 0.22);
   key.position.set(-6, -4, 8);
-  const rim = new THREE.DirectionalLight(0xe0895a, 0.12);
+  const rim = new THREE.DirectionalLight(BACKLIGHT, 0.1);
   rim.position.set(-2, 14, 3);
   const lamp = new THREE.PointLight(0xf2f0e6, 0, 0, 2);
   board.add(key, rim, lamp);
@@ -746,7 +796,7 @@ function build(el: HTMLDivElement, section: HTMLElement): (() => void) | null {
   };
 
   /* ---- motion state ------------------------------------------------------ */
-  /* Software GL holds the wall still too, not just motion off. Measured
+  /* Software GL holds the wall still. Measured
      under SwiftShader, even the coarse board at under one device pixel
      costs about half a second a frame, and that time comes out of the
      same process that scrolls the page: the whole site ran at 2fps while
@@ -757,8 +807,7 @@ function build(el: HTMLDivElement, section: HTMLElement): (() => void) | null {
      and effects driven by scroll velocity for it, and nothing here reads
      velocity. The cursor dome, the ripples, the scroll parallax, the
      pointer sway and the scan line all run exactly as in full motion. */
-  const holdStill = () => reduced() || softwareGL;
-  let still = holdStill();
+  const still = softwareGL;
 
   let raf = 0;
   let running = false;
@@ -1070,23 +1119,6 @@ function build(el: HTMLDivElement, section: HTMLElement): (() => void) | null {
     }
   };
 
-  /* Follows data-motion on <html>. Nothing changes it after load now that
-     the footer toggle is gone; this only keeps the wall honest if that
-     ever comes back. */
-  const motionWatch = new MutationObserver(() => {
-    const wasStill = still;
-    still = holdStill();
-    listen(!still);
-    if (still) {
-      stop();
-      applyStatic();
-      render();
-    } else if (wasStill) {
-      uniforms.uIdle.value = 0.8;
-      start();
-    }
-  });
-
   let resizeRaf = 0;
   const onResize = () => {
     cancelAnimationFrame(resizeRaf);
@@ -1143,7 +1175,6 @@ function build(el: HTMLDivElement, section: HTMLElement): (() => void) | null {
   window.addEventListener("resize", onResize);
   listen(!still);
   document.addEventListener("visibilitychange", onVisibility);
-  motionWatch.observe(document.documentElement, { attributes: true, attributeFilter: ["data-motion"] });
 
   /* ---- teardown ------------------------------------------------------------ */
   return () => {
@@ -1154,7 +1185,6 @@ function build(el: HTMLDivElement, section: HTMLElement): (() => void) | null {
     ctx.revert();
     io.disconnect();
     ro.disconnect();
-    motionWatch.disconnect();
     window.removeEventListener("resize", onResize);
     listen(false);
     document.removeEventListener("visibilitychange", onVisibility);

@@ -24,22 +24,11 @@ export function usePortrait(src = PORTRAIT_SRC): PortraitState {
     probe.onload = () => alive && setState("yes");
     probe.onerror = () => alive && setState("no");
     probe.src = src;
+    void import("./HeroPortrait"); // fetch the relief code alongside the photo, not after it
     return () => {
       alive = false;
     };
   }, [src]);
 
   return state;
-}
-
-export default function Portrait({ src = PORTRAIT_SRC, alt = "" }: { src?: string; alt?: string }) {
-  return (
-    /* eslint-disable-next-line @next/next/no-img-element */
-    <img
-      src={src}
-      alt={alt}
-      className="h-full w-auto object-contain object-bottom"
-      draggable={false}
-    />
-  );
 }

@@ -1,0 +1,494 @@
+/* ============================================================
+   SHEET 02: ABOUT, ON BLUEPRINT
+   The intro and its paragraph, the one facts card (a cream perforated
+   ticket with the taxi on its stub), the resume floppy half out of its
+   paper sleeve with the note on a leader, then the tram band over the
+   stack rows.
+
+   Every rule is scoped to .about (the Sheet's class) so the short names
+   ported from the drawings (.lede, .disk, .rows) cannot meet another
+   sheet's. Imported into @layer components by app/globals.css.
+   Components: AboutSheet, Intro, FactsTicket, ResumeDisk, Marquee,
+   TramBand.
+   ============================================================ */
+
+.about .in {
+  position: relative;
+  padding: 112px var(--cr) 0 var(--cl);
+}
+.about .ab-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 84px;
+  align-items: start;
+}
+.about .ab-copy .t-head {
+  font-size: 150px;
+  color: var(--bline);
+}
+.about .lede {
+  font-size: 20px;
+  line-height: 1.62;
+  color: var(--bline);
+  margin-top: 34px;
+  max-width: 660px;
+}
+.about .ab-side {
+  padding-top: 24px;
+}
+
+/* ---- the ticket: the one facts card ---------------------------------
+   Cream card stock, tipped a little on the desk, with a dashed tear line
+   down to a stub. The two punched notches at the tear are circles in the
+   ground colour. The tilt is on the card itself; nothing animates it
+   (the rows settle in on their own boxes). */
+.about .ticket {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 110px;
+  background: var(--card);
+  color: var(--ink);
+  border-radius: 8px;
+  transform: rotate(-1.4deg);
+  box-shadow: 0 34px 46px -28px rgb(3 9 38 / 0.85), inset 0 2px 0 rgb(255 255 255 / 0.4);
+}
+.about .ticket::before,
+.about .ticket::after {
+  content: "";
+  position: absolute;
+  right: 101px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--blue);
+}
+.about .ticket::before { top: -9px; }
+.about .ticket::after { bottom: -9px; }
+.about .tk-main { padding: 20px 22px 16px 24px; min-width: 0; }
+/* The title and the name wrap as whole units: on a narrow phone the
+   name drops under the title rather than each breaking in two. */
+.about .tk-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: baseline;
+  column-gap: 12px;
+  row-gap: 2px;
+  border-bottom: 1.6px solid var(--ink);
+  padding-bottom: 10px;
+}
+.about .tk-head h3 {
+  color: var(--brick);
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+.about .tk-head h3,
+.about .tk-head span { white-space: nowrap; }
+.about .tk-head span { font-weight: 700; font-size: 15px; }
+.about .tk-grid { display: grid; grid-template-columns: 1fr 1fr; }
+.about .tk-grid > div {
+  padding: 12px 12px 12px 0;
+  border-bottom: 1px solid rgb(29 42 110 / 0.18);
+  min-width: 0;
+}
+.about .tk-grid > div:nth-child(odd) { border-right: 1px solid rgb(29 42 110 / 0.18); }
+.about .tk-grid > div:nth-child(even) { padding-left: 14px; }
+.about .tk-grid > div:nth-last-child(-n + 2) { border-bottom: 0; }
+/* Without scripts the roller cell lists every role at once, too long
+   for half a ticket: the last row's two cells each take the full width,
+   so the roles keep to one line each and Status is not left beside a
+   tall empty column. Same stacking as the phone tier. */
+html:not([data-motion]) .about .tk-grid > div:nth-last-child(-n + 2) {
+  grid-column: 1 / -1;
+  border-right: 0;
+  padding-left: 0;
+}
+html:not([data-motion]) .about .tk-grid > div:nth-last-child(2) {
+  border-bottom: 1px solid rgb(29 42 110 / 0.18);
+}
+.about .tk-grid dt { font-size: 13.5px; color: var(--muted); line-height: 1.3; }
+.about .tk-grid dd {
+  font-size: 16.5px;
+  font-weight: 650;
+  margin-top: 3px;
+  letter-spacing: -0.01em;
+  line-height: 1.4;
+  text-wrap: balance;
+}
+/* Without scripts (or before the roller starts) the whole list shows;
+   each entry keeps its own marker band. */
+/* Once rolling, the wrapper holds a block-level grid (the sizers and the
+   box in one cell), so it becomes a block itself. */
+.about .roller [data-rolling] { display: block; }
+.about .roller .hlm {
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  /* On an inline span the band is measured on the glyph box, not the
+     line box, so it is set a little deeper here to keep the weight of
+     the marker stroke on the drawings. */
+  background: linear-gradient(transparent 50%, rgb(246 196 0 / 0.7) 50%, rgb(246 196 0 / 0.7) 96%, transparent 96%);
+  padding-bottom: 0.06em;
+}
+.about .tk-stub {
+  border-left: 2px dashed rgb(29 42 110 / 0.35);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: 20px 0;
+}
+.about .punch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--blue);
+  box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.4);
+}
+
+/* ---- the floppy in its sleeve, and its note --------------------------
+   The disk is ResumeDisk's link inside the box (.dview); the sleeve's two
+   panels are drawn inside that link (Intro's SleeveBack and SleeveFront),
+   so they are sized in units of the disk: left and right in percent of
+   its width, top and bottom of its height. The note is the row's second
+   cell, tied to the disk by a leader. --S is the box, --disk the
+   floppy's width, --lead the leader's run to the words. Each width below
+   only changes those three and the note's size. From 1280 to 1440px the
+   right column grows by about 70px, so the box, the leader and the note
+   grow with it and the note keeps to two lines. */
+.about .disk {
+  --S: clamp(220px, calc(220px + (100vw - 1280px) * 0.275), 264px);
+  --disk: calc(var(--S) * 0.7);
+  --lead: clamp(40px, calc(40px + (100vw - 1280px) * 0.1125), 58px);
+  display: grid;
+  grid-template-columns: var(--S) minmax(0, 1fr);
+  align-items: center;
+  margin: 46px 0 0 6px;
+  /* The hint hangs under the box out of flow; this keeps it on the
+     sheet, clear of the tram band's wires. */
+  padding-bottom: 44px;
+}
+.about .dview {
+  width: var(--S);
+  height: var(--S);
+}
+/* The disk lies at an angle, a little above the box's middle so the
+   sleeve hanging off its foot is centred with it. The angle is the
+   individual rotate property, which ResumeDisk reads back. */
+.about .sl-turn {
+  rotate: -7deg;
+  translate: 0 -5%;
+}
+/* Both panels share one outline, the front's top lower than the back's,
+   and turn about their common foot, so their sides stay in line while
+   the sleeve sits 4 degrees off the disk's angle (a disk pulled out of a
+   sleeve never comes out quite straight). */
+.about .sl-back,
+.about .sl-front {
+  position: absolute;
+  left: -7%;
+  right: -7%;
+  bottom: -9%;
+  display: block;
+  rotate: 4deg;
+  transform-origin: 50% 100%;
+  border-radius: 2px 2px 5px 5px;
+}
+/* The back panel's inside, shaded by the front, shows either side of
+   the disk; its outside casts the sleeve's one shadow on the blueprint,
+   a tight contact edge and a long soft fall, as the ticket's does. */
+.about .sl-back {
+  top: 62%;
+  background-color: #d8ccb2;
+  background-image: linear-gradient(180deg, #f1e8d4 0, #f1e8d4 2px, #c9bc9f 3px, #ddd2ba 55%);
+  box-shadow:
+    0 2px 0 rgb(3 9 38 / 0.35),
+    0 34px 44px -22px rgb(3 9 38 / 0.9);
+}
+/* The front panel, in the ticket's stock and lit from the top left like
+   it, with the thumb notch cut out of its mouth (a mask: what shows in
+   the notch is the disk itself). The mouth sits just under the name on
+   the disk's label, so the name stays whole. */
+.about .sl-front {
+  top: 79%;
+  background-color: var(--card);
+  background-image:
+    linear-gradient(180deg, rgb(255 255 255 / 0.7), transparent 2.5px),
+    linear-gradient(180deg, transparent 70%, rgb(29 42 110 / 0.06)),
+    radial-gradient(circle at 24% 0, #fffdf7, var(--card) 70%);
+  -webkit-mask: radial-gradient(circle calc(var(--disk) * 0.105) at 50% 0, transparent 97%, #000 100%);
+  mask: radial-gradient(circle calc(var(--disk) * 0.105) at 50% 0, transparent 97%, #000 100%);
+}
+/* "Resume" under a highlighter (the way yellow may touch cream),
+   and the file's size in the label's mono, low on the panel, clear of
+   the notch. */
+.about .sl-print {
+  position: absolute;
+  left: 8%;
+  right: 6%;
+  bottom: 13%;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.about .sl-print b {
+  font-weight: 800;
+  font-size: max(14px, calc(var(--disk) * 0.115));
+  line-height: 1;
+  letter-spacing: -0.015em;
+  padding: 0 0.12em;
+  margin-left: -0.12em;
+  background: linear-gradient(transparent 42%, rgb(246 196 0 / 0.85) 42% 94%, transparent 94%);
+}
+.about .sl-print span {
+  font-family: var(--font-mono);
+  font-size: max(13px, calc(var(--disk) * 0.068));
+  line-height: 1;
+}
+/* Keyboard focus rings the disk and its sleeve together: the link's own
+   outline would only go round the disk and run under the sleeve, pale
+   on cream. This ring is the link's last layer, round the whole object,
+   on the blue, in the ground's focus colour. */
+.about .dview a:focus-visible { outline: none; }
+.about .dview a::after {
+  content: "";
+  position: absolute;
+  left: -12%;
+  right: -12%;
+  top: -6%;
+  bottom: -15%;
+  border-radius: 8px;
+  outline: 2px solid var(--focus);
+  opacity: 0;
+  pointer-events: none;
+}
+.about .dview a:focus-visible::after { opacity: 1; }
+
+.about .callout {
+  position: relative;
+  min-width: 0;
+  padding-left: var(--lead);
+}
+/* The leader starts back inside the box, on the disk's right edge (the
+   callout begins at the box's edge, --hook past the disk), with a dot
+   where it meets it, as a drawing ties a note to the part it names. */
+.about .leader {
+  --hook: calc(var(--S) * 0.155);
+  position: absolute;
+  left: calc(var(--hook) * -1);
+  top: calc(50% - 0.75px);
+  width: calc(var(--lead) + var(--hook) - 10px);
+  height: 1.5px;
+  background: var(--bline);
+}
+.about .leader::before {
+  content: "";
+  position: absolute;
+  left: -4px;
+  top: -3.25px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--bline);
+}
+.about .disk .hand {
+  font-size: clamp(24px, calc(24px + (100vw - 1280px) * 0.0125), 26px);
+  line-height: 1.2;
+  color: var(--bline);
+  text-wrap: balance;
+}
+/* The tilt sits on a wrapper; the words inside are what the script
+   writes in. */
+.about .disk .note-tilt { transform: rotate(-4deg); transform-origin: 0 50%; }
+
+/* ---- the tram band ----------------------------------------------------
+   Static poles and catenary across the band, and the two-car tram in
+   its own box, which is the only thing that moves (a translateX scrub,
+   TramBand.tsx). */
+.about .tramband { position: relative; margin-top: 30px; }
+.about .tramwrap { position: relative; height: 240px; overflow: hidden; }
+.about .tramwrap .wires { position: absolute; inset: 0; width: 100%; height: 100%; }
+.about .tramwrap .wires.m-only { display: none; }
+.about .tramcars {
+  position: absolute;
+  left: calc(50% - 250px);
+  top: 49.5px;
+  width: 657px;
+}
+.about .tram { display: block; width: 100%; height: auto; }
+.about .tram .rolltext { font-family: var(--font-display); font-weight: 700; }
+
+/* ---- the stack rows ---------------------------------------------------
+   A column of enamel tins, then each row's names running through a
+   clipped track. The loops are pure CSS (Marquee.tsx sets them inline);
+   each starts on a whole word at the track's faded left edge. The rows
+   run on to the sheet's right edge, where the sheet clips them. */
+.about .rows { padding: 10px 0 96px; position: relative; }
+.about .mrow {
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 11px 0 11px var(--cl);
+  border-bottom: 1px solid rgb(226 235 255 / 0.13);
+}
+.about .tin {
+  position: relative;
+  background: var(--teal);
+  color: #f6eedb;
+  font-weight: 750;
+  font-size: 15.5px;
+  padding: 8px 26px;
+  border-radius: 4px;
+  text-align: center;
+  white-space: nowrap;
+  transform: rotate(var(--tilt, 0deg));
+  box-shadow:
+    inset 0 0 0 2px #8f949e,
+    inset 0 0 0 3.5px #e9e9ee,
+    inset 0 0 0 5.5px var(--teal),
+    inset 0 0 0 6.5px rgb(246 238 219 / 0.8),
+    0 6px 10px -6px rgb(0 0 0 / 0.6);
+}
+/* The end rivets. */
+.about .tin::before,
+.about .tin::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 6px;
+  height: 6px;
+  margin-top: -3px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #f2f2f5, #7c7c86);
+  box-shadow: 0 1px 0 rgb(0 0 0 / 0.45);
+}
+.about .tin::before { left: 10px; }
+.about .tin::after { right: 10px; }
+.about .mrow .track {
+  overflow: clip;
+  white-space: nowrap;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 28px);
+  mask-image: linear-gradient(90deg, transparent 0, #000 28px);
+}
+.about .items {
+  display: flex;
+  width: max-content;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--bline);
+  letter-spacing: -0.01em;
+}
+/* Without scripts there is no pause button (it is data-js-only), so the
+   rows hold still rather than drift with no way to stop them (WCAG
+   2.2.2). !important to beat the inline animation; the names are all in
+   the screen-reader lists either way. Held, the row starts clear of the
+   track's fade, so its first name reads whole. */
+html:not([data-motion]) [data-rows] .items { animation: none !important; padding-left: 28px; }
+.about .items > span::after {
+  content: "/";
+  margin: 0 18px;
+  color: rgb(226 235 255 / 0.32);
+}
+.about .pause {
+  position: absolute;
+  right: var(--cr);
+  top: 8px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1.4px solid var(--bline);
+  background: var(--blue);
+  color: var(--bline);
+  display: grid;
+  place-items: center;
+  z-index: 3;
+}
+.about .pause:hover { background: #22468f; }
+.about .pause svg { width: 16px; height: 16px; }
+
+/* ============================================================
+   MID WIDTHS
+   ============================================================ */
+@media (max-width: 1180px) {
+  .about .ab-copy .t-head { font-size: 120px; }
+}
+/* Short laptops, still two columns: at the desktop proportions the
+   ticket's half cells drop under the width of "Undergraduate," (about
+   120px) between 1024 and about 1260px, and the word runs into the next
+   cell. The stub narrows to the phone's and the values drop a size;
+   below 1181px, where the gutters are narrower, the copy also gives up
+   a little width. Measured: every cell stays wider than its longest
+   word. From 1181px up the copy keeps its width: narrower, the lede
+   would wrap to more lines and push Work past the 1280x720 budget. */
+@media (max-width: 1279px) and (min-width: 1024px) {
+  .about .ticket { grid-template-columns: 1fr 84px; }
+  .about .ticket::before,
+  .about .ticket::after { right: 75px; }
+  .about .tk-stub svg { width: 60px; height: auto; }
+  .about .tk-grid dd { font-size: 15.5px; }
+  /* The note keeps to two lines in the narrower right column. */
+  .about .disk { --S: 212px; --disk: 148px; --lead: 40px; margin-top: 40px; }
+  .about .disk .hand { font-size: 21px; }
+}
+@media (max-width: 1180px) and (min-width: 1024px) {
+  .about .ab-grid { grid-template-columns: 1.1fr 1fr; gap: 48px; }
+}
+@media (max-width: 1023px) and (min-width: 761px) {
+  .about .ab-grid { grid-template-columns: 1fr; gap: 44px; }
+  /* The ticket at a readable width, then the circle and its note as one
+     row under it. */
+  .about .ab-side { padding-top: 0; }
+  .about .ticket { max-width: 560px; }
+  .about .disk { --S: 240px; --disk: 168px; --lead: 52px; max-width: 600px; margin-top: 44px; }
+}
+
+/* ============================================================
+   PHONE
+   ============================================================ */
+@media (max-width: 760px) {
+  .about .in { padding-top: 88px; }
+  .about .ab-grid { grid-template-columns: 1fr; gap: 40px; }
+  .about .ab-copy .t-head { font-size: 92px; }
+  .about .lede { font-size: 17.5px; margin-top: 22px; }
+  .about .ab-side { padding-top: 0; }
+  .about .ticket { grid-template-columns: 1fr 84px; transform: rotate(-1deg); }
+  .about .ticket::before,
+  .about .ticket::after { right: 75px; }
+  .about .tk-main { padding: 16px 14px 12px 16px; }
+  .about .tk-grid { grid-template-columns: 1fr; }
+  .about .tk-grid > div { border-right: 0 !important; padding: 9px 0 !important; }
+  .about .tk-grid > div:nth-last-child(2) { border-bottom: 1px solid rgb(29 42 110 / 0.18); }
+  .about .tk-stub svg { width: 60px; height: auto; }
+  .about .disk { --S: 168px; --disk: 118px; --lead: 34px; margin: 34px 0 0 2px; padding-bottom: 46px; }
+  .about .disk .hand { font-size: 19px; }
+  .about .tramband { margin-top: 26px; }
+  .about .tramwrap { height: 200px; }
+  .about .tramwrap .wires.d-only { display: none; }
+  .about .tramwrap .wires.m-only { display: block; }
+  .about .tramcars { left: 12px; top: 91.8px; width: 365px; }
+  .about .tram .rolltext { display: none; }
+  .about .rows { padding: 8px 0 90px; }
+  .about .mrow { grid-template-columns: 168px minmax(0, 1fr); gap: 10px; padding: 9px 0 9px var(--cl); }
+  .about .tin { font-size: 13.5px; padding: 7px 18px; }
+  .about .tin::before { left: 7px; }
+  .about .tin::after { right: 7px; }
+  .about .items { font-size: 18px; }
+  .about .items > span::after { margin: 0 12px; }
+  .about .pause { right: 12px; top: 4px; }
+}
+
+/* The narrowest phones: the box gives the note a little more room,
+   so it still keeps to two lines, and the sleeve prints only "Resume"
+   (the size is on the disk's label and in the link's name). */
+@media (max-width: 380px) {
+  .about .disk { --S: 152px; --disk: 106px; --lead: 30px; }
+  .about .disk .hand { font-size: 18px; }
+  .about .sl-print span { display: none; }
+}
+

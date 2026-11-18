@@ -2,25 +2,22 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import SmoothScroll from "@/components/SmoothScroll";
-import Nav from "@/components/Nav";
-import Hero from "@/components/Hero";
-import Intro from "@/components/Intro";
-import Marquee from "@/components/Marquee";
-import Services from "@/components/Services";
-import Work from "@/components/Work";
-import Ventures from "@/components/Ventures";
-import Contact from "@/components/Contact";
-import Footer from "@/components/Footer";
-import { gsap, ScrollTrigger, reduced } from "@/lib/motion";
-
-type LenisLike = { stop?: () => void; start?: () => void };
+import StatusStrip from "@/components/StatusStrip";
+import BottomNav from "@/components/BottomNav";
+import HomeSheet from "@/components/HomeSheet";
+import AboutSheet from "@/components/AboutSheet";
+import ServicesSheet from "@/components/ServicesSheet";
+import WorkSheet from "@/components/WorkSheet";
+import JourneySheet from "@/components/JourneySheet";
+import ContactSheet from "@/components/ContactSheet";
+import { gsap, ScrollTrigger, driveRoute, jumpTo } from "@/lib/motion";
 
 export default function Page() {
   /* Flips when the hero's intro hands off: the nav slides in, the page
-     unlocks, and everything below the hero fades up. */
+     unlocks, and every sheet after the first fades up. */
   const [done, setDone] = useState(false);
-  const rest = useRef<HTMLDivElement>(null);
-  const foot = useRef<HTMLDivElement>(null);
+  const main = useRef<HTMLElement>(null);
+  const foot = useRef<HTMLElement>(null);
 
   const onDone = useCallback(() => setDone(true), []);
 
@@ -31,36 +28,54 @@ export default function Page() {
     window.scrollTo(0, 0);
   }, []);
 
-  /* Scroll is locked for the length of the intro, like the reference. */
+  /* Scroll is locked for the length of the intro, and pinned to the top:
+     browser Back into this page can restore the old position after the
+     effect above has run, which would leave the intro playing off screen
+     over a blank, locked page. */
   useEffect(() => {
     if (done) return;
     const html = document.documentElement;
-    const lenis = (window as unknown as { __lenis?: LenisLike }).__lenis;
+    const lenis = window.__lenis;
     html.style.overflow = "hidden";
-    lenis?.stop?.();
+    lenis?.stop();
+    const top = () => {
+      if (window.scrollY) window.scrollTo(0, 0);
+    };
+    top();
+    window.addEventListener("scroll", top, { passive: true });
     return () => {
+      window.removeEventListener("scroll", top);
       html.style.overflow = "";
-      (window as unknown as { __lenis?: LenisLike }).__lenis?.start?.();
+      window.__lenis?.start();
     };
   }, [done]);
 
-  /* Below-the-hero content: hidden during the intro, then fades up.
-     The rise is a relative `top` offset, not a transform. Any transform on
-     this wrapper, even for the second it takes to play, makes it the
-     containing block for the contact section's fixed pin wall, which
-     would then size itself to the whole page instead of the viewport. */
+  /* The taxi route: the small taxi drives it with the scroll, from the
+     Home stop to "You've arrived", and the line is solid behind it and
+     pencilled ahead (driveRoute, THE JOURNEY in lib/motion.ts). */
   useEffect(() => {
-    const el = rest.current;
-    if (!el || reduced()) return;
-    /* The footer sits outside <main> (it is the page's footer landmark,
-       not part of its content) but arrives with everything else. */
-    const els = foot.current ? [el, foot.current] : [el];
+    const el = main.current;
+    if (!el) return;
+    return driveRoute(el, { car: true });
+  }, []);
+
+  /* Every sheet after the first: hidden during the intro, then fades up.
+     The rise is a relative `top` offset on each slot, not a transform.
+     Any transform on a slot, even for the second it takes to play, makes
+     it the containing block for the contact sheet's fixed pin wall, which
+     would then size itself to the whole page instead of the viewport.
+     The footer is part of the Contact sheet, so it arrives with it. */
+  useEffect(() => {
+    const el = main.current;
+    if (!el) return;
+    const slots = Array.from(el.querySelectorAll<HTMLElement>(":scope > .sheet-slot")).slice(1);
+    if (!slots.length) return;
     if (!done) {
-      gsap.set(els, { autoAlpha: 0 });
+      gsap.set(slots, { autoAlpha: 0 });
       return;
     }
     gsap.fromTo(
-      els,
+      slots,
       { autoAlpha: 0, top: 60 },
       {
         autoAlpha: 1,
@@ -74,43 +89,43 @@ export default function Page() {
   }, [done]);
 
   /* Arriving from another page's footer ("/#contact"): the intro always
-     starts at the top, so once it hands off, travel to the section the
-     link asked for. */
+     starts at the top, so once it hands off, travel to the sheet the link
+     asked for. */
   useEffect(() => {
     if (!done) return;
-    const id = decodeURIComponent(window.location.hash.slice(1));
+    /* A mangled share link ("#%") makes the decode throw, and an
+       uncaught throw here would take the whole page down with it. */
+    let id = "";
+    try {
+      id = decodeURIComponent(window.location.hash.slice(1));
+    } catch {
+      return;
+    }
     if (!id) return;
-    const t = window.setTimeout(() => {
-      const target = document.getElementById(id);
-      if (!target) return;
-      const lenis = (window as unknown as { __lenis?: { scrollTo?: (t: HTMLElement, o?: object) => void } })
-        .__lenis;
-      if (lenis?.scrollTo) lenis.scrollTo(target, { duration: 1.4 });
-      else target.scrollIntoView({ behavior: "smooth" });
-    }, 1200);
+    const t = window.setTimeout(() => jumpTo(id, { focus: true }), 1200);
     return () => window.clearTimeout(t);
   }, [done]);
 
+  /* The six sheets of the drawing set, in order (lib/content.ts sheets).
+     Each wrapper owns its sheet, its heading id and its piece of the
+     route; see the sheet contract in the README. */
   return (
     <>
       <SmoothScroll />
 
-      <Nav show={done} />
+      {/* The strip and the bottom nav wait behind the intro; the bottom nav
+          steps aside while the footer's text rows pass behind it. */}
+      <StatusStrip home show={done} />
+      <BottomNav show={done} footer={foot} />
 
-      <main id="main">
-        <Hero onDone={onDone} />
-        <div ref={rest} className="relative">
-          <Intro />
-          <Marquee />
-          <Services />
-          <Work />
-          <Ventures />
-          <Contact />
-        </div>
+      <main id="main" ref={main} className="sheet-stack">
+        <HomeSheet onDone={onDone} />
+        <AboutSheet />
+        <ServicesSheet />
+        <WorkSheet />
+        <JourneySheet />
+        <ContactSheet footerRef={foot} />
       </main>
-      <div ref={foot} className="relative">
-        <Footer />
-      </div>
     </>
   );
 }

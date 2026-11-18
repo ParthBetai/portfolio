@@ -7,10 +7,10 @@ const isDev = process.env.NODE_ENV !== "production";
    the whole string.
 
    What the page actually loads, and therefore all it is allowed to:
-     · scripts, styles, fonts: this origin only. The three typefaces are
-       self-hosted through next/font/local, and three.js, GSAP and Lenis
-       are bundled into our own chunks, and the resume PDF is a file in
-       /public.
+     · scripts, styles, fonts: this origin only. The three typefaces
+       (Archivo, Kalam, JetBrains Mono) are self-hosted through
+       next/font/local, three.js, GSAP and Lenis are bundled into our
+       own chunks, and the resume PDF is a file in /public.
      · images: this origin (portraits in /public), data: (the grain
        texture is an inline SVG data URI), blob: (only a script already
        running on this page can mint a blob: URL, so it opens nothing to
@@ -35,9 +35,10 @@ const isDev = process.env.NODE_ENV !== "production";
    Why that is acceptable on this site:
      'unsafe-inline' matters when an attacker can get markup into the
      page. Here nothing can. There is no user-generated content, no
-     database, no query-string or hash value rendered into HTML, and the
-     only dangerouslySetInnerHTML is a constant string written at build
-     time. No third-party script is loaded. The policy still does real
+     database, and one rule holds: raw HTML (dangerouslySetInnerHTML,
+     innerHTML) is built only from build-time constants and numbers,
+     never from visitor input, the URL or storage. No third-party script
+     is loaded. The policy still does real
      work: it stops the page being framed, stops it loading or sending
      data anywhere but its own origin, and blocks
      plugins, <base> hijacking and form posts to foreign origins.

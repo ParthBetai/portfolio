@@ -1,42 +1,70 @@
 @import "tailwindcss";
+/* The drawing set's foundation (tokens it uses, grounds, type, the sheet
+   stack and the route), then one partial per section stream, each in
+   @layer components so a Tailwind utility can still win over it. */
+@import "./styles/f0-base.css";
+@import "./styles/s1-hero.css" layer(components);
+@import "./styles/s2-chrome.css" layer(components);
+@import "./styles/s3-about.css" layer(components);
+@import "./styles/s4-services.css" layer(components);
+@import "./styles/s5-work.css" layer(components);
+@import "./styles/s6-contact.css" layer(components);
 
 /* ============================================================
    TOKENS
-   Every colour, size and duration in this project resolves here.
+   Every colour and typeface in this project resolves here.
+   Static, so every token is written to :root even where no utility
+   uses it: the CSS partials and the scripts (the cursor) read them by
+   name.
    ============================================================ */
-@theme {
-  /* --- surface ---------------------------------------------- */
-  --color-void: #050505;      /* page canvas. deliberately not #000:
-                                 true black flattens the metal gradients */
-  --color-carbon: #0d0d0f;    /* raised surfaces: cards, fields, accordion */
-  --color-carbon-2: #141417;  /* hover state for carbon */
-  --color-hairline: #1f1f24;  /* 1px rules */
+@theme static {
+  /* --- the drawing set (approved 5 Oct 2026) ----------------- */
+  /* Parth's own numbered set of drawing sheets in Kolkata's colours. The
+     grounds: cream drafting paper (Sheet 01), cyanotype blue (02 About,
+     05 Journey), navy night (03 Services, 06 Contact) and the green grid
+     paper below (04 Work). Navy replaced black everywhere. Ratios are
+     computed from the hex values. */
+  --color-cream: #f3eee3;     /* Sheet 01 paper, the strip, legal pages */
+  --color-cream-2: #fbf8f0;   /* the nav pill, inner tabs, the phone screen */
+  --color-card: #f8f3e7;      /* the perforated ticket card */
+  --color-ink-deep: #131a4a;  /* display type on cream and paper, 14.2:1 */
+  --color-muted: #4f5a8c;     /* secondary text on cream (5.7:1) and paper (5.6:1) */
+  --color-blue: #1a3a7c;      /* the cyanotype ground */
+  --color-bline: #e2ebff;     /* text, linework and the route on blue, 9.1:1 */
+  --color-bline-2: #b3c3ea;   /* secondary text on blue, 6.1:1 */
+  --color-night: #141a3d;     /* the night ground, which replaced black */
+  --color-night-deep: #0e1332; /* the footer street, keylines, the page behind */
+  --color-nline: #efe7d6;     /* text and pencil on night, 13.7:1 */
+  --color-nline-2: #bfc3da;   /* secondary text on night, 9.7:1 */
+  --color-teal: #0f4a47;      /* painted enamel only: signboards and tin plates */
+  --color-chrome: #c9c9cf;    /* bumpers, hubs, rails, rims, chains */
 
-  /* --- ink -------------------------------------------------- */
-  --color-bone: #edede6;      /* warm white. pure #fff glares on void */
-  --color-ash: #7a7a82;       /* body copy, secondary. about 4.6:1 on
-                                 void, so small labels stay readable */
-  --color-ash-dim: #3d3d44;   /* tertiary, disabled, ghost type */
+  /* --- the taxi and the stamp ----------------------------- */
+  /* Kolkata taxi yellow: only on objects (the taxi, the memorial's
+     halftone disc, the lamps, the board's lettering, the focus ring on
+     night), never as a ground.
+     The token keeps its old name (acid) so the stroke-acid and fill-acid
+     utilities in the plotter and the resume player follow it. */
+  --color-acid: #f6c400;
 
-  /* --- accent ----------------------------------------------- */
-  /* A warm copper, taken from the rim light in Parth's portrait. It
-     replaced a neon lime that read as generic "tech" and fought with the
-     chrome. The token keeps its old name so every utility
-     (bg-acid, text-acid) follows the change. Rationed: interactive
-     affordances and one highlight per object, never glows, never a
-     blinking light. */
-  --color-acid: #e0895a;
-  --color-acid-dim: #a8653f;
+  /* Ink: the taxi's "No Refusal" navy (it was black #0b0b0a). All text
+     and linework on cream and paper, the solid buttons, the route on the
+     light grounds: 11.3:1 on cream, 11.0:1 on paper. */
+  --color-ink: #1d2a6e;
+
+  /* --- paper: the Work sheet ------------------------------- */
+  /* Engineering computation paper, pale green, with the brick-red
+     rubber stamp (5.3:1 on the paper; the CSS alias is --brick). */
+  --color-paper: #e7eee0;
+  --color-paper-2: #dde6d4;   /* a photo mount on the paper */
+  --color-stamp: #b42f1f;
 
   /* --- type ------------------------------------------------- */
   --font-display: var(--f-archivo), "Helvetica Neue", Arial, sans-serif;
   --font-body: var(--f-archivo), "Helvetica Neue", Arial, sans-serif;
-  --font-serif: var(--f-instrument), Georgia, serif;
   --font-mono: var(--f-jetbrains), ui-monospace, "SF Mono", monospace;
-
-  /* --- motion ----------------------------------------------- */
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
-  --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+  /* Handwriting for margin notes only (Kalam, Indian Type Foundry). */
+  --font-hand: var(--f-kalam), "Segoe Print", "Comic Sans MS", cursive;
 }
 
 /* ============================================================
@@ -49,7 +77,9 @@
   }
 
   html {
-    background: var(--color-void);
+    /* Behind the sheets: the night street's deepest navy, so an
+       overscroll or a gap between sheets never flashes white or black. */
+    background: var(--color-night-deep);
     /* Lenis drives scrolling; native smooth would fight it */
     scroll-behavior: auto;
     /* The display type is deliberately wider than the screen. Sections
@@ -62,23 +92,34 @@
   }
 
   body {
-    background: var(--color-void);
-    color: var(--color-bone);
+    background: var(--color-night-deep);
+    color: var(--color-nline);
     font-family: var(--font-body);
     font-synthesis-weight: none;
     overflow-x: clip;
   }
 
-  /* Keyboard focus must stay visible everywhere. Quality floor. */
+  /* Keyboard focus must stay visible everywhere. Quality floor. The ring
+     takes its colour from the nearest ground (--focus, set by the .g-*
+     grounds in styles/f0-base.css): ink on cream and paper, pale blue on
+     blue, taxi yellow on night. Yellow is the fallback for anything
+     unmarked, which only the night street behind the sheets can be. */
   :focus-visible {
-    outline: 2px solid var(--color-acid);
+    outline: 2px solid var(--focus, var(--color-acid));
     outline-offset: 3px;
     border-radius: 2px;
   }
+  /* A section that a jump link hands focus to (tabindex -1) is a landing
+     point, not a control: a ring round the whole sheet would only show
+     at its edges, half of them under the next sheet. */
+  [tabindex="-1"]:focus-visible {
+    outline: none;
+  }
 
+  /* Per ground in styles/f0-base.css; this is the night street's. */
   ::selection {
     background: var(--color-acid);
-    color: #000;
+    color: var(--color-ink-deep);
   }
 
   /* Hide the native cursor only where the custom one is active
@@ -96,108 +137,15 @@
   }
 }
 
-/* ============================================================
-   TYPE ROLES
-
-   These live in @layer components on purpose. Unlayered CSS outranks
-   everything Tailwind emits, so defining .t-display at the top level
-   would make its line-height and tracking unbeatable, every
-   leading-[0.8] in the components would silently do nothing.
-   ============================================================ */
 @layer components {
-
-/* Display, Archivo at its widest + heaviest. The width axis is the
-   thing most sites never touch; here it's animated on load. */
-.t-display {
-  font-family: var(--font-display);
-  font-weight: 900;
-  font-variation-settings: "wdth" 125;
-  letter-spacing: -0.03em;
-  line-height: 0.84;
-  text-transform: uppercase;
-}
-
-/* One-word accent in a heading ("Get in touch", "Selected work"). It used
-   to be a serif italic, which felt borrowed rather than ours. Now the
-   contrast comes from the display face itself: the same Archivo, thin,
-   normal width and lower case against the heavy, wide caps beside it. */
-.t-serif {
-  font-family: var(--font-display);
-  font-weight: 250;
-  font-style: normal;
-  font-variation-settings: "wdth" 100;
-  text-transform: none;
-  letter-spacing: -0.02em;
-}
-
-/* Indices, eyebrows, form labels, nav. Set in the body sans with modest
-   tracking: wide-spaced mono micro-labels everywhere were another tell
-   of a busy, over-styled page. Mono stays only where a machine would print it
-   (the cursor readout, the drawing sheet, the disk readout), through the
-   font-mono utility. */
-.t-mono {
-  font-family: var(--font-body);
-  font-weight: 500;
-  font-size: 0.6875rem;
-  font-variation-settings: "wdth" 100;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-/* ============================================================
-   SIGNATURE: CHROME
-   The display type is a lit metal object, not a gradient fill.
-   Three stacked ramps do the work:
-     1. base ramp     , the body of the metal
-     2. specular band , a narrow hot highlight, position driven by
-                         --shine (set from cursor X + scroll velocity)
-     3. bevel         , a hairline top edge so letters catch light
-   ============================================================ */
-.chrome {
-  --shine: 50%;
-  background-image:
-    /* specular band */
-    linear-gradient(
-      100deg,
-      transparent calc(var(--shine) - 22%),
-      rgba(255, 255, 255, 0.92) calc(var(--shine) - 4%),
-      #ffffff var(--shine),
-      rgba(255, 255, 255, 0.92) calc(var(--shine) + 4%),
-      transparent calc(var(--shine) + 22%)
-    ),
-    /* base metal ramp */
-    linear-gradient(
-      177deg,
-      #fdfdff 0%,
-      #d6d6de 17%,
-      #8e8e99 33%,
-      #55555f 46%,
-      #3a3a44 52%,
-      #6e6e79 62%,
-      #b4b4bf 76%,
-      #ededf3 88%,
-      #9c9ca6 100%
-    );
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  /* the bevel: a hairline of light on the top edge of every letter */
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.22);
-}
-
-/* Fallback: if background-clip:text is unsupported, show solid bone
-   rather than invisible text. */
-@supports not ((-webkit-background-clip: text) or (background-clip: text)) {
-  .chrome {
-    color: var(--color-bone);
-    background: none;
-  }
-}
 
 /* ============================================================
    GRAIN
-   A single tiling noise layer over the whole page. Keeps the flat
-   blacks from banding and gives the metal something to sit against.
+   A single tiling noise layer over the whole page: the tooth of printed
+   paper, so the flat grounds never look like plastic. Plain navy specks
+   at a low alpha, no blend mode (a blended fixed layer makes the browser
+   recomposite everything under it on every scroll). It steps six times
+   every few seconds, a compositor-only move.
    ============================================================ */
 .grain {
   position: fixed;
@@ -206,8 +154,7 @@
   height: 124%;
   pointer-events: none;
   z-index: 60;
-  opacity: 0.05;
-  mix-blend-mode: overlay;
+  opacity: 0.09;
   background-image: var(--grain-src);
   background-size: 180px 180px;
   will-change: transform;
@@ -222,35 +169,6 @@
   68%  { transform: translate(5%, 3%); }
   85%  { transform: translate(-2%, 6%); }
   100% { transform: translate(0, 0); }
-}
-
-/* ============================================================
-   UTILITIES
-   ============================================================ */
-
-/* Page gutter. One value, used by every section, so the grid stays
-   honest and only the display type is allowed to break it. */
-.gutter {
-  padding-inline: 1.25rem;
-}
-@media (min-width: 768px) {
-  .gutter { padding-inline: 2.5rem; }
-}
-@media (min-width: 1280px) {
-  .gutter { padding-inline: 4rem; }
-}
-
-/* Masks a line of type so it can be revealed by translating upward. */
-.line-mask {
-  display: block;
-  overflow: hidden;
-  padding-bottom: 0.08em;
-  margin-bottom: -0.08em;
-}
-
-/* Hairline rule that matches the token, at true 1 device pixel. */
-.rule {
-  border-top: 1px solid var(--color-hairline);
 }
 
 }
@@ -276,57 +194,12 @@
   to   { transform: translate3d(0, 0, 0); }
 }
 
-/* The page-change bar in app/loading.tsx: a short copper segment sweeping
-   across a hairline, like a scanner, until the next page is ready. */
-@keyframes route-scan {
-  from { transform: translate3d(-100%, 0, 0); }
-  to   { transform: translate3d(300%, 0, 0); }
-}
-
-/* Slow, low-amplitude breathing for the footer horizon glow. */
-@keyframes breathe {
-  0%, 100% { opacity: 0.85; transform: translate3d(0, 0, 0) scale(1); }
-  50%      { opacity: 1;    transform: translate3d(0, -1.5%, 0) scale(1.02); }
-}
-
-/* ============================================================
-   GLASS
-   The frosted surface the reference uses for the intro card and the
-   form fields, white at 5%, a hairline of white at 10%, blur behind.
-   ============================================================ */
-@layer components {
-  .glass {
-    background: rgba(255, 255, 255, 0.045);
-    border: 1px solid rgba(255, 255, 255, 0.09);
-    -webkit-backdrop-filter: blur(14px) saturate(1.2);
-    backdrop-filter: blur(14px) saturate(1.2);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  }
-}
-
-/* ============================================================
-   MOTION OFF
-   Only the explicit footer toggle lands here. The OS reduced-motion
-   preference maps to soft, which keeps the design alive, a blanket
-   @media (prefers-reduced-motion) kill used to zero every keyframe on the
-   page, marquees included, for anyone whose Windows had animation
-   effects switched off.
-   ============================================================ */
-html[data-motion="off"] .grain { animation: none; }
-html[data-motion="off"] *,
-html[data-motion="off"] *::before,
-html[data-motion="off"] *::after {
-  animation-duration: 0.01ms !important;
-  animation-iteration-count: 1 !important;
-  transition-duration: 0.01ms !important;
-}
 
 /* ============================================================
    INTRO START STATE
    The hero doubles as the loading screen. Its pieces start hidden, but
    only once the boot script has run (it sets data-motion), so a page
-   without JavaScript still shows everything. With motion off there is
-   no intro, everything starts in place.
+   without JavaScript still shows everything.
    ============================================================ */
 html[data-motion="full"] [data-intro-hide],
 html[data-motion="soft"] [data-intro-hide] {
@@ -342,9 +215,11 @@ html[data-motion="soft"] [data-intro-rise] {
    The boot script writes data-motion on every path, before the body is
    parsed, so a page without it is one where no script ran. There the
    controls that only scripts can drive step aside (the chat's input bar,
-   the loader readout, the phone Menu button, the floppy's hint) and the
-   service rows show their panels open, since nothing could open them,
-   with each row's arrow turned to its open angle.
+   the strip's scroll reading, the floppy's hint) and
+   the service rows show their panels open, since nothing could open
+   them. The home page's
+   floating section nav cannot step aside over the footer either, so the
+   footer ends with room for it under the legal links.
    With scripts these rules never match, so nothing moves or flashes.
    Unlayered, to beat the display and rotate utilities on the same
    elements, and !important where an inline style has to give way.
@@ -356,6 +231,6 @@ html:not([data-motion]) [data-svc-panel] {
   grid-template-rows: 1fr !important;
   opacity: 1 !important;
 }
-html:not([data-motion]) [data-svc-row] h3 svg {
-  rotate: -45deg;
+html:not([data-motion]):has([data-bottom-nav]) footer {
+  padding-bottom: 5.5rem;
 }

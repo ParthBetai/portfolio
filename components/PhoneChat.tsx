@@ -10,7 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { gsap, reduced } from "@/lib/motion";
+import { gsap } from "@/lib/motion";
 import { contact, identity, resume } from "@/lib/content";
 import { PREVIEW_EVENT, warmResumePreview } from "./ResumePreview";
 
@@ -34,7 +34,7 @@ import { PREVIEW_EVENT, warmResumePreview } from "./ResumePreview";
      tilt   written by the pointer loop only: rest pose, tilt, face-on
             ├ shadow on the wall behind
             ├ edge layers: the frame's thickness, one slice per layer
-            └ front face: metal ring, black bezel, screen
+            └ front face: metal ring, navy bezel, screen
    Transforms live on rig and tilt alone, never next to a Tailwind
    transform utility, because GSAP would not see those.
 
@@ -42,6 +42,18 @@ import { PREVIEW_EVENT, warmResumePreview } from "./ResumePreview";
    of the stage width, so one set of proportions holds at every size. The
    app inside is in px, like a real app, which is why the stage has a
    minimum width (see `size` below).
+
+   Dressed for Sheet 06: a navy metal frame and bezel round a cream
+   screen (cream-2), with the chat in navy ink. The screen is a light
+   surface inside the night sheet, so it is marked data-ground="cream"
+   and the focus ring on it is navy, not the night's yellow.
+
+   Staged as the sheet's call to action in front of a printed balloon
+   (Contact.tsx): the frame carries a crisp cream keyline, so the navy
+   metal never melts into the navy wall, a top light, and a deep cast
+   shadow down and to the left that falls on the balloon. All of it is
+   static paint on the phone's own layers; nothing animates a blur or a
+   filter, and there is no halo.
    ============================================================ */
 
 const chat = contact.chat;
@@ -87,7 +99,6 @@ const SLICES = 10; // layers that build the thickness
 /* ---- poses, in degrees ------------------------------------------- */
 const REST = { x: 6, y: -16 }; // turned toward the copy, leaning back a touch
 const FACE = { x: 0.8, y: -2.5 }; // nearly flat, for crisp text and exact clicks
-const STILL = { x: 3, y: -9 }; // motion off: one gentle angle, never moves
 
 /* Everything that follows the tilt, from one pair of angles. Used for the
    server render too, so the first paint is already the rest pose. */
@@ -147,6 +158,8 @@ type ChipSpec = {
   key: string;
   label: string;
   primary?: boolean;
+  /* One of several answers to pick from (the topics). */
+  pick?: boolean;
   cursor?: string;
   pending?: boolean;
   onClick: () => void;
@@ -244,12 +257,6 @@ export default function PhoneChat() {
         then?.();
         if (engaged.current) wantFocus.current = true;
       };
-
-      if (reduced()) {
-        append(lines);
-        finish();
-        return;
-      }
 
       let t = 420; // a moment to "read" what was just sent
       let landed = 0;
@@ -351,7 +358,7 @@ export default function PhoneChat() {
   useEffect(() => {
     const el = log.current;
     if (!el) return;
-    el.scrollTo({ top: el.scrollHeight, behavior: reduced() ? "auto" : "smooth" });
+    el.scrollTo({ top: el.scrollHeight, behavior: "smooth" });
   }, [msgs.length, typing, busy, step]);
 
   /* ---- hand focus back after Parth replies ----------------------
@@ -384,17 +391,13 @@ export default function PhoneChat() {
       if (glint.current) glint.current.style.transform = p.glint;
     };
 
-    /* Motion off: one still, gentler angle and no listeners at all. */
-    if (reduced()) {
-      write(STILL.x, STILL.y);
-      return () => write(REST.x, REST.y);
-    }
-
     /* Soft motion (the OS asking for reduced motion) gets all of this at
        full strength. The site only drops scroll inertia and effects driven
        by scroll velocity for it, and nothing here reads velocity: the tilt
        follows the pointer and the swing follows the scroll position. */
-    const zone = st.closest("section") ?? st;
+    /* The tilt follows the pointer over the contact grid (copy and phone),
+       not over the footer below it in the same sheet. */
+    const zone = st.closest("[data-chat-zone]") ?? st.closest("section") ?? st;
     const s = { rx: REST.x, ry: REST.y };
     const apply = () => write(s.rx, s.ry);
 
@@ -687,7 +690,7 @@ From: ${name} (${email})`;
   const chips: ChipSpec[] | null = busy
     ? null
     : step === "topic"
-      ? chat.topics.map((t) => ({ key: `topic:${t}`, label: t, onClick: () => pickTopic(t) }))
+      ? chat.topics.map((t) => ({ key: `topic:${t}`, label: t, pick: true, onClick: () => pickTopic(t) }))
       : step === "confirm"
         ? [{ key: "main", label: chat.actions.send, primary: true, cursor: "SEND", onClick: sendMessage }, restart]
         : step === "sending"
@@ -698,18 +701,10 @@ From: ${name} (${email})`;
               ? [restart]
               : null;
 
-  /* Stage width. 0.4615 is 9/19.5, so each height budget below becomes the
-     width that makes the phone exactly that tall.
-       Stacked: as wide as a phone screen allows, but short enough to fit
-       whole with the browser bars showing (svh), so the composer and the
-       conversation are on screen together.
-       Two columns: 76% of the viewport height, the same idea.
-     Both keep a floor of 280px. The chat text is in px so it stays
-     readable, and below about 280 the file card and the status bar no
-     longer fit. A short laptop gets a phone slightly taller than its
-     window rather than a cramped one. */
-  const size =
-    "w-[clamp(min(280px,86vw),calc((100svh_-_48px)*0.4615),min(340px,86vw))] lg:w-[clamp(280px,calc(76svh*0.4615),340px)]";
+  /* Stage width: --phw, set on .ct-phone in s6-contact.css, because the
+     balloon and the arrow beside the phone are placed from the same
+     number. How it is worked out is noted there. */
+  const size = "w-[var(--phw,340px)]";
 
   return (
     <div
@@ -732,7 +727,7 @@ From: ${name} (${email})`;
             style={{
               transform: `translate3d(-7cqw, 9cqw, ${-DEPTH / 2 - 22}cqw)`,
               borderRadius: `${R}cqw`,
-              background: "rgba(0,0,0,0.72)",
+              background: "rgba(3,5,20,0.86)",
               filter: "blur(26px)",
             }}
           />
@@ -762,7 +757,7 @@ From: ${name} (${email})`;
                 style={{
                   transform: `translateZ(${z.toFixed(3)}cqw)`,
                   borderRadius: `${R}cqw`,
-                  background: `linear-gradient(${tone}, ${tone}), linear-gradient(90deg, rgba(0,0,0,0.5), rgba(0,0,0,0) 28%, rgba(255,255,255,0) 70%, rgba(255,255,255,0.2)), linear-gradient(180deg, #85858d 0%, #414147 5%, #1e1e22 18%, #2d2d32 46%, #18181b 74%, #3a3a40 92%, #7c7c84 100%)`,
+                  background: `linear-gradient(${tone}, ${tone}), linear-gradient(90deg, rgba(0,0,0,0.5), rgba(0,0,0,0) 28%, rgba(255,246,222,0) 64%, rgba(255,240,206,0.34)), linear-gradient(180deg, #8a90b4 0%, #3f4677 5%, #161c44 18%, #262d5c 46%, #121838 74%, #363e70 92%, #7a80a8 100%)`,
                 }}
               >
                 {k > 2 && k < SLICES - 1 && <SideButtons />}
@@ -777,9 +772,13 @@ From: ${name} (${email})`;
               transform: `translateZ(${DEPTH / 2}cqw)`,
               borderRadius: `${R}cqw`,
               background:
-                "linear-gradient(155deg, #bdbdc5 0%, #5c5c64 6%, #28282d 20%, #3d3d44 38%, #19191d 58%, #303036 76%, #74747c 92%, #b4b4bc 100%)",
+                "linear-gradient(155deg, #b9bed8 0%, #5a6194 6%, #222a5c 20%, #3a4270 38%, #161c44 58%, #2c3464 76%, #6e75a3 92%, #b0b5d2 100%)",
+              /* Inside: the old keyline and an even top light (no lamp
+                 picks out one corner now). Outside: a crisp cream line
+                 all round, so the navy frame never melts into the navy
+                 wall. No halo: the balloon behind does the staging. */
               boxShadow:
-                "inset 0 0 0 1px rgba(255,255,255,0.1), inset 0 1.5px 0.5px rgba(255,255,255,0.38), inset 0 -1px 1px rgba(0,0,0,0.55)",
+                "inset 0 0 0 1px rgba(255,255,255,0.1), inset 0 1.5px 0.5px rgba(255,244,216,0.5), inset 0 -1px 1px rgba(0,0,0,0.55), 0 0 0 1px rgba(246,236,210,0.5)",
             }}
           >
             {/* The glint that runs round the ring as the phone turns. */}
@@ -796,7 +795,7 @@ From: ${name} (${email})`;
 
             {/* Bezel, then the glass. */}
             <div
-              className="absolute bg-[#020203]"
+              className="absolute bg-[#0b0f2a]"
               style={{
                 inset: `${RING}cqw`,
                 borderRadius: `${R - RING}cqw`,
@@ -805,7 +804,8 @@ From: ${name} (${email})`;
             >
               <div
                 ref={screen}
-                className="absolute flex flex-col overflow-hidden bg-[#070708]"
+                data-ground="cream"
+                className="absolute flex flex-col overflow-hidden bg-cream-2 text-ink"
                 style={{ inset: `${BEZEL}cqw`, borderRadius: `${R - RING - BEZEL}cqw` }}
               >
                 <StatusBar clock={clock} />
@@ -838,13 +838,13 @@ From: ${name} (${email})`;
                   }}
                   className="relative min-h-0 flex-1 overflow-y-auto overscroll-auto px-[3.4cqw] pb-3 pt-3 [scrollbar-width:none] focus-visible:rounded-[4px] focus-visible:outline-offset-[-3px] [@media(hover:hover)]:overscroll-contain [&::-webkit-scrollbar]:hidden"
                   style={{
-                    backgroundImage: "radial-gradient(rgba(255,255,255,0.05) 1px, transparent 1.3px)",
+                    backgroundImage: "radial-gradient(rgba(29,42,110,0.08) 1px, transparent 1.3px)",
                     backgroundSize: "15px 15px",
                     maskImage: "linear-gradient(to bottom, transparent 0, #000 12px)",
                     WebkitMaskImage: "linear-gradient(to bottom, transparent 0, #000 12px)",
                   }}
                 >
-                  <p aria-hidden className="t-mono pb-3 text-center !text-[9px] !tracking-[0.14em] text-ash">
+                  <p aria-hidden className="pb-3 text-center text-[12px] font-semibold leading-none text-muted">
                     Today{stamp ? ` ${stamp}` : ""}
                   </p>
 
@@ -910,6 +910,7 @@ From: ${name} (${email})`;
                           key={c.key}
                           first={i === 0}
                           primary={c.primary}
+                          pick={c.pick}
                           pending={c.pending}
                           cursor={c.cursor}
                           onClick={c.onClick}
@@ -933,10 +934,10 @@ From: ${name} (${email})`;
                     href={`mailto:${identity.email}`}
                     className={`group ${COMPOSER_BAR} focus-visible:outline-offset-[-3px]`}
                   >
-                    <span className="min-w-0 flex-1 rounded-[20px] border border-white/10 bg-[#121215] px-3.5 py-2 transition-colors duration-300 group-hover:border-acid/70">
-                      <span className="block text-[13px] leading-[1.35] text-bone [overflow-wrap:anywhere]">{identity.email}</span>
+                    <span className="min-w-0 flex-1 rounded-[20px] border border-ink/20 bg-white px-3.5 py-2 transition-colors duration-300 group-hover:border-ink">
+                      <span className="block text-[13px] leading-[1.35] text-ink [overflow-wrap:anywhere]">{identity.email}</span>
                     </span>
-                    <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full bg-acid text-void">
+                    <span className="grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full bg-ink text-cream">
                       <SendArrow />
                     </span>
                   </a>
@@ -950,8 +951,8 @@ From: ${name} (${email})`;
                   onSend={send}
                   onKey={onKey}
                 />
-                <div aria-hidden className="bg-[#0b0b0d] pb-[2.4cqw] pt-[2.2cqw]">
-                  <div className="mx-auto h-[1.25cqw] w-[35%] rounded-full bg-bone/75" />
+                <div aria-hidden className="bg-[#fffdf7] pb-[2.4cqw] pt-[2.2cqw]">
+                  <div className="mx-auto h-[1.25cqw] w-[35%] rounded-full bg-ink/70" />
                 </div>
 
                 {/* Glass: a faint fixed reflection plus a sheen that slides
@@ -1039,7 +1040,7 @@ const Composer = memo(function Composer({
     const pinned = list.scrollHeight - list.scrollTop - list.clientHeight < 24;
     const before = el.style.height;
     el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 104)}px`;
+    el.style.height = `${Math.min(el.scrollHeight, 118)}px`;
     if (pinned && el.style.height !== before) list.scrollTop = list.scrollHeight;
   }, [draft, step, fieldRef, logRef]);
 
@@ -1049,8 +1050,11 @@ const Composer = memo(function Composer({
     setDraft(v);
     onKey();
   };
+  /* The vertical padding is on the field, not the pill around it, so a
+     tap anywhere on the pill lands in the field (37px tall, not 23). The
+     textarea's cap (118px) is its old 104px of text plus that padding. */
   const inputClass =
-    "block w-full resize-none bg-transparent text-base leading-[1.35] text-bone outline-none placeholder:text-ash lg:text-[14.5px]";
+    "block w-full resize-none bg-transparent py-[7px] text-base leading-[1.35] text-ink outline-none placeholder:text-muted lg:text-[14.5px]";
 
   return (
     <form
@@ -1058,9 +1062,8 @@ const Composer = memo(function Composer({
       data-js-only
       onSubmit={(e) => {
         e.preventDefault();
-        /* Cleared before the send, not after: with motion off the reply
-           lands inside onSend, and a bad email is put back in the box
-           right then. Clearing afterwards would wipe it straight out. */
+        /* Cleared before the send, not after: a bad email is put back in
+           the box below, and clearing afterwards would wipe it out. */
         const text = draft;
         setDraft("");
         if (!onSend(text, step)) setDraft(text);
@@ -1073,11 +1076,21 @@ const Composer = memo(function Composer({
       <label htmlFor={id} className="sr-only">
         {f.label}
       </label>
-      <div className="min-w-0 flex-1 rounded-[20px] border border-white/10 bg-[#121215] px-3.5 py-[7px] transition-colors duration-300 focus-within:border-acid/70">
+      {/* While Parth waits on an answer the box is the obvious next
+          thing: a firmer navy edge and a soft ring round it. Locked or
+          mid-reply, it steps back to a quiet outline. */}
+      <div
+        className={`min-w-0 flex-1 rounded-[20px] border bg-white px-3.5 transition-[border-color,box-shadow] duration-300 focus-within:border-ink ${
+          f.locked || busy ? "border-ink/20" : "border-ink/55 shadow-[0_0_0_3px_rgba(29,42,110,0.1)]"
+        }`}
+      >
         {step === "message" ? (
           <textarea
             ref={fieldRef}
             id={id}
+            /* Edge's autofill can write an empty style="" here before
+               hydration; that attribute is the browser's, not a mismatch. */
+            suppressHydrationWarning
             rows={1}
             value={draft}
             maxLength={LIMITS.message}
@@ -1095,12 +1108,13 @@ const Composer = memo(function Composer({
                 form.current?.requestSubmit();
               }
             }}
-            className={`${inputClass} max-h-[104px] overflow-y-auto`}
+            className={`${inputClass} max-h-[118px] overflow-y-auto`}
           />
         ) : (
           <input
             ref={fieldRef}
             id={id}
+            suppressHydrationWarning
             type={f.type ?? "text"}
             inputMode={f.mode}
             value={f.locked ? "" : draft}
@@ -1123,7 +1137,7 @@ const Composer = memo(function Composer({
         data-cursor="SEND"
         aria-disabled={!canSend}
         className={`grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full transition-[background-color,opacity] duration-300 ${
-          canSend ? "bg-acid text-void" : "bg-white/[0.07] text-ash"
+          canSend ? "bg-ink text-cream" : "bg-ink/[0.08] text-muted"
         }`}
       >
         <SendArrow />
@@ -1134,12 +1148,13 @@ const Composer = memo(function Composer({
 
 /* The input bar's row and its send arrow, shared with the address bar
    the phone shows without scripts, so a restyle reaches both. */
-const COMPOSER_BAR = "flex items-end gap-2 border-t border-white/[0.06] bg-[#0b0b0d] px-[3.4cqw] pb-1 pt-2.5";
+const COMPOSER_BAR = "flex items-end gap-2 border-t border-ink/[0.1] bg-[#fffdf7] px-[3.4cqw] pb-1 pt-2.5";
 
+/* The same arrow as the page's buttons, pointing on along the road. */
 function SendArrow() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
-      <path d="M12 19V5M5.5 11.5 12 5l6.5 6.5" />
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false">
+      <path d="M3 10h13M11 5l5 5-5 5" />
     </svg>
   );
 }
@@ -1157,6 +1172,7 @@ function Honeypot({ inputRef }: { inputRef: React.RefObject<HTMLInputElement | n
         Company
         <input
           ref={inputRef}
+          suppressHydrationWarning
           type="text"
           name="company"
           tabIndex={-1}
@@ -1206,7 +1222,7 @@ function Island() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute left-1/2 top-[3.1cqw] flex h-[8.8cqw] w-[31cqw] -translate-x-1/2 items-center justify-end rounded-full bg-black pr-[2.4cqw]"
+      className="pointer-events-none absolute left-1/2 top-[3.1cqw] flex h-[8.8cqw] w-[31cqw] -translate-x-1/2 items-center justify-end rounded-full bg-[#0b0f2a] pr-[2.4cqw]"
       style={{ boxShadow: "inset 0 0 0 0.5px rgba(255,255,255,0.04)" }}
     >
       {/* Front camera: a dark lens with a faint blue coating. */}
@@ -1227,7 +1243,7 @@ function Island() {
    shrank, and on a short laptop the signal bars ended up under the island. */
 function StatusBar({ clock }: { clock: string }) {
   return (
-    <div aria-hidden className="relative flex h-[15cqw] shrink-0 items-center justify-between pl-[9cqw] pr-[7.4cqw] text-bone">
+    <div aria-hidden className="relative flex h-[15cqw] shrink-0 items-center justify-between pl-[9cqw] pr-[7.4cqw] text-ink">
       <span className="min-w-[10cqw] text-[4.45cqw] font-semibold tabular-nums tracking-[-0.01em]">{clock}</span>
       <span className="flex items-center gap-[1.5cqw] [&>svg]:h-auto">
         {/* signal */}
@@ -1256,17 +1272,18 @@ function StatusBar({ clock }: { clock: string }) {
 
 function ChatHeader({ typing }: { typing: boolean }) {
   return (
-    <div className="flex shrink-0 items-center gap-2.5 border-b border-white/[0.06] bg-[#0b0b0d] px-[3cqw] pb-2.5 pt-1">
-      <svg width="11" height="18" viewBox="0 0 11 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false" className="shrink-0 text-bone/70">
+    <div className="flex shrink-0 items-center gap-2.5 border-b border-ink/[0.12] bg-[#fffdf7] px-[3cqw] pb-2.5 pt-1">
+      <svg width="11" height="18" viewBox="0 0 11 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden focusable="false" className="shrink-0 text-ink/70">
         <path d="M9 2 2 9l7 7" />
       </svg>
-      <span aria-hidden className="relative grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full border border-white/10 bg-[linear-gradient(145deg,#2b2b31,#111114)]">
-        <span className="text-[12.5px] font-semibold leading-none tracking-[0.04em] text-bone/90">PB</span>
+      {/* The same circled P as the status strip's name tag. */}
+      <span aria-hidden className="relative grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full bg-ink">
+        <span className="text-[15px] font-extrabold leading-none text-cream">{chat.title.charAt(0)}</span>
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[14px] font-semibold leading-tight text-bone">{chat.title}</span>
+        <span className="block truncate text-[14.5px] font-bold leading-tight text-ink">{chat.title}</span>
         {/* Swaps to "typing" while Parth types, the way chat apps do. */}
-        <span className="block truncate text-[11px] leading-tight text-ash">{typing ? "typing..." : chat.status}</span>
+        <span className="mt-0.5 block truncate text-[13px] leading-tight text-muted">{typing ? "typing..." : chat.status}</span>
       </span>
     </div>
   );
@@ -1287,7 +1304,7 @@ function Rise({
   const ref = useRef<HTMLDivElement>(null);
   useIso(() => {
     const el = ref.current;
-    if (!el || reduced() || typeof el.animate !== "function") return;
+    if (!el || typeof el.animate !== "function") return;
     const a = el.animate(
       [
         { opacity: 0, transform: "translate3d(0, 10px, 0) scale(0.96)" },
@@ -1313,8 +1330,8 @@ function Bubble({ mine, tail, children }: { mine: boolean; tail: boolean; childr
     <p
       className={`max-w-[80%] whitespace-pre-wrap px-3.5 py-2 text-[14px] leading-[1.38] [overflow-wrap:anywhere] ${
         mine
-          ? "rounded-[18px] bg-bone text-void"
-          : "rounded-[18px] border border-white/[0.06] bg-[#17171b] text-bone"
+          ? "rounded-[18px] bg-ink text-cream"
+          : "rounded-[18px] border border-ink/[0.12] bg-white text-ink"
       } ${tail ? (mine ? "rounded-br-[6px]" : "rounded-bl-[6px]") : ""}`}
     >
       {/* Who said it, for screen readers; sighted readers get the side. */}
@@ -1344,12 +1361,12 @@ function TypingDots() {
   return (
     <span
       aria-hidden
-      className="flex h-[36px] items-center gap-[5px] rounded-[18px] rounded-bl-[6px] border border-white/[0.06] bg-[#17171b] px-4"
+      className="flex h-[36px] items-center gap-[5px] rounded-[18px] rounded-bl-[6px] border border-ink/[0.12] bg-white px-4"
     >
       <span ref={ref} className="flex items-center gap-[5px]">
-        <span className="block h-[6px] w-[6px] rounded-full bg-ash" />
-        <span className="block h-[6px] w-[6px] rounded-full bg-ash" />
-        <span className="block h-[6px] w-[6px] rounded-full bg-ash" />
+        <span className="block h-[6px] w-[6px] rounded-full bg-muted" />
+        <span className="block h-[6px] w-[6px] rounded-full bg-muted" />
+        <span className="block h-[6px] w-[6px] rounded-full bg-muted" />
       </span>
     </span>
   );
@@ -1406,27 +1423,27 @@ function FileCard({ still = false }: { still?: boolean }) {
       onClick={onClick}
       onPointerEnter={warm}
       onFocus={warm}
-      className="group flex w-[88%] items-center gap-3 rounded-[16px] rounded-bl-[6px] border border-white/[0.08] bg-[#17171b] p-2.5 pr-3 transition-colors duration-300 hover:border-acid/50"
+      className="group flex w-[88%] items-center gap-3 rounded-[16px] rounded-bl-[6px] border border-ink/[0.12] bg-white p-2.5 pr-3 transition-colors duration-300 hover:border-ink/50"
     >
-      {/* A page with a folded corner and the format on it. */}
-      <span aria-hidden className="relative block h-[42px] w-[34px] shrink-0">
-        <svg width="34" height="42" viewBox="0 0 34 42" fill="none" focusable="false">
-          <path d="M3 1h20l10 10v27a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3Z" fill="#edede6" fillOpacity="0.09" stroke="#edede6" strokeOpacity="0.22" />
-          <path d="M23 1v7a3 3 0 0 0 3 3h7" stroke="#edede6" strokeOpacity="0.22" />
+      {/* A page with a folded corner, in the brick of the stamps. */}
+      <span aria-hidden className="relative block h-[40px] w-[32px] shrink-0">
+        <svg width="32" height="40" viewBox="0 0 34 42" fill="none" focusable="false">
+          <path d="M3 1h20l10 10v27a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3Z" fill="#b42f1f" />
+          <path d="M23 1v7a3 3 0 0 0 3 3h7Z" fill="#e3a294" />
         </svg>
-        <span className="absolute bottom-[7px] left-[4px] rounded-[3px] bg-bone/85 px-[3px] py-[1px] font-mono text-[7.5px] font-bold leading-none tracking-[0.06em] text-void">
+        <span className="absolute bottom-[6px] left-[4px] text-[8px] font-extrabold leading-none tracking-[0.04em] text-cream">
           PDF
         </span>
       </span>
       <span className="min-w-0 flex-1">
         {/* No `block` here: it would override the -webkit-box that
             line-clamp relies on, and a long name would run to four lines. */}
-        <span className="line-clamp-2 text-[12.5px] font-semibold leading-tight text-bone [overflow-wrap:anywhere]">{resume.fileName}</span>
-        <span className="t-mono mt-1 block !text-[9px] !tracking-[0.12em] text-ash">PDF · {resume.size}</span>
+        <span className="line-clamp-2 text-[13px] font-bold leading-tight text-ink [overflow-wrap:anywhere]">{resume.fileName}</span>
+        <span className="mt-1 block text-[13px] leading-tight text-muted">PDF · {resume.size}</span>
       </span>
       <span
         aria-hidden
-        className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full border border-white/10 text-bone transition-colors duration-300 group-hover:border-acid group-hover:bg-acid group-hover:text-void"
+        className="grid h-[30px] w-[30px] shrink-0 place-items-center rounded-full border border-ink/20 text-ink transition-colors duration-300 group-hover:border-ink group-hover:bg-ink group-hover:text-cream"
       >
         {/* An eye rather than a download arrow: it opens for a look.
             The still card only downloads, so it gets the arrow. */}
@@ -1449,32 +1466,35 @@ function FileCard({ still = false }: { still?: boolean }) {
 /* What Parth is about to receive, so nobody is surprised by it. */
 function DraftCard({ subject, body }: { subject: string; body: string }) {
   return (
-    <div className="w-[88%] rounded-[16px] rounded-bl-[6px] border border-white/[0.08] bg-[#17171b] p-3">
-      <p className="t-mono !text-[9px] !tracking-[0.14em] text-ash">New email</p>
-      <dl className="mt-2 space-y-0.5 text-[12px] leading-snug">
+    <div className="w-[88%] rounded-[16px] rounded-bl-[6px] border border-ink/[0.12] bg-white p-3">
+      <p className="text-[13px] font-bold leading-none text-muted">New email</p>
+      <dl className="mt-2 space-y-0.5 text-[13px] leading-snug">
         <div className="flex gap-2">
-          <dt className="w-[46px] shrink-0 text-ash">To</dt>
-          <dd className="min-w-0 truncate text-bone">{identity.email}</dd>
+          <dt className="w-[50px] shrink-0 text-muted">To</dt>
+          <dd className="min-w-0 truncate text-ink">{identity.email}</dd>
         </div>
         <div className="flex gap-2">
-          <dt className="w-[46px] shrink-0 text-ash">Subject</dt>
-          <dd className="min-w-0 truncate text-bone">{subject}</dd>
+          <dt className="w-[50px] shrink-0 text-muted">Subject</dt>
+          <dd className="min-w-0 truncate text-ink">{subject}</dd>
         </div>
       </dl>
-      <p className="mt-2 line-clamp-3 whitespace-pre-wrap border-t border-white/[0.06] pt-2 text-[12px] leading-snug text-ash [overflow-wrap:anywhere]">
+      <p className="mt-2 line-clamp-3 whitespace-pre-wrap border-t border-ink/[0.1] pt-2 text-[13px] leading-snug text-muted [overflow-wrap:anywhere]">
         {body}
       </p>
     </div>
   );
 }
 
-/* Quick replies and actions. The main action of a step is filled in the
-   accent; the rest are plain outlines in the visitor's own colour.
+/* Quick replies and actions. The main action of a step is filled navy
+   like the page's solid buttons, and the answers to pick from are navy
+   outlines that fill on hover; anything else (start over) is a quieter
+   outline. Yellow stays on objects, never on the chat.
    `pending` is the send in flight: announced as unavailable and ignoring
    presses, but still focusable, so focus is not dropped to the page
    while it waits (a disabled button loses focus). */
 function Chip({
   primary = false,
+  pick = false,
   first = false,
   pending = false,
   cursor,
@@ -1482,6 +1502,7 @@ function Chip({
   children,
 }: {
   primary?: boolean;
+  pick?: boolean;
   first?: boolean;
   pending?: boolean;
   cursor?: string;
@@ -1495,12 +1516,14 @@ function Chip({
       aria-disabled={pending || undefined}
       data-chip={first ? "" : undefined}
       data-cursor={cursor}
-      className={`rounded-full px-3.5 py-[7px] text-[12.5px] font-medium leading-none transition-colors duration-300 ${
+      className={`rounded-full px-3.5 py-[7px] text-[13px] font-medium leading-none transition-colors duration-300 ${
         pending
-          ? "cursor-default bg-white/[0.08] text-ash"
+          ? "cursor-default bg-ink/[0.08] text-muted"
           : primary
-            ? "bg-acid text-void hover:bg-bone"
-            : "border border-bone/20 text-bone hover:border-bone hover:bg-bone hover:text-void"
+            ? "bg-ink text-cream hover:bg-ink-deep"
+            : pick
+              ? "border border-ink/45 text-ink hover:border-ink hover:bg-ink hover:text-cream"
+              : "border border-ink/25 text-muted hover:border-ink hover:text-ink"
       }`}
     >
       {children}

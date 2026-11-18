@@ -22,12 +22,11 @@
    ============================================================ */
 
 export const identity = {
-  /* Short form, set at viewport scale in the nav and footer wordmark. */
-  name: "PARTH",
   fullName: "Parth Betai",
-  /* The giant hero word the name decodes into on load. */
-  heroWord: "PORTFOLIO",
-  role: "Software Developer",
+  /* Shown as a title (hero, footer sign and title block, page title,
+     share card). Inside a sentence it is written in lower case, as in
+     intro.body and meta.description. */
+  role: "Software Developer & Robotics Engineer",
   email: "parthbetai007@gmail.com",
   /* Phone deliberately not published: a number on a public page gets
      scraped for spam calls within weeks. The contact form covers it.
@@ -55,7 +54,74 @@ export const nav = [
   { label: "Contact", href: "#contact" },
 ];
 
-/* `label` also picks the icon (see components/SocialIcon.tsx). */
+/* The home page is one numbered drawing set: each section is a sheet with
+   an index tab ("01 Home" to "06 Contact"), whose circled number is also
+   that sheet's stop on the taxi route. `id` is the sheet's anchor (the
+   jump target). Journey has no nav entry: the bottom nav keeps Work lit
+   over it. */
+export const sheets = [
+  { n: "01", label: "Home", id: "home" },
+  { n: "02", label: "About", id: "about" },
+  { n: "03", label: "Services", id: "services" },
+  { n: "04", label: "Work", id: "work" },
+  { n: "05", label: "Journey", id: "journey" },
+  { n: "06", label: "Contact", id: "contact" },
+];
+
+/* The status strip across the top of every page, like the title strip
+   along the top edge of a drawing set: the name, one line at a time from
+   `lines`, and how much of the page has been seen. Every line has to be
+   true. */
+export const strip = {
+  name: "Parth Betai",
+  seen: "You've seen",
+  /* Shown in place of "You've seen 100%" once the taxi reaches the end
+     of the road. */
+  arrived: "You've arrived",
+  lines: [
+    "Started with Android apps. Ended up wiring servos.",
+    "Kolkata-born, Jaipur-based, usually mid-build.",
+    "First year of college. Four years of building things.",
+    "My SOS app works with zero bars. This page needs one.",
+    "Short on time? Selected work is the good part.",
+    "Two ventures wound down. The lessons stayed.",
+  ],
+};
+
+/* The 404 page, in the taxi's words. */
+export const notFound = {
+  title: "Took a wrong turn.",
+  body: "This page isn't on the route. The home page is.",
+  cta: "Back to home",
+};
+
+/* Margin notes, in handwriting (the .hand role, Kalam). A handful on the whole
+   page, each one true and in Parth's voice, placed next to the thing it
+   is about. Never needed to use the site. */
+export const notes = {
+  resume: "my resume's on this floppy",
+  journey: "closed both, kept the lessons",
+  contact: "it really does land in my inbox",
+  signoff: "Thanks for scrolling all the way down.",
+};
+
+/* Sheet 01, the hero: the ribbon over the name, the line under the role
+   and the dimension line under the taxi (from Kolkata, home, to Jaipur,
+   where he studies). */
+export const hero = {
+  ribbon: "Portfolio",
+  billing: "Builds Android apps, robots and websites",
+  dimension: [identity.locations.secondary, identity.locations.primary] as [string, string],
+};
+
+/* The taxi route down the page: its stops, in order. The first is the
+   hero's; the rest are the four projects' kinds (work.projects[].kind). */
+export const route = {
+  stops: ["Home", "Mobile", "Robotics", "Embedded", "Hardware"],
+};
+
+/* The footer title block's "Connections": each link drawn as its logo,
+   with `label` as its accessible name. */
 export const socials = [
   { label: "Github", href: "https://github.com/ParthBetai" },
   { label: "LinkedIn", href: "https://www.linkedin.com/in/codewithparth" },
@@ -63,22 +129,18 @@ export const socials = [
   { label: "X", href: "https://x.com/ftxparth" },
 ];
 
-/* The paragraph is revealed word by word on scroll, so write it as one
-   continuous string. Wrap a word in *asterisks* for the serif accent. */
+/* The paragraph is one continuous string. Wrap a word in *asterisks*
+   for the light accent word. */
 export const intro = {
-  eyebrow: "About",
   heading: "Intro",
-  body: "Hi, I'm Parth Betai, a software developer from Kolkata, now based in Jaipur for my undergraduate degree. I started out building Android apps in Java and Kotlin, and that curiosity soon led me into robotics, where I spend my time with Arduino boards, servo motors, sensors and a fair amount of trial and error. Along the way I founded and ran two ventures, an online store and a digital studio for small businesses, which taught me the business side: vendors, marketing and finding clients. The work I enjoy most sits where software meets the physical world. If you need an app, a website or an extra pair of hands on a hardware build, I would be glad to help.",
+  body: "Hi, I'm Parth Betai, a software developer and robotics engineer from Kolkata, now based in Jaipur for my undergraduate degree. I started out building Android apps in Java and Kotlin, and that curiosity soon led me into robotics, where I spend my time with Arduino boards, servo motors, sensors and a fair amount of trial and error. Along the way I founded and ran two ventures, an online store and a digital studio for small businesses, which taught me the business side: vendors, marketing and finding clients. The work I enjoy most sits where software meets the physical world. If you need an app, a website or an extra pair of hands on a hardware build, I would be glad to help.",
 
   /* The card beside the paragraph. Plain facts, in the order someone
      skimming would want them. */
   factsTitle: "The short version",
-  /* Optional: the path of a second background-removed photo in /public
-     (for example "/portrait-2.png"). When set, it takes the card's place. */
-  photo: null as string | null,
   facts: [
-    { label: "Primary work location", value: "Jaipur, India" },
-    { label: "Secondary work location", value: "Kolkata, India" },
+    { label: "Primary work location", value: identity.locations.primary },
+    { label: "Secondary work location", value: identity.locations.secondary },
     { label: "Status", value: "Undergraduate, first year" },
   ],
   /* The rolling row at the bottom of the card: one entry at a time. */
@@ -118,8 +180,20 @@ export const stacks = [
   },
 ];
 
+/* What a screen reader hears for the stack band: its heading (the rows
+   themselves are drawn without one) and the name of its pause control,
+   a toggle whose pressed state says whether the rows are held. */
+export const stackLabels = {
+  heading: "Tech stack",
+  pause: "Pause the stack rows",
+};
+
 export const services = {
   heading: ["What I", "can do"],
+  /* The handwritten line beside the heading. */
+  note: "Started with Android apps. Ended up wiring servos.",
+  /* The enamel board beside the heading; it links to the work. */
+  shortcut: { title: "Short on time?", line: "Selected work is the good part." },
   items: [
     {
       title: "Mobile Development",
@@ -203,7 +277,8 @@ export const services = {
   ],
 };
 
-/* Wrap one word per title in *asterisks* for the serif accent.
+/* Wrap one word per title in *asterisks* for the light word of the
+   title's weight contrast.
    `image` is any URL or a path in /public. These are Parth's own photos
    and screenshots of each build, in /public/work.
    `links` is optional: projects without one simply show no buttons. */
@@ -224,6 +299,22 @@ export type Project = {
      the right side of a wide screenshot in frame. */
   focus?: string;
   links?: { label: string; href: string }[];
+  /* The technical drawing beside the project (components/drawings): an
+     HTML legend (one line per numbered balloon), an optional red callout,
+     an optional payload card, an optional rubber stamp (pressed on the
+     photo) and a handwritten note under the drawing. Every word restates
+     a fact in `body` or `badge`. Stamp only a real verdict (a placing,
+     an exhibition). A stamp without `mid` has a drawn star in its centre
+     instead of a word. */
+  drawing?: ProjectDrawing;
+};
+
+export type ProjectDrawing = {
+  legend: string[];
+  red?: string;
+  card?: { title: string; lines: string[] };
+  stamp?: { top: string; mid?: string; mid2?: string; bottom: string };
+  note?: string;
 };
 
 export const work: { heading: [string, string]; blurb: string; projects: Project[] } = {
@@ -241,6 +332,12 @@ export const work: { heading: [string, string]; blurb: string; projects: Project
       badge: "Offline SOS, relayed phone to phone",
       body: "A React Native SOS app that works with no internet or signal. A phone sends an SOS, with its GPS location and an optional short message, over Bluetooth Low Energy. Each phone running the app that picks it up sounds or vibrates and passes it on, so the phones form an offline mesh. An ID on each SOS stops it being relayed forever. In Java and XML I've built many more apps, including a replica of the Domino's ordering UI with carousels, ratings and reviews.",
       tags: ["React Native", "Bluetooth LE", "Java", "XML layouts"],
+      drawing: {
+        legend: ["sends an SOS over Bluetooth Low Energy", "picks it up, sounds or vibrates", "passes it on: an offline mesh"],
+        red: "the ID stops it being relayed forever",
+        card: { title: "Over Bluetooth Low Energy", lines: ["GPS location", "optional short message", "an ID"] },
+        note: "zero bars, it still gets through",
+      },
       image: "/work/android-app-suite.jpg",
       alt: "The XML layout of one of the Java apps open in a code editor: a scroll view holding a label and a number input, with two of its attributes highlighted",
     },
@@ -251,6 +348,11 @@ export const work: { heading: [string, string]; blurb: string; projects: Project
       badge: "1st place in Robotics · IIT Hyderabad",
       body: "A mini humanoid driven by 8+ servos through a PWM servo driver board on an Arduino. I designed it and wrote the motion code in C++: 5+ sequences built from hand-tuned poses, with every servo eased gradually from one pose to the next so the robot moves without jerking. It won first place in Robotics at a national-level interstate competition at IIT Hyderabad.",
       tags: ["Arduino", "C++", "PWM servo driver", "Motion easing"],
+      drawing: {
+        legend: ["8+ servos", "PWM servo driver board", "Arduino", "5+ sequences"],
+        stamp: { top: "ROBOTICS", mid: "1ST", mid2: "PLACE", bottom: "IIT HYDERABAD" },
+        note: "eased from pose to pose",
+      },
       image: "/work/mini-humanoid-robot.jpg",
       alt: "Building the mini humanoid: hands wiring its blue servos with coloured jumper wires, while a second pair of hands marks out the white base board in pencil",
     },
@@ -261,6 +363,10 @@ export const work: { heading: [string, string]; blurb: string; projects: Project
       badge: "Looks both ways before it turns",
       body: "An Arduino car that finds its own way around obstacles. A single ultrasonic sensor sits at the front on a servo. When something is close ahead, my C++ code stops the car, turns the sensor to check left and right, and steers toward the side with more room, driving four geared motors through a motor driver board. In controlled tests it detected obstacles reliably.",
       tags: ["Arduino", "Ultrasonic sensor", "Motor drivers", "C++"],
+      drawing: {
+        legend: ["Arduino", "ultrasonic sensor on a servo", "motor driver board", "battery pack", "four geared motors"],
+        note: "checks left and right, steers toward more room",
+      },
       image: "/work/obstacle-avoiding-car.jpg",
       alt: "The obstacle-avoiding car: a four-wheeled chassis carrying an Arduino under a motor driver board, with an ultrasonic sensor on a servo at the front and a battery pack",
     },
@@ -271,6 +377,11 @@ export const work: { heading: [string, string]; blurb: string; projects: Project
       badge: "Solar-charged cells power the track",
       body: "A working EV model that charges without a cable. A solar panel charges three 18650 Li-ion cells, which power the track. When a sensor spots the car arriving, a relay switches on the transmitter coil set into the track. I built the wireless charging circuit and the embedded motor control, then showed it at two institutional exhibitions.",
       tags: ["Wireless charging", "Solar charging", "Relay", "Motor control"],
+      drawing: {
+        legend: ["solar panel", "three 18650 Li-ion cells", "sensor", "relay", "transmitter coil set into the track"],
+        stamp: { top: "EXHIBITED", bottom: "TWICE" },
+        note: "sun, cells, coil, car",
+      },
       image: "/work/wireless-charging-ev.jpg",
       alt: "The wireless charging EV model: the charging coil set into the middle of a model road, a relay module and a small sensor on the left, a board of heatsinked parts on the right with a yellow model car behind the clear wall beside it, and three 18650 Li-ion cells along the front",
     },
@@ -279,32 +390,43 @@ export const work: { heading: [string, string]; blurb: string; projects: Project
 
 /* The small section after the work: the two businesses so far, oldest
    first. Source: the Experience section of the resume. */
+const VENTURES = [
+  {
+    name: "Psquare Online",
+    role: "CEO & Founder",
+    period: "Jul 2024 to 2025",
+    kind: "E-commerce · Dropshipping",
+    status: "Wrapped up",
+    body: "A dropshipping store I started in school and grew to more than 50 products. For a year I ran all of it: vendors, the supply pipeline and every bit of the marketing. Then I closed it to focus on Afferex.",
+    facts: ["50+ products", "12 months", "Pivoted to Afferex"],
+  },
+  {
+    name: "Afferex",
+    role: "Founder",
+    period: "Mar 2026 to 2026",
+    kind: "Digital studio · Small businesses",
+    status: "Wrapped up",
+    body: "A studio that offered small businesses what they need online: websites, admin panels, business systems, logos and social media, built faster with AI-assisted workflows. I have since wound it down.",
+    facts: ["5 services", "AI-assisted workflows", "Wound down in 2026"],
+  },
+];
+
 export const ventures = {
-  eyebrow: "Entrepreneurship journey",
   heading: ["Founder", "journey"],
   blurb: "Two small businesses so far. The first taught me how to sell online, the second how to set up a service business and go after its first clients.",
-  items: [
-    {
-      name: "Psquare Online",
-      role: "CEO & Founder",
-      period: "Jul 2024 to 2025",
-      kind: "E-commerce · Dropshipping",
-      status: "Wrapped up",
-      live: false,
-      body: "A dropshipping store I started in school and grew to more than 50 products. For a year I ran all of it: vendors, the supply pipeline and every bit of the marketing. Then I closed it to focus on Afferex.",
-      facts: ["50+ products", "12 months", "Pivoted to Afferex"],
-    },
-    {
-      name: "Afferex",
-      role: "Founder",
-      period: "Mar 2026 to 2026",
-      kind: "Digital studio · Small businesses",
-      status: "Wrapped up",
-      live: false,
-      body: "A studio that offered small businesses what they need online: websites, admin panels, business systems, logos and social media, built faster with AI-assisted workflows. I have since wound it down.",
-      facts: ["5 services", "AI-assisted workflows", "Wound down in 2026"],
-    },
-  ],
+  /* The railway timeline under the ghat: one label per line (the
+     ventures' names), the turnout where the first became the second, and
+     the years along the track. */
+  timeline: {
+    labels: VENTURES.map((v) => v.name),
+    switch: "Pivoted to Afferex",
+    years: ["2024", "2025", "2026"],
+  },
+  /* The tags on the two boats moored at the ghat (each venture's role and
+     period), and the note on the water. */
+  boatTags: VENTURES.map((v) => ({ name: v.name, line: `${v.role} · ${v.period}` })),
+  note: notes.journey,
+  items: VENTURES,
 };
 
 export const contact = {
@@ -352,7 +474,9 @@ export const contact = {
    changes, so visitors can see how current it is. */
 export const legal = {
   owner: "Parth Betai",
-  updated: "29 September 2026",
+  /* The index tab on the info pages' sheet (the pages' eyebrow). */
+  tabLabel: "Legal",
+  updated: "12 October 2026",
   pages: [
     { label: "Privacy policy", href: "/privacy" },
     { label: "Terms of use", href: "/terms" },
@@ -362,8 +486,27 @@ export const legal = {
   ],
 };
 
+/* The footer street: the hanging enamel signboard and the drawing's title
+   block. A title block cell is a label and value, or the social links
+   under their own label (`dt`, like every other cell's), drawn as logos. */
+export type TitleCell = { dt: string; dd?: string } | { socials: true; dt: string };
+
+export const footer: { signboard: { word: string; under: string; sub: string }; titleBlock: TitleCell[] } = {
+  signboard: {
+    word: identity.fullName.split(" ")[0],
+    under: identity.role,
+    sub: contact.footerNote,
+  },
+  titleBlock: [
+    { dt: identity.fullName, dd: identity.role },
+    { dt: "Primary work location", dd: identity.locations.primary },
+    { dt: "Secondary work location", dd: identity.locations.secondary },
+    { socials: true, dt: "Connections" },
+  ],
+};
+
 export const meta = {
-  title: "Parth Betai · Software Developer",
+  title: `${identity.fullName} · ${identity.role}`,
   description:
-    "Parth Betai is a software developer who builds Android apps, robots and websites, and an undergraduate in Jaipur, India.",
+    "Parth Betai is a software developer and robotics engineer who builds Android apps, robots and websites, and an undergraduate in Jaipur, India.",
 };

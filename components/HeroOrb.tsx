@@ -3,18 +3,19 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import { RoomEnvironment } from "three/addons/environments/RoomEnvironment.js";
-import { reduced } from "@/lib/motion";
 
-/* The hero's centerpiece when there is no portrait: a liquid-chrome orb.
+/* The hero's centrepiece when there is no portrait: a liquid-chrome orb.
 
-   It is made of the same material as the wordmark, a mirror metal lit by
-   a studio environment, so the type and the object read as one set. The
-   surface is displaced by two octaves of simplex noise in the vertex
-   shader; normals are rebuilt from neighbouring displaced samples, so the
-   reflections flow across the ripples instead of sitting on a smooth ball.
+   It is the chrome of the taxi's trim, a mirror metal lit by a studio
+   environment, standing on the yellow field like a hubcap on the car's
+   paint. The surface is displaced by two octaves of simplex noise in the
+   vertex shader; normals are rebuilt from neighbouring displaced samples,
+   so the reflections flow across the ripples instead of sitting on a
+   smooth ball.
 
-   A copper rim light behind-left puts the only colour on it: a warm edge
-   in the accent's hue, kept low so it reads as light on metal, not a glow. */
+   A yellow rim light behind-left puts the only colour on it: the field's
+   own hue caught on its edge, kept low so it reads as light on metal, not
+   a glow. */
 
 /* Ashima Arts 3D simplex noise (MIT). */
 const NOISE = /* glsl */ `
@@ -176,7 +177,7 @@ vec3 objectNormal = normalize(cross(pT - pC, pB - pC));`
 
     const key = new THREE.DirectionalLight(0xffffff, 1.3);
     key.position.set(3, 3, 4);
-    const rim = new THREE.DirectionalLight(0xe0895a, 2.2);
+    const rim = new THREE.DirectionalLight(0xf6c400, 2.2);
     rim.position.set(-3.5, 1.2, -2.6);
     const under = new THREE.DirectionalLight(0x8fa3ff, 0.6);
     under.position.set(0, -4, 1);
@@ -211,8 +212,6 @@ vec3 objectNormal = normalize(cross(pT - pC, pB - pC));`
     const io = new IntersectionObserver(([e]) => (visible = e.isIntersecting), { threshold: 0 });
     io.observe(el);
 
-    const still = reduced();
-
     /* First frame compiles the shader; report ready after it lands. */
     renderer.render(scene, camera);
     requestAnimationFrame(signal);
@@ -241,7 +240,7 @@ vec3 objectNormal = normalize(cross(pT - pC, pB - pC));`
       renderer.render(scene, camera);
     };
 
-    if (!still) tick();
+    tick();
 
     return () => {
       cancelAnimationFrame(raf);

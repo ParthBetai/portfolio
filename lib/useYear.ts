@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 
 /* The page is statically prerendered, so `new Date().getFullYear()` in a
    component body is frozen at BUILD time. On 1 January the server HTML and
-   the client's first render disagree and React logs a hydration mismatch , 
+   the client's first render disagree and React logs a hydration mismatch,
    and the footer shows last year until the site is rebuilt.
 
    Reading the clock after mount keeps the markup deterministic and the

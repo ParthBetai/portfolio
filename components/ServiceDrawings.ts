@@ -1,8 +1,7 @@
 /* ============================================================
    SERVICE DRAWINGS
    The geometry behind the blueprint plotter in "What I can do": one
-   engineering drawing per service, plus the sheet they are drawn on
-   (frame, zones, grid, parts list, title block).
+   engineering drawing per service, and the card they are plotted on.
 
    Pure data. Nothing here touches React or the DOM, so the same ops can be
    rendered by the component and by a plain script when checking the line
@@ -12,9 +11,9 @@
    why arrowheads retrace their own wings and why balloons are drawn as a
    leader that runs straight on into its circle.
 
-   Units are sheet units. The drawings sit inside x 14..386, y 14..330,
-   which both sheet layouts (see THE SHEET at the bottom) leave free, and
-   a sheet renders at roughly one CSS pixel per unit on a desktop.
+   Units are card units. The drawings sit inside x 14..386, y 14..330 of
+   the card (see THE CARD at the bottom), which renders at roughly one
+   CSS pixel per unit on a desktop.
 
    Conventions, as on a real drawing:
      obj    visible outlines, the heaviest line
@@ -22,10 +21,10 @@
      cl     centre lines, long dash and dot
      hid    hidden edges, short dashes
      hatch  section hatching, 45 degrees
-     hl     the one thing on each sheet drawn in the accent
+     hl     the one thing on each sheet drawn in the accent (yellow)
    ============================================================ */
 
-export type Ink = "obj" | "thin" | "lead" | "cl" | "hid" | "hl" | "hatch" | "frame" | "frame2" | "gmin" | "gmaj";
+export type Ink = "obj" | "thin" | "lead" | "cl" | "hid" | "hl" | "hatch";
 export type Tone = "bone" | "ash" | "dim" | "hl";
 export type Anchor = "start" | "middle" | "end";
 type P = [number, number];
@@ -41,39 +40,40 @@ export type TextOp = {
   rot: number;
   tone: Tone;
   bold?: boolean;
-  /* Named fields the plotter retypes when the sheet changes. */
-  slot?: string;
   /* Extra delay in ms before the text shows, after the stroke it belongs
      to is finished. Lets a block of lines come up one after another. */
   lag?: number;
 };
 export type DotOp = { k: "dot"; x: number; y: number; r: number; ink: "obj" | "hl" };
 export type HatchOp = { k: "hatch"; clip: string; d: string; box: [number, number, number, number] };
-export type BoxOp = { k: "box"; x: number; y: number; w: number; h: number };
-export type Op = PathOp | TextOp | DotOp | HatchOp | BoxOp;
+export type Op = PathOp | TextOp | DotOp | HatchOp;
 
-export const PAPER = "#070a0e";
-const BONE = "#edede6";
-const ACID = "#e0895a";
+/* The night sheet's line colours: the cream line (--color-nline) for the
+   work and its quieter second (--color-nline-2) for the drawing's own
+   notes. SVG presentation attributes, so literal values; same as the
+   tokens. */
+const LINE = "#efe7d6";
+const LINE2 = "#bfc3da";
+/* The accent, the taxi yellow of --color-acid. On the page the plotter
+   paints the "hl" ink and the pen from the token itself (the stroke-acid
+   and fill-acid classes); this copy is for anything that renders these
+   ops without the site's stylesheet. */
+const ACID = "#f6c400";
 
 export const INK: Record<Ink, { c: string; o: number; w: number; dash?: number[] }> = {
-  obj: { c: BONE, o: 0.9, w: 1.05 },
-  thin: { c: BONE, o: 0.46, w: 0.5 },
-  lead: { c: BONE, o: 0.6, w: 0.55 },
-  cl: { c: BONE, o: 0.36, w: 0.5, dash: [9, 2.2, 1.4, 2.2] },
-  hid: { c: BONE, o: 0.5, w: 0.55, dash: [3, 1.8] },
-  hl: { c: ACID, o: 1, w: 1.15 },
-  hatch: { c: BONE, o: 0.3, w: 0.42 },
-  frame: { c: BONE, o: 0.5, w: 0.8 },
-  frame2: { c: BONE, o: 0.24, w: 0.5 },
-  gmin: { c: "#7fa6dc", o: 0.07, w: 0.5 },
-  gmaj: { c: "#7fa6dc", o: 0.13, w: 0.5 },
+  obj: { c: LINE, o: 0.95, w: 1.25 },
+  thin: { c: LINE, o: 0.55, w: 0.6 },
+  lead: { c: LINE, o: 0.75, w: 0.75 },
+  cl: { c: LINE, o: 0.45, w: 0.6, dash: [9, 2.2, 1.4, 2.2] },
+  hid: { c: LINE, o: 0.6, w: 0.65, dash: [3, 1.8] },
+  hl: { c: ACID, o: 1, w: 1.4 },
+  hatch: { c: LINE, o: 0.35, w: 0.45 },
 };
 
 export const TONE: Record<Tone, { c: string; o: number }> = {
-  bone: { c: BONE, o: 0.84 },
-  ash: { c: "#8e8e96", o: 1 },
-  dim: { c: "#5b5b64", o: 1 },
+  bone: { c: LINE, o: 0.9 },
+  ash: { c: LINE2, o: 1 },
+  dim: { c: LINE2, o: 0.7 },
   hl: { c: ACID, o: 1 },
 };
 
@@ -188,7 +188,6 @@ class Kit {
       rot: o.rot ?? 0,
       tone: o.tone ?? "bone",
       bold: o.bold,
-      slot: o.slot,
       lag: o.lag,
     });
   }
@@ -956,230 +955,17 @@ export function drawingFor(title: string, i: number): Op[] {
 }
 
 /* ============================================================
-   THE SHEET
-   Frame with zones, grid, notes, parts list and title block. Text that
-   changes per drawing carries a slot name.
-
-   Two layouts, both with the drawing in the same place, so every drawing
-   works on either:
-     portrait   400 x 450, title block and parts list along the bottom.
-                The sheet everywhere except tablets.
-     landscape  640 x 360, the same blocks stacked down the right, with a
-                revision table and a scale bar above them, as on an A3
-                landscape drawing. On a tablet it spans the page.
+   THE CARD
+   The drawings are plotted straight onto the night sheet, on a card with
+   a ruled top edge (s4-services.css .plotcard). Its legend and title
+   block are HTML beside the drawing, so the only things in this viewBox
+   are the drawing and the pen. The drawings use x 14..386, y 14..330, and
+   the card leaves a margin round them.
    ============================================================ */
-export type Layout = "portrait" | "landscape";
-type Box = { x: number; y: number; w: number; h: number };
-type Spec = {
-  w: number;
-  h: number;
-  /* zones across and down */
-  zx: number;
-  zy: number;
-  tb: Box;
-  pl: Box & { row: number };
-  notes: P;
-  proj: P;
-  readout: P;
-  /* landscape only */
-  rev?: P;
-  bar?: P;
-  /* where the pen rests: circling the revision letter, centred in the
-     last cell of the title block */
-  park: P;
+export const CARD: { w: number; h: number; park: P } = {
+  w: 400,
+  h: 344,
+  /* where the pen rests between plots: the bottom right corner, clear of
+     every drawing */
+  park: [382, 330],
 };
-
-export const FRAME_IN = 14;
-export const PL_ROWS = 4;
-const TB_W = 236;
-const TB_H = 52;
-const PL_H = 50;
-const park = (tb: Box): P => [tb.x + 223, tb.y + 26 + 19.5 - 2.2];
-
-const portraitTB: Box = { x: 150, y: 384, w: TB_W, h: TB_H };
-const landscapeTB: Box = { x: 390, y: 294, w: TB_W, h: TB_H };
-
-export const LAYOUT: Record<Layout, Spec> = {
-  portrait: {
-    w: 400,
-    h: 450,
-    zx: 4,
-    zy: 4,
-    tb: portraitTB,
-    pl: { x: 150, y: 334, w: TB_W, h: PL_H, row: 10 },
-    notes: [24, 352],
-    proj: [36, 402],
-    readout: [24, 428],
-    park: park(portraitTB),
-  },
-  landscape: {
-    w: 640,
-    h: 360,
-    zx: 6,
-    zy: 4,
-    tb: landscapeTB,
-    pl: { x: 390, y: 244, w: TB_W, h: PL_H, row: 10 },
-    notes: [400, 66],
-    proj: [412, 202],
-    readout: [24, 340],
-    rev: [390, 14],
-    bar: [400, 150],
-    park: park(landscapeTB),
-  },
-};
-
-/* The portrait sheet's numbers, for anything that only knows one sheet. */
-export const SHEET_W = LAYOUT.portrait.w;
-export const SHEET_H = LAYOUT.portrait.h;
-export const PARK = LAYOUT.portrait.park;
-
-export const DRAWN_BY = "P. BETAI";
-export const DRAWN_ON = "24.09.26";
-
-export function sheetOps(layout: Layout = "portrait"): Op[] {
-  const k = new Kit();
-  const S = LAYOUT[layout];
-  const F = FRAME_IN;
-  const W = S.w;
-  const H = S.h;
-
-  /* grid: minor every 16, major every 80, on the same lines as the
-     drawings on both layouts */
-  let gmin = "";
-  let gmaj = "";
-  for (let x = 24; x <= W - F; x += 16) {
-    const s = `M${x} ${F}V${H - F}`;
-    if ((x - 40) % 80 === 0) gmaj += s;
-    else gmin += s;
-  }
-  for (let y = 30; y <= H - F; y += 16) {
-    const s = `M${F} ${y}H${W - F}`;
-    if ((y - 30) % 80 === 0) gmaj += s;
-    else gmin += s;
-  }
-  k.p(gmin, "gmin");
-  k.p(gmaj, "gmaj");
-
-  k.p(rrect(4, 4, W - 8, H - 8), "frame2");
-  k.p(rrect(F, F, W - 2 * F, H - 2 * F), "frame");
-
-  /* zones: numbers across, letters down, ticks at the boundaries */
-  const zx = (W - 2 * F) / S.zx;
-  const zy = (H - 2 * F) / S.zy;
-  let ticks = "";
-  for (let i = 1; i < S.zx; i++) {
-    const x = r2(F + i * zx);
-    ticks += `M${x} 4V${F}M${x} ${H - F}V${H - 4}`;
-  }
-  for (let i = 1; i < S.zy; i++) {
-    const y = r2(F + i * zy);
-    ticks += `M4 ${y}H${F}M${W - F} ${y}H${W - 4}`;
-  }
-  /* centring marks run a little into the field */
-  ticks += `M${W / 2} 4V${F + 6}M${W / 2} ${H - F - 6}V${H - 4}M4 ${H / 2}H${F + 6}M${W - F - 6} ${H / 2}H${W - 4}`;
-  k.p(ticks, "frame2");
-  for (let i = 0; i < S.zx; i++) {
-    const x = F + (i + 0.5) * zx;
-    k.t(x, 10.8, String(i + 1), { size: 4.8, tone: "dim" });
-    k.t(x, H - 7.2, String(i + 1), { size: 4.8, tone: "dim" });
-  }
-  for (let i = 0; i < S.zy; i++) {
-    const y = F + (i + 0.5) * zy + 1.8;
-    k.t(9, y, "ABCDEF"[i], { size: 4.8, tone: "dim" });
-    k.t(W - 9, y, "ABCDEF"[i], { size: 4.8, tone: "dim" });
-  }
-
-  const PL = S.pl;
-  const TB = S.tb;
-
-  /* parts list, read upward from the title block, header at the bottom */
-  k.ops.push({ k: "box", x: PL.x, y: PL.y, w: PL.w, h: PL.h + TB.h });
-  let pl = rrect(PL.x, PL.y, PL.w, PL.h);
-  for (let r = 1; r <= PL_ROWS; r++) pl += `M${PL.x} ${PL.y + r * PL.row}H${PL.x + PL.w}`;
-  pl += `M${PL.x + 20} ${PL.y}V${PL.y + PL.h}`;
-  k.p(pl, "frame2");
-  k.t(PL.x + 10, PL.y + PL.h - 3.2, "ITEM", { size: 4.2, tone: "dim" });
-  k.t(PL.x + 24, PL.y + PL.h - 3.2, "DESCRIPTION", { size: 4.2, tone: "dim", anchor: "start" });
-  for (let r = 0; r < PL_ROWS; r++) {
-    const y = PL.y + PL.h - PL.row * (r + 1) - 3;
-    k.t(PL.x + 10, y, String(r + 1), { size: 5.6, tone: "ash" });
-    k.t(PL.x + 24, y, "", { size: 5.6, tone: "bone", anchor: "start", slot: `pl${r}` });
-  }
-
-  /* title block */
-  const { x, y, w, h } = TB;
-  const r1 = y + 26;
-  let tb = rrect(x, y, w, h);
-  tb += `M${x} ${r1}H${x + w}M${x + 82} ${y}V${r1}`;
-  const cells = [x + 46, x + 86, x + 132, x + 168, x + 210];
-  cells.forEach((cx) => (tb += `M${cx} ${r1}V${y + h}`));
-  k.p(tb, "frame");
-  k.t(x + 5, y + 11.5, "PARTH BETAI", { size: 7, anchor: "start", tone: "bone", bold: true });
-  k.t(x + 5, y + 20, "SOFTWARE / ROBOTICS", { size: 4.2, anchor: "start", tone: "dim" });
-  k.t(x + 87, y + 7, "TITLE", { size: 4.2, anchor: "start", tone: "dim" });
-  k.t(x + 87, y + 19.5, "", { size: 7.6, anchor: "start", tone: "bone", slot: "title" });
-  const fields: [number, string, string, string?][] = [
-    [x, "DRAWN", DRAWN_BY],
-    [cells[0], "DATE", DRAWN_ON],
-    [cells[1], "DWG NO.", "", "dwg"],
-    [cells[2], "SCALE", "1:1"],
-    [cells[3], "SHEET", "", "sheet"],
-    [cells[4], "REV", "A"],
-  ];
-  fields.forEach(([fx, label, value, slot]) => {
-    k.t(fx + 3.5, r1 + 7, label, { size: 4.2, anchor: "start", tone: "dim" });
-    /* The revision letter sits centred in its cell: the pen parks on it. */
-    if (label === "REV") k.t(S.park[0], r1 + 19.5, value, { size: 6.2, tone: "bone" });
-    else k.t(fx + 3.5, r1 + 19.5, value, { size: slot === "dwg" ? 8.6 : 6.2, anchor: "start", tone: "bone", slot });
-  });
-
-  /* notes, and the third-angle projection symbol */
-  const [nx, ny] = S.notes;
-  k.t(nx, ny, "NOTES", { size: 4.8, tone: "dim", anchor: "start" });
-  ["1. DIMENSIONS IN MM", "2. DO NOT SCALE DRAWING", "3. BREAK SHARP EDGES"].forEach((s, i) =>
-    k.t(nx, ny + 9 + i * 7.5, s, { size: 4.6, tone: "ash", anchor: "start" })
-  );
-  const [px0, py0] = S.proj;
-  k.p(poly([[px0 - 9, py0 - 4], [px0 + 9, py0 - 7], [px0 + 9, py0 + 7], [px0 - 9, py0 + 4]], true), "frame");
-  k.p(circle([px0 + 28, py0], 7), "frame");
-  k.p(circle([px0 + 28, py0], 4), "frame");
-  k.p(`M${px0 - 13} ${py0}H${px0 + 13}M${px0 + 18} ${py0}H${px0 + 38}M${px0 + 28} ${py0 - 10}V${py0 + 10}`, "frame2");
-
-  /* revision table, top right */
-  if (S.rev) {
-    const [rx, ry] = S.rev;
-    const cols = [rx + 22, rx + 150, rx + 200];
-    let rt = rrect(rx, ry, TB_W, 24);
-    rt += `M${rx} ${ry + 10}H${rx + TB_W}`;
-    cols.forEach((c) => (rt += `M${c} ${ry}V${ry + 24}`));
-    k.p(rt, "frame2");
-    [["REV", rx], ["DESCRIPTION", cols[0]], ["DATE", cols[1]], ["APPD", cols[2]]].forEach(([s, cx]) =>
-      k.t((cx as number) + 3.5, ry + 7, s as string, { size: 4.2, anchor: "start", tone: "dim" })
-    );
-    [["A", rx], ["FIRST ISSUE", cols[0]], [DRAWN_ON, cols[1]], ["PB", cols[2]]].forEach(([s, cx]) =>
-      k.t((cx as number) + 3.5, ry + 19.5, s as string, { size: 5.4, anchor: "start", tone: "ash" })
-    );
-  }
-
-  /* scale bar: alternate tens filled, in millimetres */
-  if (S.bar) {
-    const [bx, by] = S.bar;
-    const u = 16;
-    let bar = rrect(bx, by, u * 5, 4);
-    for (let i = 1; i < 5; i++) bar += `M${bx + i * u} ${by}V${by + 4}`;
-    k.p(bar, "frame");
-    for (let i = 0; i < 5; i += 2) k.hatch(rrect(bx + i * u, by, u, 4), [bx + i * u, by, bx + (i + 1) * u, by + 4], 45, 1.4);
-    for (let i = 0; i <= 5; i++) k.t(bx + i * u, by + 11, String(i * 10), { size: 4.2, tone: "dim" });
-    k.t(bx + 5 * u + 6, by + 4.2, "MM", { size: 4.2, tone: "dim", anchor: "start" });
-  }
-
-  /* live readout of the pen */
-  k.t(S.readout[0], S.readout[1], "X 000.0  Y 000.0", { size: 4.8, tone: "dim", anchor: "start", slot: "xy" });
-
-  return k.ops;
-}
-
-/* Fits a parts-list line to its cell, in whole glyphs. */
-export const PL_CHARS = Math.floor((TB_W - 28) / (5.6 * MONO_ADVANCE));
-export const TITLE_CHARS = Math.floor((TB_W - 92) / (7.6 * MONO_ADVANCE));
-export const fit = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);

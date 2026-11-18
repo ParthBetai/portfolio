@@ -5,6 +5,7 @@ import { SITE_URL, xHandle } from "@/lib/site";
 import Cursor from "@/components/Cursor";
 import Grain from "@/components/Grain";
 import RouteProgress from "@/components/RouteProgress";
+import AmbassadorDefs from "@/components/AmbassadorDefs";
 import { motionBootScript } from "@/lib/motionBoot";
 import "./globals.css";
 
@@ -13,8 +14,9 @@ import "./globals.css";
    fetch failed intermittently, a build that can break on someone else's
    network is not a build you can deploy on. */
 
-/* Archivo's width axis carries the display type (wdth 125, the hero at
-   104), so this is the variable file with both weight and width. */
+/* Archivo's width axis carries the display type (condensed: 92% for
+   headings, 96% for the hero name), so this is the variable file with
+   both weight and width. */
 const archivo = localFont({
   src: "./fonts/archivo-latin-standard-normal.woff2",
   weight: "100 900",
@@ -24,12 +26,12 @@ const archivo = localFont({
   declarations: [{ prop: "font-stretch", value: "62% 125%" }],
 });
 
-const instrument = localFont({
-  src: "./fonts/instrument-serif-latin-400-italic.woff2",
-  weight: "400",
-  style: "italic",
+/* Kalam, by the Indian Type Foundry: the handwriting of the margin notes.
+   Latin only, regular weight only (the notes never use bold). */
+const kalam = localFont({
+  src: [{ path: "./fonts/kalam-latin-400-normal.woff2", weight: "400", style: "normal" }],
   display: "swap",
-  variable: "--f-instrument",
+  variable: "--f-kalam",
 });
 
 const jetbrains = localFont({
@@ -89,7 +91,8 @@ const person = {
 const personJson = JSON.stringify(person).replace(/</g, "\\u003c");
 
 export const viewport: Viewport = {
-  themeColor: "#050505",
+  /* The cream of the status strip, so a phone's browser bar runs on into it. */
+  themeColor: "#f3eee3",
   colorScheme: "dark",
 };
 
@@ -97,7 +100,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html
       lang="en"
-      className={`${archivo.variable} ${instrument.variable} ${jetbrains.variable}`}
+      className={`${archivo.variable} ${jetbrains.variable} ${kalam.variable}`}
       /* data-motion is written by the boot script before hydration */
       suppressHydrationWarning
     >
@@ -110,10 +113,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[90] focus:rounded-full focus:bg-acid focus:px-5 focus:py-3 focus:text-sm focus:text-void"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[90] focus:rounded-full focus:border-2 focus:border-acid focus:bg-night focus:px-5 focus:py-3 focus:text-sm focus:text-nline"
         >
           Skip to content
         </a>
+        {/* The taxi, drawn once as a symbol for every page to use (see
+            AmbassadorDefs.tsx). */}
+        <AmbassadorDefs />
         {/* Site-wide, so the policy pages get the same cursor and texture. */}
         <Cursor />
         <Grain />

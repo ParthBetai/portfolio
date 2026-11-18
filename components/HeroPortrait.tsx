@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import * as THREE from "three";
-import { reduced } from "@/lib/motion";
+import { gsap } from "@/lib/motion";
 import { PORTRAIT_SRC } from "./Portrait";
+import type { ExposureState } from "./Exposure";
 
 /* ============================================================
    THE HERO PORTRAIT, AS A LIT RELIEF
@@ -19,8 +20,24 @@ import { PORTRAIT_SRC } from "./Portrait";
    flat pixel was, and the lighting is a difference against the rest pose,
    so at rest it adds nothing. Only when the relief turns toward the
    pointer do the parallax and the light change: surfaces turning into the
-   warm light on the right (the photo's own orange rim) pick it up, the
-   ones turning away from the cool left light lose some.
+   warm light on the right (the photo's own orange rim, pushed toward the
+   yellow disc printed behind him) pick it up, the ones turning
+   away from the cool left light lose some.
+
+   He stands behind the Strand Road railing on the cream sheet, so the
+   waist fade is short (the railing hides the cut), and the only shadow
+   is a hard, printed one: his silhouette in faint navy ink, a few pixels
+   down and to the right. Nothing soft or dark rings him (a blurred
+   occlusion read as a grey halo).
+
+   THE EXPOSURE. When the About sheet slides up, a copy line runs up the
+   hero ahead of it and everything below the line is the blueprint print
+   (Exposure.tsx). This canvas sits between the two prints' layers, so it
+   draws the split itself: the hero passes the line's height in through
+   `exposure`, and below it (gl_FragCoord, in both shaders) the photo is
+   printed as a blue duotone and the shadow in the deep navy of the blue
+   sheet. No second canvas, no filter. Once About covers the hero the loop
+   stops.
 
    Both images were made once from the original photo: the cutout keyed
    off its black backdrop with soft edges un-premultiplied against the
@@ -62,8 +79,24 @@ const SWAY_YAW = 1.4;
 const SWAY_PITCH = 0.6;
 
 /* The waist fade: alpha ramps in over this much of the plane's height. */
-const FADE_FROM = 0.02;
-const FADE_TO = 0.3;
+const FADE_FROM = 0.0;
+const FADE_TO = 0.05;
+
+/* The blueprint print below the copy line: the photo's grey level mapped
+   through three stops (shadow, mid, light), in sRGB, the same curve the
+   drawings' cyanotype uses. */
+const DUO = [
+  [0.05, 0.12, 0.33],
+  [0.3, 0.42, 0.7],
+  [0.88, 0.92, 1.0],
+] as const;
+
+/* The printed shadow: its offset down and to the right, in units of the
+   plane's height (about 6px on a desktop), and the ink's strength: faint,
+   and sampled at full resolution, so it reads as a crisp offset print
+   rather than a soft fringe along the hair and shoulders. */
+const PRINT_OFFSET = 0.0095;
+const PRINT_ALPHA = 0.1;
 
 const DEG = Math.PI / 180;
 
@@ -110,6 +143,10 @@ uniform vec3 uCoolDir0;
 uniform vec3 uWarm;
 uniform vec3 uCool;
 uniform vec2 uFade;
+uniform float uEdge;
+uniform vec3 uDuo0;
+uniform vec3 uDuo1;
+uniform vec3 uDuo2;
 varying vec2 vUv;
 varying vec3 vN;
 varying vec3 vN0;
@@ -137,20 +174,33 @@ void main() {
   /* A trace of light on the black shirt, which multiplying cannot reach. */
   c += (uWarm * max(w, 0.0) + uCool * max(k, 0.0)) * 0.012;
 
-  gl_FragColor = vec4(toSrgb(c) * a, a);
+  vec3 o = toSrgb(c);
+  /* Below the copy line: the blueprint print, a duotone of the lit photo. */
+  if (gl_FragCoord.y < uEdge) {
+    float g = clamp(dot(o, vec3(0.2126, 0.7152, 0.0722)), 0.0, 1.0);
+    o = g < 0.5 ? mix(uDuo0, uDuo1, g * 2.0) : mix(uDuo1, uDuo2, g * 2.0 - 1.0);
+  }
+  gl_FragColor = vec4(o * a, a);
 }`;
 
-/* A soft occlusion on the backdrop behind him: the cutout's alpha from a
-   small mip, so it is already blurred. */
+/* The printed shadow on the field behind him: the cutout's own alpha, so
+   its edge is as crisp as his, in faint ink (premultiplied), fading at
+   the waist with him. */
 const SHADE_FRAG = /* glsl */ `
 uniform sampler2D uMap;
 uniform float uStrength;
+uniform vec3 uInk;
+uniform vec3 uInkBp;
 uniform vec2 uFade;
+uniform float uEdge;
 varying vec2 vUv;
 void main() {
-  float a = textureLod(uMap, vUv, 5.0).a;
-  a *= smoothstep(uFade.x, uFade.y + 0.2, vUv.y) * uStrength;
-  gl_FragColor = vec4(0.0, 0.0, 0.0, a);
+  float a = textureLod(uMap, vUv, 0.0).a;
+  a *= smoothstep(uFade.x, uFade.y, vUv.y) * uStrength;
+  bool bp = gl_FragCoord.y < uEdge;
+  /* On the blue a faint navy would vanish, so the copy prints it deeper. */
+  if (bp) a *= 2.2;
+  gl_FragColor = vec4((bp ? uInkBp : uInk) * a, a);
 }`;
 
 const SHADE_VERT = /* glsl */ `
@@ -167,11 +217,15 @@ export default function HeroPortrait({
   depthSrc = PORTRAIT_DEPTH,
   label,
   onReady,
+  exposure,
 }: {
   src?: string;
   depthSrc?: string;
   label?: string;
   onReady?: () => void;
+  /** The Exposure's state (Exposure.tsx): the copy line's height in this
+      box and whether About has covered the hero. */
+  exposure?: ExposureState;
 }) {
   const host = useRef<HTMLDivElement>(null);
   /* Client-only (the hero loads it with ssr: false), so the flag can be read
@@ -245,27 +299,55 @@ export default function HeroPortrait({
     camera.position.set(0, VIEW_H / 2, CAM_Z);
 
     /* ---- textures ------------------------------------------------ */
-    const loader = new THREE.TextureLoader();
     const textures: THREE.Texture[] = [];
     let map: THREE.Texture | null = null;
 
-    /* A texture that arrives after unmount is disposed on arrival. */
+    /* Decoded off the main thread as ImageBitmaps, so the first frame only
+       uploads them (a 1080px WebP decode there froze the loader on phones).
+       WebGL ignores its unpack flags for bitmaps, so the flip is done at
+       decode and the premultiply on the GPU (premultiply() below). Safari
+       before 17 and Firefox before 98 ignore the decode options (three's
+       GLTFLoader gates the same way), so they keep the <img> loader and its
+       unpack flags. */
+    const ua = navigator.userAgent;
+    const safari = /^((?!chrome|android).)*safari/i.test(ua) ? Number(ua.match(/Version\/(\d+)/)?.[1] ?? 0) : 99;
+    const firefox = Number(ua.match(/Firefox\/(\d+)\./)?.[1] ?? 99);
+    const bitmaps = typeof createImageBitmap === "function" && safari >= 17 && firefox >= 98;
+    const free = (t: THREE.Texture) => {
+      t.dispose();
+      (t.image as Partial<ImageBitmap>).close?.(); // a bitmap holds its pixels until closed
+    };
+
+    /* A texture that arrives after unmount is freed on arrival. One loader
+       per image: an ImageBitmapLoader reads its options when the fetch lands. */
     const load = (url: string, setup: (t: THREE.Texture) => void) =>
       new Promise<THREE.Texture>((resolve, reject) => {
-        loader.load(
-          url,
-          (t) => {
-            if (!alive) {
-              t.dispose();
-              return reject(new Error("unmounted"));
-            }
-            setup(t);
-            textures.push(t);
-            resolve(t);
-          },
-          undefined,
-          reject
-        );
+        const arrive = (t: THREE.Texture) => {
+          if (!alive) {
+            free(t);
+            return reject(new Error("unmounted"));
+          }
+          setup(t);
+          textures.push(t);
+          resolve(t);
+        };
+        if (!bitmaps) {
+          new THREE.TextureLoader().load(url, arrive, undefined, reject);
+          return;
+        }
+        new THREE.ImageBitmapLoader()
+          .setOptions({ imageOrientation: "flipY", colorSpaceConversion: "none", premultiplyAlpha: "none" })
+          .load(
+            url,
+            (bmp) => {
+              const t = new THREE.Texture(bmp);
+              t.flipY = false;
+              t.needsUpdate = true;
+              arrive(t);
+            },
+            undefined,
+            reject
+          );
       });
 
     /* ---- scene ------------------------------------------------------ */
@@ -286,10 +368,17 @@ export default function HeroPortrait({
       uCoolDir: { value: cool0.clone() },
       uWarmDir0: { value: warm0 },
       uCoolDir0: { value: cool0 },
-      /* Linear-light gains: the orange and the blue of the photo's rims. */
-      uWarm: { value: new THREE.Vector3(1.0, 0.62, 0.34).multiplyScalar(1.15) },
+      /* Linear-light gains: the photo's orange rim warmed toward the taxi
+         yellow around him, and the blue of its cool rim. */
+      uWarm: { value: new THREE.Vector3(1.0, 0.76, 0.24).multiplyScalar(1.15) },
       uCool: { value: new THREE.Vector3(0.36, 0.56, 1.0).multiplyScalar(1.0) },
       uFade: { value: new THREE.Vector2(FADE_FROM, FADE_TO) },
+      /* Below this height in the drawing buffer (from its bottom, as
+         gl_FragCoord counts) the blueprint print shows. -1: none of it. */
+      uEdge: { value: -1 },
+      uDuo0: { value: new THREE.Vector3(...DUO[0]) },
+      uDuo1: { value: new THREE.Vector3(...DUO[1]) },
+      uDuo2: { value: new THREE.Vector3(...DUO[2]) },
     };
 
     const geo = new THREE.PlaneGeometry(ASPECT, 1, 160, 216);
@@ -308,16 +397,23 @@ export default function HeroPortrait({
     mesh.renderOrder = 1;
     pivot.add(mesh);
 
-    /* The occlusion sits on a plane behind him that does not turn, scaled
-       so it lines up at rest; the parallax against it is part of the 3D. */
+    /* The shadow sits on a plane behind him that does not turn, scaled so it
+       lines up at rest; the parallax against it is part of the 3D: as he
+       turns, he lifts off the field. */
     const SHADE_Z = -0.22;
     const shadeScale = (CAM_Z - SHADE_Z) / CAM_Z;
     const shadeGeo = new THREE.PlaneGeometry(ASPECT, 1, 1, 1);
     shadeGeo.translate(0, 0.5, 0);
     const shadeUniforms = {
       uMap: { value: null as THREE.Texture | null },
-      uStrength: { value: 0.32 },
+      uStrength: { value: PRINT_ALPHA },
+      /* The ink-deep token, #131a4a, as raw sRGB like the photo; under the
+         copy line the night-deep #0e1332. */
+      uInk: { value: new THREE.Vector3(19 / 255, 26 / 255, 74 / 255) },
+      uInkBp: { value: new THREE.Vector3(14 / 255, 19 / 255, 50 / 255) },
       uFade: { value: new THREE.Vector2(FADE_FROM, FADE_TO) },
+      /* Shares the relief's edge uniform, so the two always split as one. */
+      uEdge: uniforms.uEdge,
     };
     const shadeMat = new THREE.ShaderMaterial({
       uniforms: shadeUniforms,
@@ -330,21 +426,32 @@ export default function HeroPortrait({
     });
     const shade = new THREE.Mesh(shadeGeo, shadeMat);
     /* Scaled about the camera's eye line so that at rest it projects onto the
-       photo (a touch larger, and a touch lower, as light from above would). */
-    const s = shadeScale * 1.04;
+       photo exactly, then offset (scaled the same way) down and right. */
+    const s = shadeScale;
     shade.scale.setScalar(s);
-    shade.position.set(0, (VIEW_H / 2) * (1 - s) - 0.012, SHADE_Z);
+    shade.position.set(PRINT_OFFSET * s, (VIEW_H / 2) * (1 - s) - PRINT_OFFSET * s, SHADE_Z);
     shade.renderOrder = 0;
     shade.visible = false;
     scene.add(shade);
 
     /* ---- sizing ----------------------------------------------------- */
+    /* The copy line arrives in this box's CSS pixels from its top; the
+       shaders want drawing-buffer pixels from the bottom. */
+    let boxH = 1;
+    let bufH = 1;
+    const applyEdge = () => {
+      const y = exposure ? exposure.edge : Infinity;
+      uniforms.uEdge.value = Number.isFinite(y) ? (boxH - y) * (bufH / boxH) : -1;
+    };
     const resize = () => {
       const w = el.clientWidth || 1;
       const h = el.clientHeight || 1;
       renderer.setSize(w, h, false);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
+      boxH = h;
+      bufH = canvas.height || h;
+      applyEdge();
     };
     resize();
     const ro = new ResizeObserver(() => {
@@ -371,8 +478,6 @@ export default function HeroPortrait({
     document.documentElement.addEventListener("pointerleave", onLeave);
 
     /* ---- loop ------------------------------------------------------- */
-    const still = reduced();
-    let raf = 0;
     let running = false;
     let visible = true;
     let prev = performance.now();
@@ -413,20 +518,26 @@ export default function HeroPortrait({
       renderer.render(scene, camera);
     };
 
-    const tick = (now: number) => {
-      if (!running) return;
-      raf = requestAnimationFrame(tick);
-      frame(now);
+    /* The loop rides GSAP's ticker rather than its own requestAnimationFrame,
+       so it draws after the Exposure's scrub has moved the copy line in the
+       same frame (the CSS masks and the shader split stay in step). If a
+       frame was already drawn when the line moves anyway (a listener added
+       ahead of this one), onChange draws it again below. */
+    let drawnFrame = -1;
+    const tick = () => {
+      drawnFrame = gsap.ticker.frame;
+      frame(performance.now());
     };
     const start = () => {
-      if (running || still || !map || !visible || document.hidden) return;
+      if (running || !map || !visible || document.hidden || exposure?.covered) return;
       running = true;
       prev = performance.now();
-      raf = requestAnimationFrame(tick);
+      gsap.ticker.add(tick);
     };
     const stop = () => {
+      if (!running) return;
       running = false;
-      cancelAnimationFrame(raf);
+      gsap.ticker.remove(tick);
     };
 
     const io = new IntersectionObserver(
@@ -440,6 +551,57 @@ export default function HeroPortrait({
     io.observe(el);
     const onVis = () => (document.hidden ? stop() : start());
     document.addEventListener("visibilitychange", onVis);
+
+    /* The Exposure moves the line (and covers the hero) by scrolling, so
+       each change is drawn at once when the loop is not running anyway. */
+    if (exposure) {
+      exposure.onChange = () => {
+        applyEdge();
+        if (exposure.covered) stop();
+        else start();
+        if (map && (!running || drawnFrame === gsap.ticker.frame)) renderer.render(scene, camera);
+      };
+    }
+
+    /* Chrome's bitmap premultiply truncates where the <img> unpack rounded
+       (a step darker on the soft rim), so the photo is decoded straight and
+       premultiplied here, texel for texel, rounding as before: the texture
+       stays byte for byte the same, mipmaps and all. */
+    let premultiplied: THREE.WebGLRenderTarget | null = null;
+    const premultiply = (t: THREE.Texture) => {
+      const { width, height } = t.image as ImageBitmap;
+      const rt = (premultiplied = new THREE.WebGLRenderTarget(width, height, {
+        depthBuffer: false,
+        colorSpace: THREE.NoColorSpace,
+        generateMipmaps: t.generateMipmaps,
+        minFilter: t.minFilter,
+        magFilter: t.magFilter,
+        anisotropy: t.anisotropy,
+      }));
+      t.generateMipmaps = false; // the source is only read texel for texel
+      t.minFilter = THREE.NearestFilter; // so it is complete without mipmaps
+      const quad = new THREE.Mesh(
+        new THREE.PlaneGeometry(2, 2),
+        new THREE.ShaderMaterial({
+          uniforms: { uSrc: { value: t } },
+          vertexShader: "void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }",
+          fragmentShader:
+            // integer maths: float c * a lands a step low on exact halves
+            "uniform sampler2D uSrc; void main() { uvec4 c = uvec4(texelFetch(uSrc, ivec2(gl_FragCoord.xy), 0) * 255.0 + 0.5); gl_FragColor = vec4(vec3((c.rgb * c.a * 2u + 255u) / 510u), float(c.a)) / 255.0; }",
+          blending: THREE.NoBlending,
+          depthTest: false,
+          depthWrite: false,
+        })
+      );
+      quad.frustumCulled = false;
+      renderer.setRenderTarget(rt);
+      renderer.render(quad, camera);
+      renderer.setRenderTarget(null);
+      quad.geometry.dispose();
+      quad.material.dispose();
+      free(t);
+      return rt.texture;
+    };
 
     Promise.all([
       load(src, (t) => {
@@ -457,9 +619,9 @@ export default function HeroPortrait({
         t.magFilter = THREE.LinearFilter;
       }),
     ]).then(
-      ([m, d]) => {
+      ([photo, d]) => {
         if (!alive) return;
-        map = m;
+        const m = (map = bitmaps ? premultiply(photo) : photo);
         const img = d.image as { width: number; height: number };
         uniforms.uMap.value = m;
         uniforms.uDepth.value = d;
@@ -478,6 +640,7 @@ export default function HeroPortrait({
     return () => {
       alive = false;
       stop();
+      if (exposure) exposure.onChange = null;
       io.disconnect();
       ro.disconnect();
       document.removeEventListener("visibilitychange", onVis);
@@ -488,14 +651,15 @@ export default function HeroPortrait({
       mat.dispose();
       shadeGeo.dispose();
       shadeMat.dispose();
-      textures.forEach((t) => t.dispose());
+      textures.forEach(free);
+      premultiplied?.dispose();
       map = null;
       renderer.dispose();
       if (canvas.parentNode === el) el.removeChild(canvas);
     };
-  }, [mode, src, depthSrc, signal]);
+  }, [mode, src, depthSrc, signal, exposure]);
 
-  if (mode === "flat") return <FlatPortrait src={src} label={label} onReady={signal} />;
+  if (mode === "flat") return <FlatPortrait src={src} label={label} onReady={signal} exposure={exposure} />;
 
   return (
     <div
@@ -510,24 +674,85 @@ export default function HeroPortrait({
 
 /* ============================================================
    FALLBACK: the cutout itself, with a CSS tilt toward the pointer and the
-   same idle float and waist fade, framed exactly like the relief so the
-   layout does not move when it is used.
-   ============================================================ */
-const FADE_MASK =
-  "linear-gradient(to top, transparent 2%, rgba(0,0,0,0.16) 9%, rgba(0,0,0,0.5) 16%, rgba(0,0,0,0.84) 23%, #000 30%)";
+   same idle float, waist fade and printed shadow, framed exactly like the
+   relief so the layout does not move when it is used.
 
-function FlatPortrait({ src, label, onReady }: { src: string; label?: string; onReady: () => void }) {
+   Its blueprint print is a second copy of the cutout inside a translate
+   mask (the same mask the Exposure uses for its layers): a static holder
+   in the blue, clipped to his silhouette, with the photo blended onto it
+   by luminosity, so it reads as a blue duotone without a filter. The tilt
+   holds still while the copy line crosses him, so the two prints stay in
+   register with the line.
+   ============================================================ */
+const FADE_MASK = `linear-gradient(to top, transparent ${FADE_FROM * 100}%, #000 ${FADE_TO * 100}%)`;
+
+/* The relief's printed shadow as a hard drop shadow. Its offset is in
+   container units of the canvas box, so it scales like the relief's. */
+const PRINT_CQH = ((PRINT_OFFSET / VIEW_H) * 100).toFixed(3);
+const PRINT_SHADOW = `drop-shadow(${PRINT_CQH}cqh ${PRINT_CQH}cqh 0 rgb(19 26 74 / ${PRINT_ALPHA}))`;
+
+function FlatPortrait({
+  src,
+  label,
+  onReady,
+  exposure,
+}: {
+  src: string;
+  label?: string;
+  onReady: () => void;
+  exposure?: ExposureState;
+}) {
   const tilt = useRef<HTMLDivElement>(null);
   const img = useRef<HTMLImageElement>(null);
+  const maskOut = useRef<HTMLDivElement>(null);
+  const maskIn = useRef<HTMLDivElement>(null);
 
   /* A cached image can finish before the handler is attached. */
   useEffect(() => {
     if (img.current?.complete) onReady();
   }, [onReady]);
 
+  /* One effect owns both the copy line's mask and the tilt loop, because
+     the Exposure has a single onChange slot and both answer to it. */
   useEffect(() => {
-    const el = tilt.current;
-    if (!el || reduced()) return;
+    const box = tilt.current;
+    if (!box) return;
+    const out = maskOut.current;
+    const inn = maskIn.current;
+    const host = box.parentElement;
+
+    /* ---- the copy line ---------------------------------------------- */
+    /* The line is given in the canvas box; the mask lives in the image's
+       own box, which stands on the canvas box's bottom edge. Both heights
+       are cached here and refreshed by a ResizeObserver, so the scrub's
+       per-frame call only writes the two transforms and never forces a
+       layout right after the Exposure's own writes. */
+    let off = 0;
+    let boxH = 0;
+    const measure = () => {
+      boxH = box.clientHeight;
+      off = host ? host.clientHeight - boxH : 0;
+    };
+    const applyMask = () => {
+      if (!exposure || !out || !inn) return;
+      const y = Number.isFinite(exposure.edge) ? Math.max(0, exposure.edge - off) : boxH;
+      out.style.transform = `translate3d(0, ${y}px, 0)`;
+      inn.style.transform = `translate3d(0, ${-y}px, 0)`;
+    };
+    measure();
+    applyMask();
+    const ro = new ResizeObserver(() => {
+      measure();
+      applyMask();
+    });
+    ro.observe(box);
+    if (host) ro.observe(host);
+
+    /* ---- the tilt --------------------------------------------------- */
+    /* It holds still while the copy line is on him, so the two prints stay
+       in register, and stops outright once About has covered the hero.
+       The Exposure's onChange wakes it again. */
+    const held = () => !!exposure && (exposure.covered || (exposure.p > 0 && exposure.p < 1));
 
     let px = 0;
     let py = 0;
@@ -538,16 +763,24 @@ function FlatPortrait({ src, label, onReady }: { src: string; label?: string; on
       py = Math.max(-1, Math.min(1, (e.clientY / window.innerHeight) * 2 - 1));
       lastMove = performance.now();
     };
-    window.addEventListener("pointermove", onMove, { passive: true });
 
     let raf = 0;
+    let running = false;
     let prev = performance.now();
     const t0 = prev;
     let yaw = 0;
     let pitch = 0;
     const tick = (now: number) => {
+      if (!running) return;
+      if (held()) {
+        running = false;
+        return;
+      }
       raf = requestAnimationFrame(tick);
-      if (document.hidden) return;
+      if (document.hidden) {
+        prev = now;
+        return;
+      }
       const dt = Math.min((now - prev) / 1000, 0.05);
       prev = now;
       const t = (now - t0) / 1000;
@@ -560,22 +793,43 @@ function FlatPortrait({ src, label, onReady }: { src: string; label?: string; on
       yaw += (ty - yaw) * ease;
       pitch += (tp - pitch) * ease;
       const lift = Math.sin(t * 1.15) * 0.3;
-      el.style.transform = `translateY(${lift.toFixed(2)}%) rotateX(${(-pitch).toFixed(3)}deg) rotateY(${yaw.toFixed(3)}deg)`;
+      box.style.transform = `translateY(${lift.toFixed(2)}%) rotateX(${(-pitch).toFixed(3)}deg) rotateY(${yaw.toFixed(3)}deg)`;
     };
-    raf = requestAnimationFrame(tick);
+    const start = () => {
+      if (running || held()) return;
+      running = true;
+      prev = performance.now();
+      raf = requestAnimationFrame(tick);
+    };
+
+    window.addEventListener("pointermove", onMove, { passive: true });
+    if (exposure) {
+      exposure.onChange = () => {
+        applyMask();
+        start();
+      };
+    }
+    start();
 
     return () => {
+      running = false;
       cancelAnimationFrame(raf);
+      ro.disconnect();
+      if (exposure) exposure.onChange = null;
       window.removeEventListener("pointermove", onMove);
-      el.style.transform = "";
+      box.style.transform = "";
     };
-  }, []);
+  }, [exposure]);
 
+  const silhouette = `url(${src})`;
   return (
-    <div className="flex h-full w-full items-end justify-center" style={{ perspective: "1600px" }}>
+    <div
+      className="flex h-full w-full items-end justify-center"
+      style={{ perspective: "1600px", containerType: "size" }}
+    >
       <div
         ref={tilt}
-        className="will-change-transform"
+        className="relative will-change-transform"
         style={{ height: `${PLANE_SHARE * 100}%`, transformOrigin: "50% 45%" }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -587,8 +841,38 @@ function FlatPortrait({ src, label, onReady }: { src: string; label?: string; on
           onLoad={onReady}
           onError={onReady}
           className="block h-full w-auto select-none"
-          style={{ maskImage: FADE_MASK, WebkitMaskImage: FADE_MASK }}
+          style={{ maskImage: FADE_MASK, WebkitMaskImage: FADE_MASK, filter: PRINT_SHADOW }}
         />
+        {exposure && (
+          <div
+            ref={maskOut}
+            aria-hidden="true"
+            className="absolute inset-0 overflow-hidden"
+            style={{ transform: "translate3d(0, 100%, 0)" }}
+          >
+            <div ref={maskIn} className="absolute inset-0" style={{ transform: "translate3d(0, -100%, 0)" }}>
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: "var(--color-blue)",
+                  maskImage: silhouette,
+                  WebkitMaskImage: silhouette,
+                  maskSize: "100% 100%",
+                  WebkitMaskSize: "100% 100%",
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={src}
+                  alt=""
+                  draggable={false}
+                  className="block h-full w-auto select-none"
+                  style={{ mixBlendMode: "luminosity", opacity: 0.85 }}
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

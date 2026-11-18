@@ -32,7 +32,10 @@ export default function AccessibilityPage() {
           scroll the page, even while smooth scrolling is on.
         </LI>
         <LI>
-          <Strong>Visible focus.</Strong> Whatever has keyboard focus gets a bright copper outline.
+          <Strong>Visible focus.</Strong> Whatever has keyboard focus gets an outline in a colour
+          picked for the sheet it sits on: navy on the cream and paper sheets, pale blue on the blue
+          ones and taxi yellow on the night ones. The sheets slide over one another as you scroll, and
+          a focused link that ends up under one is brought back into view.
         </LI>
         <LI>
           <Strong>Skip link.</Strong> The first press of Tab shows a &ldquo;Skip to content&rdquo; link
@@ -49,7 +52,8 @@ export default function AccessibilityPage() {
         </LI>
         <LI>
           <Strong>The tech stack.</Strong> The scrolling rows of skills and tools also exist as a plain
-          list for screen readers, so nothing is only available as moving text.
+          list for screen readers, so nothing is only available as moving text, and a pause button
+          beside them stops every row.
         </LI>
         <LI>
           <Strong>Contact chat.</Strong> New messages are announced to screen readers as they arrive,
@@ -87,25 +91,27 @@ export default function AccessibilityPage() {
       <P>I&apos;d rather be honest about these than pretend they aren&apos;t there:</P>
       <UL>
         <LI>
-          Some small grey labels on the home page are lower in contrast than the 4.5:1 that AA asks
-          for. I&apos;m raising them as I go. These info pages already use stronger contrast.
-        </LI>
-        <LI>
           On the home page the opening animation holds the page still for a moment before you can
           scroll.
         </LI>
         <LI>
-          The tech stack rows keep moving on their own, and there is no switch to stop them. Pointing
-          at them slows them right down, and every name in them is also listed for screen readers.
+          The one-liner in the bar at the top of the page changes every four seconds. It holds while
+          you point at it and while the tab is in the background, and screen readers get every line
+          once as plain text, but there is no keyboard control to stop it.
+        </LI>
+        <LI>
+          The list of roles I&apos;m open to, on the ticket in the About section, rolls through one
+          entry at a time. It holds while you point at it and while it&apos;s off screen, and screen
+          readers get the whole list once as plain text, but there is no keyboard control to stop it.
         </LI>
         <LI>
           If the contact chat can&apos;t send your message, it offers to open your email app instead.
           Emailing me directly always works too.
         </LI>
         <LI>
-          The very large display headings are sized to the screen in an extra-wide typeface. On a narrow
-          screen or at high zoom, part of a heading can be cut off at the edge. The full words are
-          still there as normal text for screen readers.
+          The very large headings are set at fixed sizes. At high zoom, part of a heading can be cut
+          off at the edge of the screen. The full words are still there as normal text for screen
+          readers.
         </LI>
         <LI>
           Links to LinkedIn, GitHub, Instagram and X take you to sites I don&apos;t control.

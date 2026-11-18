@@ -2,18 +2,59 @@
 
 import { useEffect } from "react";
 import Lenis from "lenis";
-import { gsap, ScrollTrigger, soft } from "@/lib/motion";
+import { gsap, ScrollTrigger, jumpTo, soft } from "@/lib/motion";
+
+/* The one Lenis instance, for jumpTo, the loader lock and the preview. */
+declare global {
+  interface Window {
+    __lenis?: Lenis;
+  }
+}
 
 /* Lenis drives the scroll position; ScrollTrigger reads it.
    Driving ScrollTrigger from GSAP's ticker (rather than Lenis's own RAF)
    keeps both on one loop, so triggers never evaluate against a stale
-   scroll position, the usual cause of reveals firing a frame late. */
+   scroll position, the usual cause of reveals firing a frame late.
+
+   It also owns in-page jumps: any plain link to "#something" on this page
+   (a sheet's index tab, the hero's buttons, a board, a footer link) goes
+   through jumpTo, which lands on the anchor's natural position (honouring
+   its scroll-margin-top) and moves focus there, in both motion levels.
+   A component that handles its own click and calls preventDefault keeps
+   its own behaviour. */
 export default function SmoothScroll() {
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      const a = e.target instanceof Element ? e.target.closest("a[href]") : null;
+      if (!a || (a.getAttribute("target") ?? "_self") !== "_self") return;
+      const href = a.getAttribute("href") ?? "";
+      /* "#work" and "/#work" while on the home page both mean "here". */
+      const hash = href.startsWith("#") ? href : href.startsWith("/#") && location.pathname === "/" ? href.slice(1) : "";
+      if (hash.length < 2) return;
+      /* A malformed escape ("#%") throws: leave that link to the browser. */
+      let id = "";
+      try {
+        id = decodeURIComponent(hash.slice(1));
+      } catch {
+        return;
+      }
+      if (!document.getElementById(id)) return;
+      e.preventDefault();
+      jumpTo(id, { focus: true });
+    };
+    /* Window, bubbling: React's own handlers (on the document) have run
+       by then, so one that already took the click shows defaultPrevented. */
+    window.addEventListener("click", onClick);
+    return () => window.removeEventListener("click", onClick);
+  }, []);
+
   useEffect(() => {
     /* Inertia is the one thing "soft" motion drops: it moves the page
        under the reader. Native scrolling, ScrollTrigger still works. */
     if (soft()) {
       ScrollTrigger.refresh();
+      document.fonts?.ready.then(() => ScrollTrigger.refresh());
       return;
     }
 
@@ -31,8 +72,8 @@ export default function SmoothScroll() {
     gsap.ticker.add(tick);
     gsap.ticker.lagSmoothing(0);
 
-    /* Expose for the nav's anchor scrolling. */
-    (window as unknown as { __lenis?: Lenis }).__lenis = lenis;
+    /* Exposed for jumpTo and the nav's anchor scrolling. */
+    window.__lenis = lenis;
 
     /* Lenis owns the scroll position, so native keyboard scrolling either
        does nothing or gets snapped back on the next frame. Route the
@@ -94,7 +135,7 @@ export default function SmoothScroll() {
       window.removeEventListener("keydown", onKey);
       gsap.ticker.remove(tick);
       lenis.destroy();
-      delete (window as unknown as { __lenis?: Lenis }).__lenis;
+      delete window.__lenis;
     };
   }, []);
 

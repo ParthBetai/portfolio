@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, useRef, useState } from "react";
 import type { ComponentType, CSSProperties, MouseEvent as ReactMouseEvent, Ref, RefObject } from "react";
 import { createPortal } from "react-dom";
-import { gsap, reduced } from "@/lib/motion";
+import { gsap } from "@/lib/motion";
 import { identity, resume } from "@/lib/content";
 
 /* ============================================================
@@ -18,7 +18,7 @@ import { identity, resume } from "@/lib/content";
    Opening from the disk is the disc coming out of its case. A copy of
    the floppy, drawn from the same art, lifts off the desk in exactly the
    pose the real one was in and flies into a pool of light in the middle
-   of the room, which dims and blurs around it. Its shutter slides open
+   of the room, which dims to night around it. Its shutter slides open
    and a silver disc slides up out of it like a tray ejecting, while the
    empty case drops away. The disc turns to face you and spins up, a
    ring counts the file in, and when the page is ready the disc turns
@@ -106,8 +106,7 @@ type Rect = { x: number; y: number; width: number; height: number };
 type Origin = { kind: "disk"; frame: DiskFrame } | { kind: "card"; rect: Rect } | { kind: "none" };
 type Session = { id: number; origin: Origin; opener: HTMLElement | null };
 type Phase = "opening" | "open" | "closing";
-type Mode = "still" | "plain" | "disk" | "card";
-type LenisLike = { stop: () => void; start: () => void; isStopped?: boolean };
+type Mode = "plain" | "disk" | "card";
 
 const useIso = typeof window !== "undefined" ? useLayoutEffect : useEffect;
 
@@ -318,7 +317,7 @@ export default function ResumePreview({
     const next: Session = { id: ++seq.current, origin, opener };
     live.current = next;
     startedAt.current = performance.now();
-    state.current = reduced() ? "open" : "opening";
+    state.current = "opening";
     setPhase(state.current);
     setZoom(false);
     setImg(ready ? "ok" : "wait");
@@ -402,13 +401,13 @@ export default function ResumePreview({
         detail: pick<HTMLSpanElement>("detail"),
         ring: pick<SVGSVGElement>("ring"),
         arc: pick<SVGCircleElement>("arc"),
-        arcGlow: pick<SVGCircleElement>("arc-glow"),
         head: pick<SVGCircleElement>("head"),
         glint: pick<HTMLSpanElement>("glint"),
         readWrap: pick<HTMLDivElement>("read-wrap"),
         read: pick<HTMLDivElement>("read"),
         label: pick<HTMLSpanElement>("label"),
         count: pick<HTMLSpanElement>("count"),
+        bar: pick<HTMLSpanElement>("bar"),
         led: pick<HTMLSpanElement>("led"),
         paper: pick<HTMLDivElement>("paper"),
         paperRig: pick<HTMLDivElement>("paper-rig"),
@@ -431,9 +430,8 @@ export default function ResumePreview({
       return parts as { [K in keyof typeof parts]: NonNullable<(typeof parts)[K]> };
     })();
 
-    let mode: Mode = reduced()
-      ? "still"
-      : origin.kind === "disk" && St && drive.current
+    let mode: Mode =
+      origin.kind === "disk" && St && drive.current
         ? "disk"
         : origin.kind === "card"
           ? "card"
@@ -464,7 +462,7 @@ export default function ResumePreview({
     const classicBar = window.innerWidth > html.clientWidth;
     html.style.overflow = "hidden";
     if (classicBar) html.style.scrollbarGutter = "stable";
-    const lenis = (window as unknown as { __lenis?: LenisLike }).__lenis;
+    const lenis = window.__lenis;
     const stoppedLenis = !!lenis && !lenis.isStopped;
     if (stoppedLenis) lenis.stop();
 
@@ -500,10 +498,10 @@ export default function ResumePreview({
       fl: 1, cs: 0, sh: 1, dv: 1, ej: 1, sk: 1, dz: 1, vs: 0, sw: 1, ring: 0, rd: 0, prog: 1,
       df: 1, sf: 1, sg: 1, ut: 1, ub: 1, m: 1, tint: 0, fade: 1, dim: 1, blur: 1, ui: 1,
     };
-    const s = { ...(mode === "still" ? END : START) };
-    if (origin.kind === "disk") s.sh = mode === "still" ? 1 : Math.min(1, Math.max(0, origin.frame.shutter / (origin.frame.travel || 1)));
+    const s = { ...START };
+    if (origin.kind === "disk") s.sh = Math.min(1, Math.max(0, origin.frame.shutter / (origin.frame.travel || 1)));
 
-    let phaseNow: Phase = mode === "still" ? "open" : "opening";
+    let phaseNow: Phase = "opening";
     let dead = false;
     let tl: ReturnType<typeof gsap.timeline> | null = null;
     const timers = new Set<number>();
@@ -591,8 +589,8 @@ export default function ResumePreview({
       c.height = `${Hb}px`;
       c.perspective = `${P.toFixed(1)}px`;
       c.setProperty("--d", `${u.toFixed(4)}px`);
-      St.near.style.filter = `blur(${(5 * u).toFixed(2)}px)`;
-      St.far.style.filter = `blur(${(18 * u).toFixed(2)}px)`;
+      St.near.style.filter = `blur(${(3 * u).toFixed(2)}px)`;
+      St.far.style.filter = `blur(${(10 * u).toFixed(2)}px)`;
       const d = St.dvd.style;
       d.width = d.height = `${Dm}px`;
       d.marginLeft = d.marginTop = `${-Dm / 2}px`;
@@ -718,7 +716,8 @@ export default function ResumePreview({
         lastProg = pr;
         const dash = `${pr} 1`;
         St.arc.setAttribute("stroke-dasharray", dash);
-        St.arcGlow.setAttribute("stroke-dasharray", dash);
+        /* The readout's line fills in step with the ring. */
+        St.bar.style.transform = `scaleX(${pr})`;
         const t = (pr * 360 - 90) * TAU;
         St.head.setAttribute("cx", (60 + 58 * Math.cos(t)).toFixed(2));
         St.head.setAttribute("cy", (60 + 58 * Math.sin(t)).toFixed(2));
@@ -874,90 +873,85 @@ export default function ResumePreview({
 
     /* ---- opening ------------------------------------------------------ */
     tintEl.style.opacity = mode === "card" ? "1" : "0";
-    if (mode === "still") {
-      write();
-      clearSheet();
-    } else {
-      /* Nothing scrolls while it moves: the sheet is far from where it
-         will sit, and its overflow would otherwise flash scrollbars. */
-      scrollEl.style.overflow = "hidden";
-      if (mode !== "disk") sheetEl.style.willChange = "transform";
-      write();
-      tl = gsap.timeline({ onUpdate: write, onComplete: opened });
+    /* Nothing scrolls while it moves: the sheet is far from where it
+       will sit, and its overflow would otherwise flash scrollbars. */
+    scrollEl.style.overflow = "hidden";
+    if (mode !== "disk") sheetEl.style.willChange = "transform";
+    write();
+    tl = gsap.timeline({ onUpdate: write, onComplete: opened });
 
-      if (mode === "disk" && St) {
-        const t = tl;
-        const label = St.label;
-        /* The last tenth of the ring is the picture actually arriving: on
-           a slow connection the disc keeps spinning there until it has. */
-        const hold = () => {
-          if (ready) return;
-          t.pause();
-          whenReady(() => {
-            if (phaseNow === "opening") t.resume();
-          }, 6000);
-        };
-        t.to(s, { dim: 1, duration: 0.5, ease: "power2.out" }, 0)
-          .to(s, { blur: 1, duration: 0.6, ease: "power2.inOut" }, 0.05)
-          .to(s, { cs: 0, duration: 0.26, ease: "power2.out" }, 0)
-          .to(s, { fl: 1, duration: 0.58, ease: "power3.inOut" }, 0)
-          .to(s, { dv: 1, duration: 0.4, ease: "power1.inOut" }, 0.1)
-          .to(s, { sh: 1, duration: 0.26, ease: "power2.inOut" }, 0.38)
-          /* the tray: the disc slides up out of the case */
-          .to(s, { ej: 1, duration: 0.46, ease: "power2.inOut" }, 0.54)
-          .to(s, { vs: 0.5, duration: 0.4, ease: "power1.in" }, 0.54)
-          /* the empty case drops away as the disc comes round to face you */
-          .to(s, { sk: 1, duration: 0.5, ease: "power2.in" }, 0.9)
-          .to(s, { dz: 1, duration: 0.44, ease: "power3.out" }, 0.92)
-          .to(s, { ring: 1, rd: 1, duration: 0.3, ease: "power2.out" }, 0.96)
-          .to(s, { sw: 1, duration: 0.9, ease: "sine.inOut" }, 0.92)
-          /* reading: spin up, count the file in */
-          .to(s, { vs: 3.2, duration: 0.46, ease: "power2.in" }, 1.0)
-          .to(s, { prog: 0.9, duration: 0.42, ease: "power1.inOut" }, 1.0)
-          .call(hold, undefined, 1.42)
-          .call(
-            () => {
-              label.textContent = "Opening";
-            },
-            undefined,
-            1.43
-          )
-          .to(s, { prog: 1, duration: 0.12, ease: "power1.out" }, 1.43)
-          .to(s, { rd: 0, ring: 0, duration: 0.2, ease: "power1.in" }, 1.5)
-          /* the disc turns edge-on and the page swings out of it */
-          .to(s, { df: 1, duration: 0.17, ease: "power2.in" }, 1.52)
-          .to(s, { vs: 0, duration: 0.2, ease: "power1.out" }, 1.69)
-          .to(s, { sf: 1, duration: 0.22, ease: "power2.out" }, 1.69)
-          .to(s, { sg: 1, duration: 0.6, ease: "expo.out" }, 1.72)
-          .to(s, { ut: 1, duration: 0.34, ease: "power3.inOut" }, 1.78)
-          .to(s, { ub: 1, duration: 0.34, ease: "power3.inOut" }, 1.9)
-          .to(s, { ui: 1, duration: 0.5, ease: "expo.out" }, 2.08);
-      } else if (mode === "card") {
-        /* The card's face gives way to the page almost at once, so there
-           is never an empty card sitting in the chat, and the page then
-           leaves fast and settles slowly, like a file opened on a phone. */
-        const t = tl;
-        t.to(s, { dim: 1, duration: 0.3, ease: "power2.out" }, 0)
-          .to(s, { tint: 0, duration: 0.26, ease: "power1.out" }, 0.02)
-          .call(
-            () => {
-              if (ready) return;
-              t.pause();
-              whenReady(() => {
-                if (phaseNow === "opening") t.resume();
-              }, 900);
-            },
-            undefined,
-            0.06
-          )
-          .to(s, { blur: 1, duration: 0.45, ease: "power2.out" }, 0.04)
-          .to(s, { m: 1, duration: 0.64, ease: "power3.out" }, 0.04)
-          .to(s, { ui: 1, duration: 0.5, ease: "expo.out" }, 0.4);
-      } else {
-        tl.to(s, { dim: 1, blur: 1, duration: 0.3, ease: "power2.out" }, 0)
-          .to(s, { fade: 1, duration: 0.45, ease: "expo.out" }, 0.04)
-          .to(s, { ui: 1, duration: 0.35, ease: "power2.out" }, 0.12);
-      }
+    if (mode === "disk" && St) {
+      const t = tl;
+      const label = St.label;
+      /* The last tenth of the ring is the picture actually arriving: on
+         a slow connection the disc keeps spinning there until it has. */
+      const hold = () => {
+        if (ready) return;
+        t.pause();
+        whenReady(() => {
+          if (phaseNow === "opening") t.resume();
+        }, 6000);
+      };
+      t.to(s, { dim: 1, duration: 0.5, ease: "power2.out" }, 0)
+        .to(s, { blur: 1, duration: 0.6, ease: "power2.inOut" }, 0.05)
+        .to(s, { cs: 0, duration: 0.26, ease: "power2.out" }, 0)
+        .to(s, { fl: 1, duration: 0.58, ease: "power3.inOut" }, 0)
+        .to(s, { dv: 1, duration: 0.4, ease: "power1.inOut" }, 0.1)
+        .to(s, { sh: 1, duration: 0.26, ease: "power2.inOut" }, 0.38)
+        /* the tray: the disc slides up out of the case */
+        .to(s, { ej: 1, duration: 0.46, ease: "power2.inOut" }, 0.54)
+        .to(s, { vs: 0.5, duration: 0.4, ease: "power1.in" }, 0.54)
+        /* the empty case drops away as the disc comes round to face you */
+        .to(s, { sk: 1, duration: 0.5, ease: "power2.in" }, 0.9)
+        .to(s, { dz: 1, duration: 0.44, ease: "power3.out" }, 0.92)
+        .to(s, { ring: 1, rd: 1, duration: 0.3, ease: "power2.out" }, 0.96)
+        .to(s, { sw: 1, duration: 0.9, ease: "sine.inOut" }, 0.92)
+        /* reading: spin up, count the file in */
+        .to(s, { vs: 3.2, duration: 0.46, ease: "power2.in" }, 1.0)
+        .to(s, { prog: 0.9, duration: 0.42, ease: "power1.inOut" }, 1.0)
+        .call(hold, undefined, 1.42)
+        .call(
+          () => {
+            label.textContent = "Opening";
+          },
+          undefined,
+          1.43
+        )
+        .to(s, { prog: 1, duration: 0.12, ease: "power1.out" }, 1.43)
+        .to(s, { rd: 0, ring: 0, duration: 0.2, ease: "power1.in" }, 1.5)
+        /* the disc turns edge-on and the page swings out of it */
+        .to(s, { df: 1, duration: 0.17, ease: "power2.in" }, 1.52)
+        .to(s, { vs: 0, duration: 0.2, ease: "power1.out" }, 1.69)
+        .to(s, { sf: 1, duration: 0.22, ease: "power2.out" }, 1.69)
+        .to(s, { sg: 1, duration: 0.6, ease: "expo.out" }, 1.72)
+        .to(s, { ut: 1, duration: 0.34, ease: "power3.inOut" }, 1.78)
+        .to(s, { ub: 1, duration: 0.34, ease: "power3.inOut" }, 1.9)
+        .to(s, { ui: 1, duration: 0.5, ease: "expo.out" }, 2.08);
+    } else if (mode === "card") {
+      /* The card's face gives way to the page almost at once, so there
+         is never an empty card sitting in the chat, and the page then
+         leaves fast and settles slowly, like a file opened on a phone. */
+      const t = tl;
+      t.to(s, { dim: 1, duration: 0.3, ease: "power2.out" }, 0)
+        .to(s, { tint: 0, duration: 0.26, ease: "power1.out" }, 0.02)
+        .call(
+          () => {
+            if (ready) return;
+            t.pause();
+            whenReady(() => {
+              if (phaseNow === "opening") t.resume();
+            }, 900);
+          },
+          undefined,
+          0.06
+        )
+        .to(s, { blur: 1, duration: 0.45, ease: "power2.out" }, 0.04)
+        .to(s, { m: 1, duration: 0.64, ease: "power3.out" }, 0.04)
+        .to(s, { ui: 1, duration: 0.5, ease: "expo.out" }, 0.4);
+    } else {
+      tl.to(s, { dim: 1, blur: 1, duration: 0.3, ease: "power2.out" }, 0)
+        .to(s, { fade: 1, duration: 0.45, ease: "expo.out" }, 0.04)
+        .to(s, { ui: 1, duration: 0.35, ease: "power2.out" }, 0.12);
     }
 
     /* A click or Escape during the opening lands it at once. */
@@ -982,10 +976,6 @@ export default function ResumePreview({
       goPhase("closing");
       tl?.kill();
       zoomAnim.current?.cancel();
-      if (mode === "still") {
-        finish();
-        return;
-      }
       scrollEl.style.overflow = "hidden";
       /* From wherever the page is now: zoomed and scrolled is fine. */
       F = pageBox();
@@ -1098,7 +1088,7 @@ export default function ResumePreview({
           End: [0, 1e6],
         };
         const [left, top] = d[e.key] ?? [0, 0];
-        scrollEl.scrollBy({ left, top, behavior: mode === "still" ? "auto" : "smooth" });
+        scrollEl.scrollBy({ left, top, behavior: "smooth" });
       }
     };
     window.addEventListener("keydown", onKey, true);
@@ -1118,7 +1108,7 @@ export default function ResumePreview({
       });
       html.style.overflow = prevOverflow;
       html.style.scrollbarGutter = prevGutter;
-      if (stoppedLenis) (window as unknown as { __lenis?: LenisLike }).__lenis?.start();
+      if (stoppedLenis) window.__lenis?.start();
       /* Focus first, then the disk: it decides whether to open again
          from whether it has keyboard focus. */
       const o = session.opener;
@@ -1150,7 +1140,7 @@ export default function ResumePreview({
     const r2 = b.getBoundingClientRect();
     sc.scrollLeft += r2.left + from.u * r2.width - from.x;
     sc.scrollTop += r2.top + from.v * r2.height - from.y;
-    if (reduced() || typeof b.animate !== "function") return;
+    if (typeof b.animate !== "function") return;
     const r3 = b.getBoundingClientRect();
     zoomAnim.current?.cancel();
     zoomAnim.current = b.animate(
@@ -1175,7 +1165,7 @@ export default function ResumePreview({
   const fit = !zoom;
   const zoomLabel = zoom ? "Fit to screen" : "Zoom in";
   const ghost =
-    "inline-flex items-center justify-center gap-2 rounded-full border border-white/[0.12] text-bone/85 transition-colors duration-300 hover:border-white/35 hover:text-bone";
+    "inline-flex items-center justify-center gap-2 rounded-full border border-nline/25 text-nline transition-colors duration-300 hover:border-nline/70";
   /* Once the warm-up has decoded the picture, every copy of it paints in
      the same frame as its element: with async decoding a brand new img
      can stay blank for a few frames, which showed as an empty white page. */
@@ -1194,21 +1184,21 @@ export default function ResumePreview({
          around it keeps focus inside the dialog instead of dropping it
          on <body>, where the keys would no longer reach the preview. */
       tabIndex={-1}
-      className="fixed inset-0 z-[65] overflow-hidden text-bone outline-none"
+      data-ground="night"
+      className="fixed inset-0 z-[65] overflow-hidden text-nline outline-none"
     >
-      {/* Backdrop: the room dimming round a pool of light, and a blur. */}
-      <div ref={dim} aria-hidden className="absolute inset-0 bg-[rgba(4,4,5,0.84)]" />
-      <div
-        ref={blur}
-        aria-hidden
-        className="absolute inset-0 bg-[rgba(5,5,5,0.32)] backdrop-blur-[14px] backdrop-saturate-[0.7]"
-      />
+      {/* Backdrop: the room dimming to night round a pool of light. Two
+          flat layers of the night ground, no backdrop blur: a blur the
+          size of the screen, faded in frame by frame, is exactly the
+          paint cost the page avoids everywhere else. */}
+      <div ref={dim} aria-hidden className="absolute inset-0 bg-[rgb(14_19_50/0.9)]" />
+      <div ref={blur} aria-hidden className="absolute inset-0 bg-[rgb(14_19_50/0.5)]" />
 
       {/* ---- the page ---------------------------------------------- */}
       <div
         ref={scroller}
         onClick={onBackdrop}
-        className="@container absolute inset-0 z-[3] overflow-auto overscroll-contain [scrollbar-color:rgba(237,237,230,0.22)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin]"
+        className="@container absolute inset-0 z-[3] overflow-auto overscroll-contain [scrollbar-color:rgba(239,231,214,0.25)_transparent] [scrollbar-gutter:stable_both-edges] [scrollbar-width:thin]"
       >
         <div
           data-backdrop=""
@@ -1230,7 +1220,7 @@ export default function ResumePreview({
                 className={`absolute inset-0 overflow-hidden rounded-[3px] bg-white ${PAGE_SHADOW} [touch-action:manipulation]`}
               >
                 {img !== "ok" && (
-                  <span className="t-mono absolute inset-x-0 top-1/2 -translate-y-1/2 px-6 text-center !text-[10px] text-[#8a8a91]">
+                  <span className="mono absolute inset-x-0 top-1/2 -translate-y-1/2 px-6 text-center text-[13px] text-muted">
                     {img === "broken" ? "Preview unavailable. The PDF download still works." : "Loading preview"}
                   </span>
                 )}
@@ -1249,11 +1239,11 @@ export default function ResumePreview({
                   onError={() => setImg("broken")}
                   className={`pointer-events-none relative block h-full w-full select-none ${img === "broken" ? "invisible" : ""}`}
                 />
-                <span ref={tint} aria-hidden className="pointer-events-none absolute inset-0 bg-[#17171b]" />
+                <span ref={tint} aria-hidden className="pointer-events-none absolute inset-0 bg-night" />
               </div>
             </div>
             {/* How to drive it, under the page, where the eye already is. */}
-            <p aria-hidden className="t-mono whitespace-nowrap text-center !text-[9px] leading-[14px] !tracking-[0.16em] text-ash">
+            <p aria-hidden className="whitespace-nowrap text-center text-[13px] leading-[18px] text-nline-2">
               <span ref={caption} className="inline-block">
                 {fit ? `Page 1 of ${resume.pages} · ` : ""}
                 <span className="[@media(hover:hover)]:hidden">Tap the page to {fit ? "zoom" : "fit"}</span>
@@ -1274,8 +1264,8 @@ export default function ResumePreview({
               poses it; the floppy wrapper lets the case drop away on its
               own while the disc stays. */}
           <div data-k="carrier" className="absolute left-0 top-0 origin-center">
-            <span data-k="near" className="absolute inset-x-[3%] bottom-[-2.5%] top-[5%] block rounded-[5%] bg-black/80" />
-            <span data-k="far" className="absolute inset-x-[1%] bottom-[-7%] top-[10%] block rounded-[8%] bg-black/70" />
+            <span data-k="near" className="absolute inset-x-[3%] bottom-[-2.5%] top-[5%] block rounded-[5%] bg-[rgb(3_9_38/0.8)]" />
+            <span data-k="far" className="absolute inset-x-[1%] bottom-[-7%] top-[10%] block rounded-[8%] bg-[rgb(3_9_38/0.7)]" />
             <div data-k="rig" className="absolute inset-0 [transform-style:preserve-3d]">
               <div data-k="floppy" className="absolute inset-0 [transform-style:preserve-3d]">
                 <Art faceRef={copyFace} shutterRef={copyShutter} discRef={copyOxide} mediaRef={copySilver} />
@@ -1296,7 +1286,7 @@ export default function ResumePreview({
                         <text fill="rgba(236,240,248,0.5)" fontSize="3.5" letterSpacing="0.62" style={{ fontFamily: "var(--font-mono)" }}>
                           <textPath href={`#${ringTextId}`}>
                             {`${identity.fullName.toUpperCase()} · RESUME · ${resume.size} · ${resume.updated.toUpperCase()} `}
-                            <tspan fill="#e0895a">●</tspan>
+                            <tspan className="fill-acid">●</tspan>
                           </textPath>
                         </text>
                       </svg>
@@ -1304,7 +1294,9 @@ export default function ResumePreview({
                   </span>
                   <span className="absolute inset-0 block rounded-full" style={DISC_GLOSS} />
                 </span>
-                {/* The progress ring, with a bright head like a laser. */}
+                {/* The progress ring in taxi yellow, a hard line with a bright
+                    head like a laser. No soft halo under it: nothing on the
+                    page glows. */}
                 <svg
                   data-k="ring"
                   viewBox="0 0 120 120"
@@ -1312,42 +1304,30 @@ export default function ResumePreview({
                   style={{ opacity: 0 }}
                   focusable="false"
                 >
-                  <circle cx="60" cy="60" r="58" fill="none" stroke="rgba(237,237,230,0.12)" strokeWidth="0.45" />
-                  <circle
-                    data-k="arc-glow"
-                    cx="60"
-                    cy="60"
-                    r="58"
-                    fill="none"
-                    stroke="rgba(224,137,90,0.2)"
-                    strokeWidth="3.2"
-                    strokeLinecap="round"
-                    pathLength={1}
-                    strokeDasharray="0 1"
-                    transform="rotate(-90 60 60)"
-                  />
+                  <circle cx="60" cy="60" r="58" fill="none" stroke="rgba(239,231,214,0.14)" strokeWidth="0.45" />
                   <circle
                     data-k="arc"
                     cx="60"
                     cy="60"
                     r="58"
                     fill="none"
-                    stroke="#e0895a"
-                    strokeWidth="0.9"
+                    className="stroke-acid"
+                    strokeWidth="1.1"
                     strokeLinecap="round"
                     pathLength={1}
                     strokeDasharray="0 1"
                     transform="rotate(-90 60 60)"
                   />
-                  <circle data-k="head" cx="60" cy="2" r="1.5" fill="#fff1e6" style={{ opacity: 0 }} />
+                  <circle data-k="head" cx="60" cy="2" r="1.5" className="fill-nline" style={{ opacity: 0 }} />
                 </svg>
               </div>
             </div>
           </div>
 
+          {/* The edge-on flash is the line itself, with no halo round it. */}
           <span
             data-k="glint"
-            className="absolute left-0 top-0 block w-[2px] origin-center rounded-full bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.95)_30%,rgba(255,255,255,0.95)_70%,transparent)] shadow-[0_0_10px_2px_rgba(255,255,255,0.25)]"
+            className="absolute left-0 top-0 block w-[2px] origin-center rounded-full bg-[linear-gradient(180deg,transparent,rgba(255,255,255,0.95)_30%,rgba(255,255,255,0.95)_70%,transparent)]"
             style={{ opacity: 0 }}
           />
 
@@ -1355,18 +1335,18 @@ export default function ResumePreview({
           <div data-k="read-wrap" className="absolute left-0 top-0 -translate-x-1/2">
             <div
               data-k="read"
-              className="t-mono flex min-w-[15.5rem] flex-col gap-2.5 rounded-[10px] border border-white/[0.09] bg-[rgba(12,12,14,0.92)] px-3.5 py-3 !text-[9.5px] shadow-[0_14px_34px_-14px_rgba(0,0,0,0.95)]"
+              className="mono flex min-w-[17rem] flex-col gap-2.5 rounded-[10px] border border-nline/15 bg-night px-3.5 py-3 text-[13px] shadow-[0_14px_34px_-14px_rgb(3_9_38/0.95)]"
               style={{ opacity: 0 }}
             >
-              <span className="flex items-center gap-2 whitespace-nowrap text-bone/85">
+              <span className="flex items-center gap-2 whitespace-nowrap text-nline">
                 <span data-k="led" className="block h-[5px] w-[5px] shrink-0 rounded-full bg-acid" />
                 <span data-k="label">Reading {resume.fileName}</span>
               </span>
               <span className="flex items-center gap-3 whitespace-nowrap">
-                <span className="relative block h-[2px] flex-1 overflow-hidden rounded-full bg-white/10">
-                  <span className="absolute inset-y-0 left-0 block w-full origin-left bg-acid/70" style={{ transform: "scaleX(0)" }} data-k="bar" />
+                <span className="relative block h-[2px] flex-1 overflow-hidden rounded-full bg-nline/15">
+                  <span className="absolute inset-y-0 left-0 block w-full origin-left bg-acid" style={{ transform: "scaleX(0)" }} data-k="bar" />
                 </span>
-                <span data-k="count" className="tabular-nums text-ash">
+                <span data-k="count" className="tabular-nums text-nline-2">
                   {counter(0)}
                 </span>
               </span>
@@ -1398,7 +1378,7 @@ export default function ResumePreview({
       <div className="absolute inset-x-0 top-0 z-[4]">
         <div
           ref={topBar}
-          className="flex h-14 items-center gap-3 border-b border-white/[0.07] bg-[rgba(9,9,11,0.8)] pl-4 pr-2.5 backdrop-blur-xl md:h-[68px] md:gap-4 md:px-6 lg:px-8"
+          className="flex h-14 items-center gap-3 border-b border-nline/10 bg-night pl-4 pr-2.5 md:h-[68px] md:gap-4 md:px-6 lg:px-8"
         >
           <FileGlyph />
           <div className="min-w-0 flex-1">
@@ -1406,11 +1386,11 @@ export default function ResumePreview({
               ref={heading}
               id={titleId}
               tabIndex={-1}
-              className="truncate text-[13px] font-semibold leading-tight text-bone outline-none md:text-sm"
+              className="truncate text-[14px] font-semibold leading-tight text-nline outline-none md:text-[15px]"
             >
               {resume.fileName}
             </h2>
-            <p id={metaId} className="t-mono mt-1 truncate !text-[9px] !tracking-[0.14em] text-ash">
+            <p id={metaId} className="mono mt-1 truncate text-[13px] leading-tight text-nline-2">
               PDF · {resume.size} · {pages}
               <span className="hidden sm:inline"> · Updated {resume.updated}</span>
             </p>
@@ -1422,7 +1402,7 @@ export default function ResumePreview({
               onClick={() => toggleZoom()}
               aria-label={zoomLabel}
               data-cursor={zoom ? "FIT" : "ZOOM"}
-              className={`${ghost} h-10 px-4 text-[12.5px] font-medium`}
+              className={`${ghost} h-10 px-4 text-[14px] font-medium`}
             >
               <ZoomIcon out={zoom} />
               {zoom ? "Fit" : "Zoom"}
@@ -1432,7 +1412,7 @@ export default function ResumePreview({
               target="_blank"
               rel="noopener noreferrer"
               data-cursor="OPEN"
-              className={`${ghost} h-10 px-4 text-[12.5px] font-medium`}
+              className={`${ghost} h-10 px-4 text-[14px] font-medium`}
             >
               <NewTabIcon />
               <span className="lg:hidden">New tab</span>
@@ -1445,14 +1425,14 @@ export default function ResumePreview({
               download={resume.fileName}
               type="application/pdf"
               data-cursor="DOWNLOAD"
-              className="inline-flex h-10 items-center gap-2 rounded-full bg-acid pl-4 pr-5 text-[13px] font-semibold text-void transition-colors duration-300 hover:bg-bone"
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-cream pl-4 pr-5 text-[14px] font-semibold text-ink transition-colors duration-300 hover:bg-cream-2"
             >
               <DownloadIcon />
               Download PDF
             </a>
           </div>
 
-          <span aria-hidden className="hidden h-6 w-px bg-white/10 md:block" />
+          <span aria-hidden className="hidden h-6 w-px bg-nline/15 md:block" />
           <button
             type="button"
             onClick={() => ctl.current?.close()}
@@ -1471,7 +1451,7 @@ export default function ResumePreview({
       <div className="absolute inset-x-0 bottom-0 z-[4] md:hidden">
         <div
           ref={bottomBar}
-          className="flex items-center gap-2 border-t border-white/[0.07] bg-[rgba(9,9,11,0.84)] px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl"
+          className="flex items-center gap-2 border-t border-nline/10 bg-night px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3"
         >
           <button
             type="button"
@@ -1499,7 +1479,7 @@ export default function ResumePreview({
             download={resume.fileName}
             type="application/pdf"
             data-cursor="DOWNLOAD"
-            className="inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-acid px-5 text-[14px] font-semibold text-void transition-colors duration-300 active:bg-bone"
+            className="inline-flex h-12 min-w-0 flex-1 items-center justify-center gap-2 rounded-full bg-cream px-5 text-[14px] font-semibold text-ink transition-colors duration-300 active:bg-cream-2"
           >
             <DownloadIcon />
             Download PDF
@@ -1561,11 +1541,11 @@ function Back({ n }: { n: 0 | 2 }) {
     >
       {n === 0 && (
         <span className="absolute inset-0 flex flex-col items-center justify-center gap-[1.6cqw]">
-          <span className="flex items-center gap-[1.4cqw] font-mono text-[2.5cqw] font-medium uppercase leading-none tracking-[0.16em] text-[#3a3b42]">
-            <span className="block h-[2.2cqw] w-[2.2cqw] rounded-full bg-[#e0895a] shadow-[0_0.5px_0.5px_rgba(0,0,0,0.3)]" />
+          <span className="flex items-center gap-[1.4cqw] font-mono text-[2.6cqw] font-medium leading-none text-ink">
+            <span className="block h-[2.2cqw] w-[2.2cqw] rounded-full bg-stamp" />
             {resume.fileName}
           </span>
-          <span className="font-mono text-[1.9cqw] uppercase leading-none tracking-[0.2em] text-[#8a8b92]">
+          <span className="font-mono text-[2cqw] leading-none text-muted">
             PDF · {resume.size} · {pages}
           </span>
         </span>
@@ -1584,14 +1564,14 @@ function FileGlyph() {
       <svg viewBox="0 0 34 42" fill="none" focusable="false" className="h-full w-full">
         <path
           d="M3 1h20l10 10v27a3 3 0 0 1-3 3H3a3 3 0 0 1-3-3V4a3 3 0 0 1 3-3Z"
-          fill="#edede6"
-          fillOpacity="0.09"
-          stroke="#edede6"
-          strokeOpacity="0.24"
+          fill="#efe7d6"
+          fillOpacity="0.1"
+          stroke="#efe7d6"
+          strokeOpacity="0.3"
         />
-        <path d="M23 1v7a3 3 0 0 0 3 3h7" stroke="#edede6" strokeOpacity="0.24" />
+        <path d="M23 1v7a3 3 0 0 0 3 3h7" stroke="#efe7d6" strokeOpacity="0.3" />
       </svg>
-      <span className="absolute bottom-[5px] left-[3px] rounded-[2.5px] bg-acid px-[3px] py-[1px] font-mono text-[6.5px] font-bold leading-none tracking-[0.06em] text-void md:bottom-[6px]">
+      <span className="absolute bottom-[5px] left-[3px] rounded-[2.5px] bg-stamp px-[3px] py-[1px] font-mono text-[6.5px] font-bold leading-none text-cream-2 md:bottom-[6px]">
         PDF
       </span>
     </span>

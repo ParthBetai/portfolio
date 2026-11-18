@@ -1,0 +1,644 @@
+/* ============================================================
+   THE DRAWING SET: FOUNDATION
+   Tokens, grounds, type, materials, the sheet stack and the taxi route
+   shared by every sheet. Imported by app/globals.css. Each section
+   stream's own partial (app/styles/s1-hero.css to s6-contact.css) sits
+   in @layer components after this file and may use everything here.
+
+   The page is one numbered set of drawing sheets laid over one another
+   on a desk (01 Home to 06 Contact), and one inked taxi route runs down
+   it. See README section 9 for the rules (yellow only on objects, teal
+   only on enamel, brick at full strength only).
+   ============================================================ */
+
+@layer base {
+  :root {
+    /* Short names for the palette, so CSS ported from the drawings reads
+       the same as the drawings. They point at the @theme tokens; change
+       a colour there, never here. */
+    --cream: var(--color-cream);
+    --card: var(--color-card);
+    --ink: var(--color-ink);
+    --ink-deep: var(--color-ink-deep);
+    --muted: var(--color-muted);
+    --blue: var(--color-blue);
+    --bline: var(--color-bline);
+    --bline-2: var(--color-bline-2);
+    --nline: var(--color-nline);
+    --nline-2: var(--color-nline-2);
+    --taxi: var(--color-acid);
+    --brick: var(--color-stamp);
+    --teal: var(--color-teal);
+    --chrome: var(--color-chrome);
+
+    /* The route and the sheet columns: the route's gutter (x of its
+       centre line), the content's left and right insets, the elbow
+       radius and the route's stroke. Every rail offset is written in
+       these, so a column change moves the route with it. */
+    --rx: 34px;
+    --cl: 104px;
+    --cr: 104px;
+    --R: 26px;
+    --rw: 4px;
+    /* The bridge band: tall enough that its height always governs the
+       slice (Sheet 03). */
+    --bh: max(270px, 24.8vw);
+
+    /* Sign-painter shading: stepped hard shadows, a cream (or teal)
+       keyline first, then the brick. Written out once here so the three
+       painted places stay one family. Steps of 0.006em (the hero, whose
+       loader steps the same shade in per line: data-sh in s1-hero.css), 0.012em
+       (the board) and 0.01em (the footer sign). */
+    --shade-hero: 0.006em 0.006em 0 var(--color-cream), 0.012em 0.012em 0 var(--color-cream), 0.018em 0.018em 0 var(--color-stamp), 0.024em 0.024em 0 var(--color-stamp), 0.030em 0.030em 0 var(--color-stamp), 0.036em 0.036em 0 var(--color-stamp), 0.042em 0.042em 0 var(--color-stamp), 0.048em 0.048em 0 var(--color-stamp), 0.054em 0.054em 0 var(--color-stamp);
+    --shade-bphero: 0.006em 0.006em 0 var(--color-blue), 0.012em 0.012em 0 var(--color-blue), 0.018em 0.018em 0 rgb(226 235 255 / 0.45), 0.024em 0.024em 0 rgb(226 235 255 / 0.45), 0.030em 0.030em 0 rgb(226 235 255 / 0.45), 0.036em 0.036em 0 rgb(226 235 255 / 0.45), 0.042em 0.042em 0 rgb(226 235 255 / 0.45), 0.048em 0.048em 0 rgb(226 235 255 / 0.45), 0.054em 0.054em 0 rgb(226 235 255 / 0.45);
+    --shade-board: 0.012em 0.012em 0 var(--color-teal), 0.024em 0.024em 0 var(--color-teal), 0.036em 0.036em 0 var(--color-stamp), 0.048em 0.048em 0 var(--color-stamp), 0.060em 0.060em 0 var(--color-stamp), 0.072em 0.072em 0 var(--color-stamp), 0.084em 0.084em 0 var(--color-stamp);
+    --shade-sign: -1px -1px 0 rgb(243 234 214 / 0.85), 0.010em 0.010em 0 var(--color-teal), 0.020em 0.020em 0 var(--color-stamp), 0.030em 0.030em 0 var(--color-stamp), 0.040em 0.040em 0 var(--color-stamp), 0.050em 0.050em 0 var(--color-stamp);
+  }
+  @media (max-width: 1180px) {
+    :root { --cl: 64px; --cr: 56px; }
+  }
+  @media (max-width: 760px) {
+    :root { --rx: 14px; --cl: 30px; --cr: 22px; --R: 18px; --rw: 3.5px; --bh: 270px; }
+  }
+
+  /* Focus and selection follow the ground under them. The ring colour is
+     a variable set by each ground, so the nearest ground wins when one
+     sits inside another (the phone's cream screen on the night sheet).
+     Every ring is at least 3:1 on its ground: ink on cream 11.3:1, bline
+     on blue 9.1:1, yellow on night 10.3:1. The rule that reads --focus is
+     the :focus-visible rule in globals.css. */
+  .g-cream, .g-paper, [data-ground="cream"], [data-ground="paper"] { --focus: var(--color-ink); }
+  .g-blue, [data-ground="blue"] { --focus: var(--color-bline); }
+  .g-night, [data-ground="night"] { --focus: var(--color-acid); }
+
+  /* Selection is a marker swipe on the light grounds (yellow as the
+     highlighter, the one way it touches cream) and a pale wash on the
+     dark ones. The light rules come last so a cream surface inside a dark
+     sheet (the phone) gets its own. */
+  .g-blue ::selection, [data-ground="blue"] ::selection { background: var(--color-bline); color: var(--color-blue); }
+  .g-night ::selection, [data-ground="night"] ::selection { background: var(--color-nline); color: var(--color-night); }
+  .g-cream ::selection, .g-paper ::selection,
+  [data-ground="cream"] ::selection, [data-ground="paper"] ::selection { background: rgb(246 196 0 / 0.6); color: var(--color-ink-deep); }
+}
+
+@layer components {
+
+/* ============================================================
+   TYPE
+   ============================================================ */
+
+/* Display: Archivo 800, a little narrow, tight, title case as written.
+   Sizes are set per sheet. */
+.t-head {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-stretch: 92%;
+  letter-spacing: -0.045em;
+  line-height: 0.86;
+  text-transform: none;
+}
+/* Weight contrast on three headings (What I / can do, Selected / work,
+   Founder / journey) and the project titles: the bold word in <b>, the
+   light one in <span>. */
+.wc b { font-weight: 800; }
+.wc span { font-weight: 280; letter-spacing: -0.03em; }
+
+/* Sign-painted lettering: exactly three places on the home page (the
+   hero name, the "Short on time?" board, the footer sign). The shade is
+   one of the four --shade-* values: the board and the sign through the
+   utilities below, the hero name (stepped in while it loads) and its
+   blueprint copy straight from s1-hero.css. */
+.painted {
+  font-family: var(--font-display);
+  font-weight: 850;
+  font-stretch: 96%;
+  letter-spacing: -0.035em;
+  line-height: 0.95;
+}
+.shade-board { text-shadow: var(--shade-board); }
+.shade-sign { text-shadow: var(--shade-sign); }
+
+/* Kalam, for notes, stop labels, drawing legends and dimension labels.
+   Never under 16px; nothing a visitor needs in order to use the site. */
+.hand {
+  font-family: var(--font-hand);
+  font-weight: 400;
+  font-style: normal;
+  font-variation-settings: normal;
+  letter-spacing: 0;
+  line-height: 1.25;
+  text-transform: none;
+}
+.mono { font-family: var(--font-mono); }
+
+/* The highlighter: a marker swipe behind the words, never a plate. Used
+   on the role (identity.role) and the project badges. */
+.hl {
+  background-image: linear-gradient(98deg, transparent 0.12em, rgb(246 196 0 / 0.85) 0.2em, rgb(246 196 0 / 0.72) 55%, rgb(246 196 0 / 0.88) calc(100% - 0.3em), transparent calc(100% - 0.1em));
+  background-size: 100% 0.58em;
+  background-position: 0 82%;
+  background-repeat: no-repeat;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  padding: 0 0.14em;
+  margin: 0 -0.14em;
+}
+/* The flatter marker band for a single rolling line (the ticket roller). */
+.hlm {
+  background: linear-gradient(transparent 58%, rgb(246 196 0 / 0.7) 58%, rgb(246 196 0 / 0.7) 92%, transparent 92%);
+}
+
+/* ============================================================
+   BUTTONS
+   Rounded, solid navy or outlined, with a soft printed drop under the
+   solid one. The cream one is for night grounds.
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  border-radius: 12px;
+  padding: 14px 22px;
+  font-weight: 700;
+  font-size: 16.5px;
+  letter-spacing: -0.005em;
+  /* The sheet line height (1.55), not a tight one: the buttons take their
+     height from it (56px desktop, 52px phone, as drawn). */
+  line-height: 1.55;
+  white-space: nowrap;
+  transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+.btn .arr { width: 18px; height: 18px; flex: none; }
+.btn.solid {
+  background: var(--color-ink);
+  color: var(--color-cream-2);
+  box-shadow: 0 12px 22px -12px rgb(19 26 74 / 0.75), inset 0 -2px 0 rgb(0 0 0 / 0.25);
+}
+.btn.solid:hover { background: var(--color-ink-deep); }
+.btn.line {
+  border: 1.6px solid var(--color-ink);
+  color: var(--color-ink);
+  background: rgb(251 248 240 / 0.7);
+}
+.btn.line:hover { background: var(--color-cream-2); }
+.btn.cream { background: var(--color-cream); color: var(--color-ink); }
+.btn.cream:hover { background: var(--color-cream-2); }
+@media (max-height: 700px) and (min-width: 761px) {
+  .btn { padding: 12px 18px; font-size: 15.5px; }
+}
+@media (max-width: 760px) {
+  .btn { padding: 13px 18px; font-size: 15.5px; }
+}
+
+/* ============================================================
+   GROUNDS
+   Each sets the ground colour (--g), the route ink (--ri) and the
+   route's highlighter (--rh, only on the light grounds), plus its text
+   colour and printed texture. Sheet.tsx applies one per sheet.
+   ============================================================ */
+.g-cream {
+  --g: var(--color-cream);
+  --ri: var(--color-ink);
+  --rh: rgb(246 196 0 / 0.55);
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  background-image: radial-gradient(circle, rgb(29 42 110 / 0.17) 1.05px, transparent 1.5px);
+  background-size: 24px 24px;
+}
+.g-blue {
+  --g: var(--color-blue);
+  --ri: var(--color-bline);
+  --rh: transparent;
+  background-color: var(--color-blue);
+  color: var(--color-bline);
+  background-image:
+    radial-gradient(ellipse at 50% 35%, transparent 50%, rgb(6 16 52 / 0.32)),
+    linear-gradient(rgb(226 235 255 / 0.10) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(226 235 255 / 0.10) 1px, transparent 1px),
+    linear-gradient(rgb(226 235 255 / 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(226 235 255 / 0.045) 1px, transparent 1px);
+  background-size: 100% 100%, 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+}
+.g-night {
+  --g: var(--color-night);
+  --ri: var(--color-acid);
+  --rh: transparent;
+  background-color: var(--color-night);
+  color: var(--color-nline);
+  background-image: radial-gradient(circle, rgb(239 231 214 / 0.06) 1px, transparent 1.4px);
+  background-size: 24px 24px;
+}
+.g-paper {
+  --g: var(--color-paper);
+  --ri: var(--color-ink);
+  --rh: rgb(246 196 0 / 0.55);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  background-image:
+    linear-gradient(rgb(29 42 110 / 0.085) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(29 42 110 / 0.085) 1px, transparent 1px),
+    linear-gradient(rgb(29 42 110 / 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(29 42 110 / 0.04) 1px, transparent 1px);
+  background-size: 80px 80px, 80px 80px, 16px 16px, 16px 16px;
+}
+
+/* ============================================================
+   THE SHEET STACK
+   DOM per sheet: an in-flow zero-height anchor (it carries the id and
+   is the jump target), then a slot, then the sheet inside it.
+
+   With scripts, each sheet sticks inside its slot until the next sheet
+   has covered it, then scrolls away. The slot's run-out is a 100svh
+   content spacer (::after) cancelled by a -100svh bottom margin, so the
+   layout is the same as without scripts. It has to be content, not
+   padding: a sticky box never enters its parent's padding, so with
+   padding the sheets never stuck.
+
+   A sheet sticks at top: min(0, viewport - its height), written to
+   --stick by useSheetStick (lib/motion.ts), which also sets data-stick;
+   until then the sheet stays in flow. Every ScrollTrigger is measured in
+   natural flow: html[data-measure] is set at ScrollTrigger's refreshInit
+   and removed at refresh.
+
+   Without scripts the sheets simply flow, each overlapping the one
+   before by 26px with its index tab above that.
+   ============================================================ */
+.sheet-stack {
+  display: flex;
+  flex-direction: column;
+}
+.sheet-anchor {
+  height: 0;
+  scroll-margin-top: 84px;
+}
+.sheet-slot {
+  position: relative;
+}
+.sheet-slot + .sheet-anchor + .sheet-slot {
+  margin-top: -26px;
+}
+.sheet {
+  position: relative;
+  isolation: isolate;
+  overflow-x: clip;
+  font-size: 17px;
+  line-height: 1.55;
+}
+.sheet-slot + .sheet-anchor + .sheet-slot > .sheet {
+  box-shadow: 0 -18px 34px -22px rgb(8 12 40 / 0.6);
+}
+@media (max-width: 760px) {
+  .sheet { font-size: 16px; }
+}
+
+/* The frame: a thin rule a little inside the sheet edge, and a second
+   one inside it with no left edge, so the route's gutter carries one
+   rule only. */
+.sheet-frame {
+  position: absolute;
+  inset: 14px;
+  border: 1px solid currentColor;
+  opacity: 0.2;
+  pointer-events: none;
+  z-index: 1;
+}
+.sheet-frame::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 1px solid currentColor;
+  border-left: 0;
+  opacity: 0.55;
+}
+
+/* Crosshair registration marks, inside the corners. */
+.reg-mark {
+  position: absolute;
+  z-index: 2;
+  opacity: 0.6;
+  pointer-events: none;
+}
+.reg-mark.tl { top: 1px; left: 1px; }
+.reg-mark.tr { top: 1px; right: 1px; }
+.reg-mark.bl { bottom: 1px; left: 1px; }
+.reg-mark.br { bottom: 1px; right: 1px; }
+
+/* The index tab: sits on the sheet's top edge over the gutter, in the
+   sheet's own ground. Its circled number is the sheet's route stop. */
+.sheet-tab {
+  position: absolute;
+  z-index: 8;
+  top: -36px;
+  left: calc(var(--rx) - 21px);
+  height: 36px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 18px 0 8px;
+  background: var(--g);
+  color: inherit;
+  border-radius: 10px 10px 0 0;
+  font-weight: 700;
+  font-size: 15.5px;
+  line-height: 1;
+  letter-spacing: -0.005em;
+  box-shadow: 0 -8px 16px -12px rgb(8 12 40 / 0.5);
+}
+/* The ring goes inside the tab, on its own ground (what --focus was picked
+   to contrast with). Outside, it would lie over the sheet above: navy on
+   night, pale blue on grid paper, and off screen at the phone's left edge. */
+.sheet-tab:focus-visible { outline-offset: -2px; }
+.sheet-tab .tn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: var(--rw) solid var(--ri);
+  background: var(--g);
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+/* The first sheet has nothing above it: its tab sits inside, below the
+   status strip, as a cream label. */
+.sheet-tab.is-inner {
+  top: 58px;
+  border-radius: 10px;
+  box-shadow: none;
+  border: 1px solid rgb(29 42 110 / 0.2);
+  background: var(--color-cream-2);
+}
+
+/* A dark wash an outgoing sheet takes on as the next one covers it
+   (driveVeil in lib/motion.ts tweens its opacity). Never on Contact. */
+.veil {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: #0a0e28;
+  opacity: 0;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .sheet-frame { inset: 5px; }
+  .sheet-frame::before { display: none; }
+  /* Scaled from their own corner, so they never poke past the edge. */
+  .reg-mark { transform: scale(0.7); }
+  .reg-mark.tl { top: 0; left: 0; transform-origin: 0 0; }
+  .reg-mark.tr { top: 0; right: 0; transform-origin: 100% 0; }
+  .reg-mark.bl { bottom: 0; left: 0; transform-origin: 0 100%; }
+  .reg-mark.br { bottom: 0; right: 0; transform-origin: 100% 100%; }
+  .sheet-tab { height: 32px; top: -32px; font-size: 14px; left: calc(var(--rx) - 14px); padding: 0 14px 0 0; gap: 7px; }
+  .sheet-tab.is-inner { top: 52px; left: 20px; padding: 0 14px 0 2px; }
+}
+
+/* ============================================================
+   THE ROUTE
+   One 4px inked line in the left gutter, built per sheet from static
+   pieces at fixed offsets (Route.tsx): rails, elbows, stops, spurs,
+   stations and the terminus. On light grounds a 10px yellow highlighter
+   runs under it. Each rail is a dotted pencil line (::before) with the
+   solid ink (<b>) over it; driveRoute (lib/motion.ts) scales the solid
+   part to the route taxi as it drives (the reading line, where no taxi
+   drives), so it is solid behind and dotted ahead. At rest and without
+   scripts every piece is solid.
+   ============================================================ */
+.rail {
+  position: absolute;
+  display: block;
+  pointer-events: none;
+  z-index: 4;
+}
+.rail.v { left: calc(var(--rx) - var(--rw) / 2); width: var(--rw); }
+.rail.h { height: var(--rw); }
+.rail::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.55;
+}
+.rail.v::before { left: 1px; width: 2px; background: repeating-linear-gradient(to bottom, var(--ri) 0 2px, transparent 2px 9px); }
+.rail.h::before { top: 1px; height: 2px; background: repeating-linear-gradient(to right, var(--ri) 0 2px, transparent 2px 9px); }
+.rail > b {
+  position: absolute;
+  inset: 0;
+  display: block;
+  background: var(--ri);
+  box-shadow: 0 0 0 3px var(--rh);
+  border-radius: 2px;
+  transform-origin: 50% 0;
+}
+.rail.h > b { transform-origin: 0 50%; }
+.rail.h.rtl > b { transform-origin: 100% 50%; }
+
+/* An elbow is a quarter of a rounded box: the corner class names which
+   two borders it draws (e-tl: top and left, and so on). */
+.elbow {
+  position: absolute;
+  width: var(--R);
+  height: var(--R);
+  border: 0 solid var(--ri);
+  pointer-events: none;
+  z-index: 4;
+}
+.elbow::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border: 0 solid var(--rh);
+  border-radius: inherit;
+}
+.elbow.e-tl { border-top-width: var(--rw); border-left-width: var(--rw); border-top-left-radius: var(--R); }
+.elbow.e-tl::before { border-top-width: 10px; border-left-width: 10px; border-top-left-radius: calc(var(--R) + 7px); }
+.elbow.e-tr { border-top-width: var(--rw); border-right-width: var(--rw); border-top-right-radius: var(--R); }
+.elbow.e-tr::before { border-top-width: 10px; border-right-width: 10px; border-top-right-radius: calc(var(--R) + 7px); }
+.elbow.e-bl { border-bottom-width: var(--rw); border-left-width: var(--rw); border-bottom-left-radius: var(--R); }
+.elbow.e-bl::before { border-bottom-width: 10px; border-left-width: 10px; border-bottom-left-radius: calc(var(--R) + 7px); }
+.elbow.e-br { border-bottom-width: var(--rw); border-right-width: var(--rw); border-bottom-right-radius: var(--R); }
+.elbow.e-br::before { border-bottom-width: 10px; border-right-width: 10px; border-bottom-right-radius: calc(var(--R) + 7px); }
+.elbow.ahead { border-style: dotted; opacity: 0.6; }
+.elbow.ahead::before { display: none; }
+
+/* A stop: a ring in the ground colour on the route. Placed on the
+   gutter by default; the caller sets top (and left when it is not on
+   the gutter). */
+.stop {
+  position: absolute;
+  z-index: 5;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--g);
+  border: var(--rw) solid var(--ri);
+  left: calc(var(--rx) - 10px);
+}
+.stoplab {
+  font-family: var(--font-hand);
+  font-size: 19px;
+  line-height: 1;
+  color: var(--ri);
+}
+.g-cream .stoplab, .g-paper .stoplab { color: var(--color-ink); }
+
+/* A spur: one fixed-offset branch from the gutter out to a piece of
+   content. It lives inside a positioned box whose left edge is at --cl
+   (the content column), centred on that box's height. */
+.rail.r-spur { left: calc(var(--rx) - var(--cl)); width: calc(var(--cl) - var(--rx)); top: calc(50% - var(--rw) / 2); }
+.stop.s-spur { left: calc(var(--rx) - var(--cl) - 10px); top: calc(50% - 10px); }
+
+/* A station: the stop a list row hangs from (the service rows). Placed
+   in a row inside the content column; the open row's is filled. */
+.station {
+  position: absolute;
+  top: 30px;
+  left: calc(var(--rx) - var(--cl) - 8px);
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--g);
+  border: 3px solid var(--ri);
+  z-index: 5;
+  pointer-events: none;
+}
+.station::before {
+  content: "";
+  position: absolute;
+  left: 13px;
+  top: 4px;
+  width: calc(var(--cl) - var(--rx) - 14px);
+  border-top: 1.5px solid color-mix(in srgb, var(--ri) 50%, transparent);
+}
+.station.on { background: var(--ri); width: 20px; height: 20px; top: 28px; left: calc(var(--rx) - var(--cl) - 10px); }
+.station.on::before { top: 6px; left: 17px; }
+
+/* The route taxi: the car seen from above, nose first, riding the line
+   (driveRoute's journey makes it and moves it, so there is none without
+   scripts). It lives inside whichever sheet it is on, at that sheet's
+   top-left corner, and only its transform changes: a translate to its
+   place on the line and a turn to the way it is driving. Over the rails,
+   stops and index tabs (z 4 to 8) and under the veil (z 20); the hero
+   holds it back while it loads (s1-hero.css). It first shows just above
+   About's tab, where the big taxi has driven off and shrunk to its
+   size, and curves down into About's ring. */
+.route-car {
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: 10;
+  width: 28px;
+  height: 13.55px;
+  line-height: 0;
+  pointer-events: none;
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+.route-car > svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@media (max-width: 760px) {
+  .route-car { width: 24px; height: 11.6px; }
+}
+
+/* The terminus: a heavier ring with a filled centre where the route
+   ends (the footer kerb). The caller places it. */
+.stop.s-end { width: 24px; height: 24px; }
+.stop.s-end::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--ri); }
+.arrived { font-family: var(--font-hand); font-size: 21px; line-height: 1.2; color: var(--ri); }
+
+@media (max-width: 760px) {
+  .stop { width: 18px; height: 18px; left: calc(var(--rx) - 9px); }
+  .stoplab { font-size: 17px; }
+  .stop.s-spur { left: calc(var(--rx) - var(--cl) - 9px); top: calc(50% - 9px); }
+  .stop.s-end { width: 22px; height: 22px; }
+  .station { top: 24px; left: calc(var(--rx) - var(--cl) - 7px); width: 14px; height: 14px; border-width: 2.5px; }
+  .station::before { display: none; }
+  .station.on { top: 22px; left: calc(var(--rx) - var(--cl) - 9px); width: 18px; height: 18px; }
+  .arrived { font-size: 18px; }
+}
+
+/* ============================================================
+   MATERIALS
+   ============================================================ */
+
+/* The deckle edge on a pasted-up sheet's top: an svg (the torn path in
+   the sheet's own colour) laid over the edge. */
+.deckle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -24px;
+  height: 28px;
+  width: 100%;
+  z-index: 3;
+  display: block;
+}
+
+/* One layout for desktop and tablet, another for phone. */
+.m-only { display: none; }
+@media (max-width: 760px) {
+  .d-only { display: none; }
+  .m-only { display: block; }
+}
+
+/* ============================================================
+   PAGE-CHANGE SHEET (RouteProgress.tsx)
+   A cream sheet with the one-ink taxi driving along the kerb while the
+   next page loads.
+   ============================================================ */
+.rp-road {
+  position: absolute;
+  left: var(--cl);
+  right: var(--cr);
+  bottom: 120px;
+  height: 30px;
+  border-bottom: 1.6px solid var(--color-ink);
+  overflow: hidden;
+}
+.rp-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 4px;
+  background: var(--color-ink);
+  transform-origin: 0 50%;
+  animation: rp-fill 1.8s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+}
+.rp-car {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 3px;
+  line-height: 0;
+  animation: rp-drive 1.8s cubic-bezier(0.76, 0, 0.24, 1) infinite;
+}
+.rp-car > svg { position: absolute; bottom: 0; left: -54px; }
+@keyframes rp-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+@keyframes rp-drive {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(100%, 0, 0); }
+}
+
+}
+
+/* Sticky sheets only with scripts (the boot script sets data-motion
+   before first paint). Unlayered, so no utility on a sheet can undo it. */
+html[data-motion] .sheet-slot:not(:last-child) {
+  margin-bottom: -100svh;
+}
+html[data-motion] .sheet-slot:not(:last-child)::after {
+  content: "";
+  display: block;
+  height: 100svh;
+}
+html[data-motion] .sheet-slot > .sheet[data-stick] {
+  position: sticky;
+  top: var(--stick, 0px);
+}
+html[data-measure] .sheet-slot > .sheet {
+  position: relative !important;
+  top: auto !important;
+}

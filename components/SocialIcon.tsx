@@ -1,20 +1,21 @@
-/* Shared by the contact section and the footer. */
-
 /* ------------------------------------------------------------
    SOCIAL ICONS
-   Inline, lucide-style strokes: an icon font or sprite would be a network
-   request for four glyphs. Matched on the label in content.ts, so adding a
-   network there needs no change here; unknown names get a generic
-   outbound arrow rather than an empty circle.
+   The logos in the footer title block's "Connections" cell (Footer.tsx),
+   drawn in the same line as the rest of the drawing set: inline strokes in
+   currentColor, so the night palette and its hover reach them with no
+   extra rules, and no icon font or sprite to fetch for four glyphs.
+   Matched on the label in content.ts, so adding a network there needs no
+   change here; unknown names get a generic outbound arrow rather than an
+   empty circle. Always decorative: the link around it carries the name.
    ------------------------------------------------------------ */
-export default function SocialIcon({ name, size = 18 }: { name: string; size?: number }) {
+export default function SocialIcon({ name, size = 22 }: { name: string; size?: number }) {
   const common = {
     width: size,
     height: size,
     viewBox: "0 0 24 24",
     fill: "none",
     stroke: "currentColor",
-    strokeWidth: 1.75,
+    strokeWidth: 1.8,
     strokeLinecap: "round" as const,
     strokeLinejoin: "round" as const,
     "aria-hidden": true,

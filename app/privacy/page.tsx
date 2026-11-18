@@ -16,7 +16,7 @@ export default function PrivacyPage() {
   const mail = `mailto:${identity.email}`;
 
   return (
-    <LegalPage eyebrow="Legal" title="Privacy policy" updated={legal.updated} path="/privacy">
+    <LegalPage title="Privacy policy" updated={legal.updated} path="/privacy">
       <P>
         This is my personal portfolio. I built it to show my work, not to learn about the people who
         visit it. I collect almost nothing, and the little that does move around is explained below in

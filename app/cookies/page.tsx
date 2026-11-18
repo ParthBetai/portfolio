@@ -14,7 +14,7 @@ export const metadata: Metadata = pageMeta(
    the boot script in lib/motionBoot.ts removing the old "motion" key. */
 export default function CookiesPage() {
   return (
-    <LegalPage eyebrow="Legal" title="Cookies" updated={legal.updated} path="/cookies">
+    <LegalPage title="Cookies" updated={legal.updated} path="/cookies">
       <P>
         <Strong>This site doesn&apos;t use cookies.</Strong> Not for analytics, not for ads, not for
         anything. That&apos;s also why you didn&apos;t have to click through a cookie banner to get here.

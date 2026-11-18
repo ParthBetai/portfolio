@@ -1,17 +1,22 @@
 import Link from "next/link";
-import Footer from "./Footer";
-import { identity, legal } from "@/lib/content";
+import Sheet from "./Sheet";
+import { FooterSheet } from "./Footer";
+import StatusStrip from "./StatusStrip";
+import { legal, notFound } from "@/lib/content";
 
 /* ============================================================
    LEGAL PAGE
-   The shell every policy and info page shares. A Server Component with
-   no client JavaScript of its own: these pages are text to be read, so
-   there is nothing here to hydrate and nothing that can fail to load.
+   The shell every policy and info page shares: one cream sheet of the
+   drawing set, its index tab reading "Legal" under the status strip,
+   then the same night footer sheet that ends the home page, sliding
+   over it. The page itself is a Server Component: the prose is text to
+   be read, so it needs nothing hydrated. Only the sheets' stickiness and
+   the footer's motion are scripted, and without scripts the two sheets
+   simply flow.
 
-   Contrast is deliberately higher than the home page. The body copy sits
-   at bone/70 rather than ash: ash on void is about 4.6:1, which is fine
-   for a short caption and tiring for four screens of policy. bone/70
-   lands around 8:1, and the smallest mono text stays above 4.5:1.
+   Navy ink on cream throughout (11.3:1 for the body, 5.7:1 for the
+   date), links underlined so they never depend on colour alone.
+   Styles: .legalsheet and .lg in app/styles/s6-contact.css.
    ============================================================ */
 
 const MONTHS = [
@@ -33,59 +38,38 @@ function isoDate(human: string): string | undefined {
 
 /* ------------------------------------------------------------
    PROSE
-   Small components rather than a descendant-selector wrapper, so each
-   page reads as plain markup and every style lives in one place.
+   Small components, so each page reads as plain markup. Their look is
+   one set of rules under .lg-body in the stylesheet.
    ------------------------------------------------------------ */
-const body = "text-base leading-relaxed text-bone/70 break-words md:text-lg";
-
 export function H2({ children, id }: { children: React.ReactNode; id?: string }) {
-  return (
-    /* t-display is set at 0.84 for single giant lines. A heading this
-       small can wrap, and two lines at 0.84 collide. */
-    <h2 id={id} className="t-display mb-4 mt-14 text-xl leading-[1.1] text-bone md:text-2xl">
-      {children}
-    </h2>
-  );
+  return <h2 id={id}>{children}</h2>;
 }
 
 export function P({ children }: { children: React.ReactNode }) {
-  return <p className={`mb-4 ${body}`}>{children}</p>;
+  return <p>{children}</p>;
 }
 
 export function UL({ children }: { children: React.ReactNode }) {
-  return <ul className="mb-6 space-y-3">{children}</ul>;
+  return <ul>{children}</ul>;
 }
 
 export function LI({ children }: { children: React.ReactNode }) {
-  return (
-    <li className={`flex gap-3 ${body}`}>
-      {/* The outer box is exactly one line of the item's own text (1lh),
-          so the small square centres on the first line however the text
-          wraps or scales. */}
-      <span aria-hidden className="flex h-[1lh] shrink-0 items-center">
-        <span className="text-[10px] leading-none text-acid">■</span>
-      </span>
-      <span className="min-w-0">{children}</span>
-    </li>
-  );
+  return <li>{children}</li>;
 }
 
 export function Strong({ children }: { children: React.ReactNode }) {
-  return <strong className="font-medium text-bone">{children}</strong>;
+  return <strong>{children}</strong>;
 }
 
 /* One link style for the prose. Internal paths go through next/link so
    moving between policy pages is a client navigation; anything on
    another origin opens in a new tab and says so to screen readers. */
 export function A({ href, children }: { href: string; children: React.ReactNode }) {
-  const cls =
-    "text-bone underline decoration-white/25 underline-offset-4 transition-colors duration-300 hover:decoration-acid";
-
   /* "//host" is protocol-relative, i.e. another site, so it is not an
      internal path even though it starts with a slash. */
   if (href.startsWith("/") && !href.startsWith("//")) {
     return (
-      <Link href={href} data-hover className={cls}>
+      <Link href={href} data-hover>
         {children}
       </Link>
     );
@@ -96,15 +80,10 @@ export function A({ href, children }: { href: string; children: React.ReactNode 
      data:, a stray protocol-relative URL) renders as plain text, so a
      bad href in the copy can never become a clickable script. */
   if (!external && !/^mailto:/i.test(href)) {
-    return <span className="text-bone">{children}</span>;
+    return <span>{children}</span>;
   }
   return (
-    <a
-      href={href}
-      data-hover
-      className={cls}
-      {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}
-    >
+    <a href={href} data-hover {...(external ? { target: "_blank", rel: "noopener noreferrer" } : {})}>
       {children}
       {external && <span className="sr-only"> (opens in a new tab)</span>}
     </a>
@@ -115,88 +94,58 @@ export function A({ href, children }: { href: string; children: React.ReactNode 
    SHELL
    ------------------------------------------------------------ */
 export default function LegalPage({
-  eyebrow = "Info",
   title,
   updated,
   path,
   children,
 }: {
-  eyebrow?: string;
   title: string;
   updated: string;
-  /* This page's own href, so the footer can mark it as the current one.
-     A Server Component has no usePathname, and passing it costs nothing. */
+  /* This page's own href. It names the sheet's anchor; the footer marks
+     the current page itself. */
   path?: string;
   children: React.ReactNode;
 }) {
-  /* The display face is at its widest here, so one long word
-     ("Accessibility") at the standard size is wider than a phone and
-     than the text column. Titles with a long word step down a size;
-     break-words is the last resort for anything longer still. */
-  const longest = Math.max(...title.split(/\s+/).map((w) => w.length));
-  const size =
-    longest > 9
-      ? "text-[9vw] sm:text-[3.5rem] md:text-[4.25rem]"
-      : "text-[13vw] sm:text-[4.5rem] md:text-[5.5rem]";
-
+  const slug = path?.replace(/[^a-z0-9-]/gi, "") || "info";
   const iso = isoDate(updated);
-  const year = legal.updated.match(/\d{4}/)?.[0];
-
-  /* Links on these pages are 11px mono. A min height keeps every target
-     at least 24px tall (the WCAG 2.2 minimum) without making the type any
-     bigger: min-h-6 in the footer rows, a roomier min-h-10 up top. */
-  const hit = "inline-flex items-center transition-colors duration-300";
+  /* One long word ("Accessibility") at the standard size is wider than a
+     phone, so a title with one steps down a size there. */
+  const long = Math.max(...title.split(/\s+/).map((w) => w.length)) > 9;
 
   return (
-    <div className="min-h-screen bg-void text-bone">
-      <header className="gutter flex items-center justify-between gap-6 py-6">
-        <Link href="/" data-hover className={`t-mono ${hit} min-h-10 text-bone hover:text-acid`}>
-          {identity.name}
-          <span aria-hidden className="text-acid">
-            .
-          </span>
-          <span className="sr-only">, home page</span>
-        </Link>
+    <>
+      {/* The same strip as the home page; its name tag goes home. */}
+      <StatusStrip />
 
-        <Link
-          href="/"
-          data-hover
-          className={`t-mono ${hit} min-h-10 gap-2 text-bone/60 hover:text-acid`}
+      <main id="main" className="sheet-stack">
+        <Sheet
+          id={slug}
+          n="01"
+          label={legal.tabLabel}
+          ground="cream"
+          tab="inner"
+          className="legalsheet"
+          labelledBy={`h-${slug}`}
         >
-          <svg
-            aria-hidden
-            focusable="false"
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M19 12H5" />
-            <path d="m12 19-7-7 7-7" />
-          </svg>
-          Back to home
-        </Link>
-      </header>
+          <article className="lg">
+            <Link href="/" className="lg-back" data-hover>
+              <svg aria-hidden="true" focusable="false" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 10H4M9 5l-5 5 5 5" />
+              </svg>
+              {notFound.cta}
+            </Link>
+            <h1 id={`h-${slug}`} className={`t-head${long ? " is-long" : ""}`}>
+              {title}
+            </h1>
+            <p className="lg-upd">Last updated {iso ? <time dateTime={iso}>{updated}</time> : updated}</p>
+            <div className="lg-body">{children}</div>
+          </article>
+        </Sheet>
 
-      <main id="main" className="gutter mx-auto max-w-3xl pb-24 pt-16 md:pt-24">
-        <p className="t-mono mb-6 text-bone/55">{eyebrow}</p>
-
-        <h1 className={`t-display chrome break-words text-balance leading-[0.9] ${size}`}>{title}</h1>
-
-        <p className="t-mono mt-8 text-bone/55">
-          Last updated {iso ? <time dateTime={iso}>{updated}</time> : updated}
-        </p>
-
-        <div className="mt-12 md:mt-16">{children}</div>
+        {/* The same footer as the home page, so the bottom of the site
+            never changes from page to page. */}
+        <FooterSheet />
       </main>
-
-      {/* The same footer as the home page, so the bottom of the site never
-          changes from page to page. */}
-      <Footer />
-    </div>
+    </>
   );
 }

@@ -18,16 +18,16 @@ const fonts = [
     use: "the display type and body copy",
   },
   {
-    name: "Instrument Serif",
-    by: "Instrument",
-    href: "https://github.com/Instrument/instrument-serif",
-    use: "the italic accents",
+    name: "Kalam",
+    by: "the Indian Type Foundry",
+    href: "https://github.com/itfoundry/kalam",
+    use: "the handwritten margin notes and drawing labels",
   },
   {
     name: "JetBrains Mono",
     by: "JetBrains",
     href: "https://www.jetbrains.com/lp/mono/",
-    use: "labels and small print",
+    use: "machine readouts: the cursor, the drawing sheet and the disk",
   },
 ];
 

@@ -1,0 +1,484 @@
+/* ============================================================
+   SHEET 03: SERVICES, AT NIGHT
+   The Howrah Bridge crossing, "What I can do" with the "Short on time?"
+   board, the seven services on the station line beside the plotter,
+   and the rooftops seam at the foot.
+
+   Every rule is scoped to .services (the Sheet's class), so the short
+   names ported from the drawings (.sky, .scene, .panel, .st) cannot meet
+   another sheet's. Imported into @layer components by app/globals.css.
+   Components: ServicesSheet, Services, BridgeBand (art in BridgeArt.ts),
+   ShortOnTimeBoard, ServicePlotter (drawings in ServiceDrawings.ts).
+   ============================================================ */
+
+/* ---- the bridge band -------------------------------------------------
+   Its height is max(270px, 24.8vw) (--bh, styles/f0-base.css), which is
+   always tall enough for the art's slice to be governed by the height,
+   so the deck sits at 0.6625 of the band at every width and the route
+   pieces below are written in those terms.
+
+   Each moving thing is its own box, so nothing but a box's opacity or
+   transform is ever written: BridgeBand's scrub fades the skies and the
+   truss, and the route's journey (driveRoute) drives the deck taxi and
+   the lamps' mask. The rest state here is what it shows without
+   scripts: dusk, the taxi at 62% of the way over, the lamps lit behind
+   it. */
+.services .bridge {
+  position: relative;
+  height: var(--bh);
+  overflow: hidden;
+}
+.services .sky {
+  position: absolute;
+  inset: 0;
+}
+.services .sky.day {
+  opacity: 0;
+  background: linear-gradient(#efe7d6 0%, #ebe1cd 40%, #e4d7bf 63.5%, #ddd3be 68%, #d2c7b0 88%, #141a3d 100%);
+}
+.services .sky.dusk {
+  background: linear-gradient(#8f93b6 0%, #c6b2b0 40%, #e7bf92 63.5%, #555a86 68%, #2a3062 88%, #141a3d 100%);
+}
+.services .sky.night {
+  opacity: 0;
+  background: linear-gradient(#0f1433 0%, #141a3d 40%, #1f2652 63.5%, #1a2150 68%, #141a3d 100%);
+}
+/* The truss <g> is defined once in this zero-size svg and drawn by two
+   roots. Zero size, never display:none, or the <use>s would draw
+   nothing. */
+.services .br-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+.services .scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* navy at dusk, cream once it is dark: the cream root fades in over the
+   navy one */
+.services .tr-ink { color: var(--color-ink); }
+.services .tr-cream { color: #e6dece; opacity: 0; }
+/* The lit layer is revealed up to the taxi: the mask box slides left by
+   what is still ahead of the taxi and the art inside slides back by the
+   same amount, so the lamps stay where they stand. */
+.services .litmask {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  transform: translateX(-38%);
+}
+.services .litmask > .lit { transform: translateX(38%); }
+/* the Strand bank below the river, with its embankment joints */
+.services .bankstrip {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 44px;
+  background-color: var(--color-night-deep);
+  border-top: 1.5px solid rgb(239 231 214 / 0.28);
+  background-image: repeating-linear-gradient(90deg, rgb(239 231 214 / 0.1) 0 1px, transparent 1px 72px);
+  background-size: 100% 18px;
+  background-repeat: repeat-x;
+}
+/* The deck taxi rides a full-width box with the car centred on its left
+   edge: translateX(62%) is its rest without scripts, and the journey
+   replaces it with a px offset while it is the route's taxi (it is
+   hidden the rest of the time, data-stand-car="deck"). */
+.services .decktaxi {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  width: 100%;
+  top: calc(var(--bh) * 0.639 - 42.5px);
+  line-height: 0;
+  pointer-events: none;
+  transform: translateX(62%);
+}
+.services .decktaxi .dtaxi { transform: translateX(-50%); }
+
+/* The route's U-turn through the band: down the gutter, along the deck,
+   down the right side, back along the bank and down the gutter again.
+   The journey drives it from when its first corner is 84% down the
+   viewport to when the last one is 16% down: the deck taxi across the
+   deck, the small taxi the rest.
+   Tied to the deck line at --bh * 0.6625 and the bank's midline 22px
+   above the band's foot (README: route offsets move with the layout). */
+.services .r-br-a { top: 0; height: calc(var(--bh) * 0.6625 - var(--R) - var(--rw) / 2); }
+.services .e-br-a { left: calc(var(--rx) - var(--rw) / 2); top: calc(var(--bh) * 0.6625 - var(--R) - var(--rw) / 2); }
+.services .r-br-deck {
+  left: calc(var(--rx) + var(--R) - var(--rw) / 2);
+  right: calc(var(--rx) + var(--R) - var(--rw) / 2);
+  top: calc(var(--bh) * 0.6625 - var(--rw) / 2);
+}
+.services .e-br-b { right: calc(var(--rx) - var(--rw) / 2); top: calc(var(--bh) * 0.6625 - var(--rw) / 2); }
+.services .rail.r-br-b {
+  left: auto;
+  right: calc(var(--rx) - var(--rw) / 2);
+  top: calc(var(--bh) * 0.6625 + var(--R) - var(--rw) / 2);
+  bottom: calc(22px + var(--R) - var(--rw) / 2);
+}
+.services .e-br-c { right: calc(var(--rx) - var(--rw) / 2); bottom: calc(22px - var(--rw) / 2); }
+.services .r-br-bank {
+  left: calc(var(--rx) + var(--R) - var(--rw) / 2);
+  right: calc(var(--rx) + var(--R) - var(--rw) / 2);
+  bottom: calc(22px - var(--rw) / 2);
+}
+.services .e-br-d { left: calc(var(--rx) - var(--rw) / 2); top: calc(var(--bh) - 22px - var(--rw) / 2); }
+.services .r-br-down { top: calc(var(--bh) - 22px + var(--R) - var(--rw) / 2); bottom: 0; }
+
+/* ---- the header -------------------------------------------------------- */
+.services .svc {
+  position: relative;
+  padding: 58px var(--cr) 72px var(--cl);
+}
+.services .r-svc-in { top: 0; bottom: 0; }
+.services .svc-head {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: 40px;
+}
+.services .t-head {
+  font-size: 116px;
+  color: var(--color-nline);
+}
+/* The strip note, pencilled a little uphill. `rotate`, not transform:
+   its pencil-in (playOnce) moves it with a transform of its own. */
+.services .svc-head .hand {
+  font-size: 23px;
+  color: var(--color-nline-2);
+  rotate: -2deg;
+  transform-origin: 0 50%;
+  margin-top: 18px;
+  width: max-content;
+  max-width: 100%;
+}
+
+/* ---- the board: "Short on time?" --------------------------------------
+   Teal enamel with a cream keyline inset from its edge, four screws, a
+   slight tilt and the one painted title on this sheet. */
+.services .board {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+  background-color: var(--color-teal);
+  color: #f3ead6;
+  border-radius: 10px;
+  padding: 24px 36px 22px;
+  rotate: -1.2deg;
+  margin-bottom: 10px;
+  box-shadow:
+    inset 0 0 0 6px var(--color-teal),
+    inset 0 0 0 8px rgb(243 234 214 / 0.85),
+    0 26px 40px -24px rgb(0 0 0 / 0.85);
+  transition: translate 0.3s ease;
+}
+@media (hover: hover) {
+  .services .board:hover { translate: 0 -3px; }
+}
+.services .board:focus-visible { outline-offset: 5px; }
+.services .screws {
+  position: absolute;
+  inset: 14px;
+  pointer-events: none;
+  background:
+    radial-gradient(circle, #d8d8de 0 3px, transparent 3.6px) 0 0 / 8px 8px no-repeat,
+    radial-gradient(circle, #d8d8de 0 3px, transparent 3.6px) 100% 0 / 8px 8px no-repeat,
+    radial-gradient(circle, #d8d8de 0 3px, transparent 3.6px) 0 100% / 8px 8px no-repeat,
+    radial-gradient(circle, #d8d8de 0 3px, transparent 3.6px) 100% 100% / 8px 8px no-repeat;
+}
+.services .board .painted { font-size: 44px; }
+.services .board .bl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 650;
+  font-size: 18px;
+  margin-top: 10px;
+}
+.services .board .arr {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  color: var(--color-acid);
+}
+
+/* ---- the rows, on the station line ------------------------------------ */
+.services .svc-grid {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: 64px;
+  margin-top: 46px;
+  align-items: start;
+}
+.services .srows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  border-bottom: 1px solid rgb(239 231 214 / 0.16);
+}
+.services .srows > li {
+  position: relative;
+  border-top: 1px solid rgb(239 231 214 / 0.16);
+  transition: background-color 0.3s ease;
+}
+.services .srows > li.open { background-color: rgb(239 231 214 / 0.05); }
+.services .srows h3 {
+  margin: 0;
+  font: inherit;
+}
+/* The whole row is the button. Its ring sits inside the row, which the
+   row above and below would otherwise cover. */
+.services .srow {
+  display: grid;
+  grid-template-columns: 40px 30px 1fr 22px;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 16px 10px;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.services .srow:focus-visible { outline-offset: -3px; }
+.services .sn {
+  color: var(--color-acid);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+.services .ico {
+  width: 28px;
+  height: 28px;
+  color: var(--color-nline);
+}
+.services .st {
+  font-size: 23px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  /* No line-height here: the title inherits the sheet's 1.55 like the
+     mockup's, which sets the row height the fixed station top is tuned to. */
+  color: var(--color-nline);
+}
+@media (hover: hover) {
+  .services .srow:hover .st { color: #fff; }
+}
+/* Plus while closed, minus while open, from aria-expanded, so the server
+   HTML (every row open) draws a minus too. */
+.services .tg {
+  font-size: 24px;
+  color: var(--color-nline-2);
+  text-align: right;
+  line-height: 1;
+}
+.services .srow[aria-expanded="true"] .tg::before { content: "\2212"; }
+.services .srow[aria-expanded="false"] .tg::before { content: "+"; }
+
+/* The panel opens with grid-template-rows 0fr to 1fr (set inline by
+   Services), which animates to the content's own height. */
+.services .pwrap {
+  display: grid;
+  transition:
+    grid-template-rows 0.6s cubic-bezier(0.76, 0, 0.24, 1),
+    opacity 0.6s cubic-bezier(0.76, 0, 0.24, 1);
+}
+.services .pclip {
+  min-height: 0;
+  overflow: hidden;
+}
+.services .panel {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 28px;
+  padding: 2px 22px 26px 96px;
+}
+.services .pts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 15.5px;
+  color: var(--color-nline);
+}
+.services .pts li {
+  position: relative;
+  padding: 4px 0 4px 24px;
+}
+.services .pts li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 10px;
+  width: 10px;
+  height: 6px;
+  border-left: 2.2px solid var(--color-acid);
+  border-bottom: 2.2px solid var(--color-acid);
+  transform: rotate(-45deg);
+}
+.services .panel p {
+  font-size: 15.5px;
+  color: var(--color-nline-2);
+  line-height: 1.62;
+}
+
+/* ---- the plotter card -------------------------------------------------
+   The drawing is plotted on the night ground itself, inside a cream
+   rule with a ruled top edge; the handwritten legend and the title block
+   are HTML under it. From 1024px up it rides sticky beside the rows. */
+.services .plotcard {
+  position: relative;
+  margin: 0;
+  border: 1px solid rgb(239 231 214 / 0.3);
+  padding: 22px 22px 0;
+  background-image: repeating-linear-gradient(90deg, rgb(239 231 214 / 0.45) 0 1px, transparent 1px 48px);
+  background-size: 100% 8px;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .services .plotcard {
+    position: sticky;
+    top: 96px;
+  }
+}
+.services .plot {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.services .plotlegend {
+  list-style: none;
+  counter-reset: b;
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 12px 0 16px;
+  font-size: 18.5px;
+  color: var(--color-nline);
+}
+.services .plotlegend li {
+  counter-increment: b;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  transition: opacity 0.25s ease;
+}
+.services .plotlegend li::before {
+  content: counter(b);
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border: 1.5px solid var(--color-nline);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font: 700 13px/1 var(--font-display);
+}
+/* The title block: two ruled rows, a drafting caption in the narrow
+   column and its entry beside it, the way a sheet's block reads "Title"
+   and "Note". Rows rather than side-by-side cells, so even the 348px card
+   at 1024 keeps every service name and note on one line and the block
+   does not change height from drawing to drawing. */
+.services .tblock {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  border-top: 1px solid rgb(239 231 214 / 0.3);
+  margin: 0 -22px;
+}
+.services .tblock > :nth-child(n + 3) { border-top: 1px solid rgb(239 231 214 / 0.3); }
+.services .tb-k {
+  display: flex;
+  align-items: center;
+  padding: 0 14px 0 16px;
+  border-right: 1px solid rgb(239 231 214 / 0.3);
+  font-size: 13px;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-acid);
+}
+.services .tb-v {
+  padding: 10px 16px;
+  font-size: 15px;
+  line-height: 1.4;
+  color: var(--color-nline-2);
+}
+.services .tb-title {
+  font-weight: 700;
+  color: var(--color-nline);
+}
+
+/* ---- the rooftops seam ------------------------------------------------- */
+.services .roofs-wrap {
+  position: relative;
+  height: 130px;
+}
+.services .roofs {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 100%;
+}
+
+/* ---- without scripts ---------------------------------------------------
+   No row can open, so every panel shows open (globals.css shows the
+   [data-svc-panel] boxes) and every row is the "open" shade. */
+html:not([data-motion]) .services .srows > li { background-color: rgb(239 231 214 / 0.05); }
+/* ...and every station is filled, as the open row's is (these restate
+   F0's .station.on so an open row always has a filled stop). */
+html:not([data-motion]) .services .station { background: var(--ri); width: 20px; height: 20px; top: 28px; left: calc(var(--rx) - var(--cl) - 10px); }
+html:not([data-motion]) .services .station::before { top: 6px; left: 17px; }
+@media (max-width: 760px) {
+  html:not([data-motion]) .services .station { top: 22px; left: calc(var(--rx) - var(--cl) - 9px); width: 18px; height: 18px; }
+}
+
+/* ---- widths ------------------------------------------------------------ */
+@media (max-width: 1180px) {
+  .services .t-head { font-size: 96px; }
+}
+/* The sticky card is narrowest here (348px at 1024): tighter title block
+   padding keeps the longest note ("Cisco and Tata cybersecurity
+   training") on one line. */
+@media (min-width: 1024px) and (max-width: 1180px) {
+  .services .tb-k { padding: 0 12px; }
+  .services .tb-v { padding: 10px 12px; }
+}
+@media (max-width: 1023px) and (min-width: 761px) {
+  .services .svc-head { grid-template-columns: 1fr; gap: 26px; }
+  .services .board { justify-self: start; }
+  .services .svc-grid { grid-template-columns: 1fr; gap: 40px; }
+  .services .plotcard { max-width: 620px; }
+}
+
+/* ---- phone ------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .services .decktaxi { top: calc(var(--bh) * 0.639 - 27.3px); }
+  .services .decktaxi .dtaxi { width: 72px; height: 27.9px; }
+  .services .svc { padding: 48px var(--cr) 60px var(--cl); }
+  .services .svc-head { grid-template-columns: 1fr; gap: 22px; }
+  /* 16vw keeps "What I can do" on one line down to 360px wide */
+  .services .t-head { font-size: min(62px, 16vw); }
+  .services .svc-head .hand { font-size: 20px; margin-top: 12px; width: auto; }
+  .services .board { justify-self: start; padding: 18px 22px; margin: 0 0 0 2px; }
+  .services .board .painted { font-size: 34px; }
+  .services .board .bl { font-size: 16px; }
+  .services .svc-grid { grid-template-columns: 1fr; gap: 0; margin-top: 30px; }
+  .services .srow { grid-template-columns: 28px 24px 1fr 16px; gap: 10px; padding: 14px 4px; }
+  .services .ico { width: 23px; height: 23px; }
+  .services .st { font-size: 18.5px; }
+  .services .panel { grid-template-columns: 1fr; gap: 12px; padding: 0 10px 18px 14px; }
+  .services .pts { font-size: 15px; }
+  .services .panel p { font-size: 15px; }
+  /* The plotter's legend repeats the open panel's bullets, and it cost a
+     phone screen and a half: tablet and up only. */
+  .services .plotcard { display: none; }
+  .services .roofs-wrap { height: 100px; }
+}

@@ -1,0 +1,249 @@
+/* ============================================================
+   S2 CHROME: the status strip and the bottom nav
+   Imported into @layer components by app/globals.css. Ported from the
+   mockup's .strip and .bnav, every rule scoped under its own root so a
+   sheet's .road or .seen can never pick these up.
+   ============================================================ */
+
+/* --- STATUS STRIP (components/StatusStrip.tsx) ---------------------
+   Opaque cream with a navy hairline: the sheets slide under it, and a
+   see-through strip would show their edges and tabs through the name.
+   A three-column grid keeps the one-liner centred on the page whatever
+   the reading says; the reading never shrinks. */
+.strip {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 50;
+  height: 40px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 24px;
+  padding: 0 24px;
+  background-color: var(--color-cream);
+  border-bottom: 1px solid rgb(29 42 110 / 0.18);
+  color: var(--color-ink);
+  font-size: 14px;
+  line-height: 1.3;
+}
+.strip .sname {
+  grid-column: 1;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  /* A little padding so the focus ring clears the circle and the text;
+     pulled back by the same amount so the circle still sits at 24px. */
+  margin-left: -6px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  color: var(--color-ink);
+}
+.strip .sname:focus-visible {
+  outline-offset: 0;
+  border-radius: 8px;
+}
+.strip .sname i {
+  width: 22px;
+  height: 22px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid var(--color-ink);
+  border-radius: 50%;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+/* One line tall, the reel inside rolls up a row at a time. */
+.strip .sline {
+  grid-column: 2;
+  display: block;
+  min-width: 0;
+  max-width: min(560px, 46vw);
+  height: 1.3em;
+  overflow: hidden;
+  text-align: center;
+  color: var(--color-muted);
+}
+.strip .sline .reel {
+  display: block;
+  will-change: transform;
+}
+.strip .sline .reel > span {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.strip .seen {
+  grid-column: 3;
+  justify-self: end;
+  flex: none;
+  margin: 0;
+  white-space: nowrap;
+}
+/* Wide enough for "99%", so the words beside it do not step left as the
+   number grows. */
+.strip .seen b {
+  display: inline-block;
+  min-width: 34px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- BOTTOM NAV (components/BottomNav.tsx) -------------------------
+   A cream-2 pill: the labels, then a dashed road with the outlined taxi.
+   The fixed layer centres it and passes clicks through around it; GSAP
+   moves the pill (hide and show) and the taxi (x), nothing else. */
+.bnav-layer {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 16px;
+  z-index: 50;
+  display: flex;
+  justify-content: center;
+  padding: 0 12px;
+  pointer-events: none;
+}
+.bnav {
+  pointer-events: auto;
+  padding: 6px 6px 0;
+  background-color: var(--color-cream-2);
+  border: 1px solid rgb(29 42 110 / 0.2);
+  border-radius: 15px;
+  box-shadow:
+    0 16px 34px -14px rgb(13 22 60 / 0.5),
+    0 1px 0 rgb(255 255 255 / 0.8) inset;
+  color: var(--color-ink);
+}
+.bnav .labs {
+  display: flex;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.bnav .labs a {
+  position: relative;
+  display: block;
+  padding: 9px 15px 6px;
+  border-radius: 9px;
+  font-size: 14.5px;
+  font-weight: 600;
+  /* The mockup's body leading: the label box is as tall as the drawing's. */
+  line-height: 1.55;
+  text-align: center;
+  white-space: nowrap;
+  color: var(--color-ink);
+  transition: background-color 0.25s ease;
+}
+/* The tap target runs down over the road (which takes no pointer
+   events), so each label is a finger-sized 40px and more on a phone. */
+.bnav .labs a::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 -17px 0;
+}
+/* The bold copy, zero tall and invisible: the label is as wide lit as
+   unlit, so the row and the taxi's parking places never shift. */
+.bnav .labs a::after {
+  content: attr(data-label);
+  display: block;
+  height: 0;
+  overflow: hidden;
+  visibility: hidden;
+  font-weight: 700;
+}
+.bnav .labs a:hover {
+  background-color: rgb(29 42 110 / 0.045);
+}
+.bnav .labs a[aria-current] {
+  background-color: rgb(29 42 110 / 0.07);
+  font-weight: 700;
+}
+.bnav .labs a:focus-visible {
+  outline-offset: 0;
+  border-radius: 9px;
+}
+.bnav .road {
+  position: relative;
+  height: 17px;
+  margin: 0 6px;
+  pointer-events: none;
+}
+.bnav .road .dash {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 11px;
+  border-top: 1.5px dashed rgb(29 42 110 / 0.32);
+}
+/* Parked under Home until the script measures the labels (and for good
+   without JavaScript, where Home is the lit label). */
+.bnav .ntaxi {
+  position: absolute;
+  top: 0;
+  left: 0;
+  line-height: 0;
+  /* Where the script parks it under Home, measured at 1440 (and 7px on
+     phones, below). */
+  transform: translateX(14.6px);
+}
+.bnav .ntaxi svg {
+  overflow: visible;
+}
+
+/* --- widths ----------------------------------------------------------- */
+/* 1180px and narrower: no room for a whole one-liner between the name
+   and the reading, and a cut one-liner loses its point. */
+@media (max-width: 1180px) {
+  .strip .sline {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .strip {
+    height: 36px;
+    padding: 0 14px;
+    gap: 14px;
+    font-size: 13px;
+  }
+  .bnav-layer {
+    bottom: 12px;
+  }
+  .bnav {
+    padding: 4px 4px 0;
+  }
+  .bnav .labs a {
+    padding: 11px 9px 7px;
+    font-size: 13.5px;
+  }
+  .bnav .ntaxi {
+    transform: translateX(7.2px);
+  }
+}
+
+/* The narrowest phones (320 to 359): the five labels still fit. */
+@media (max-width: 359px) {
+  .bnav .labs a {
+    padding-inline: 7px;
+  }
+}
+
+/* Without scripts StatusStrip cannot measure itself into the root's
+   scroll-padding-top, so a native jump to a sheet would land with the
+   sheet's index tab under the strip. The strip's own heights instead. */
+html:not([data-motion]) {
+  scroll-padding-top: 40px;
+}
+@media (max-width: 760px) {
+  html:not([data-motion]) {
+    scroll-padding-top: 36px;
+  }
+}

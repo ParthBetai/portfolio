@@ -2,11 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import Ambassador from "./Ambassador";
+import RegMark from "./RegMark";
 
 /* ============================================================
    ROUTE PROGRESS
    The "Loading" screen shown between pages, from the moment a link to
-   another page is clicked until that page has arrived.
+   another page is clicked until that page has arrived: a cream drawing
+   sheet, like the home page's loader, with the one-ink taxi driving
+   along the kerb and the road inking in behind it (a CSS loop, see
+   PAGE-CHANGE SHEET in styles/f0-base.css).
 
    This used to be app/loading.tsx, but Next wraps every page under a
    loading file in a Suspense boundary. Even a fully prebuilt page then
@@ -89,14 +94,19 @@ export default function RouteProgress() {
   /* Above the nav (z-50), below the cursor (z-70), the same layer the
      resume preview uses. */
   return (
-    <div className="fixed inset-0 z-[65] flex items-center justify-center bg-void">
-      <div role="status" className="flex flex-col items-center gap-4">
-        <p className="t-mono text-ash">Loading</p>
-        <span aria-hidden className="block h-px w-28 overflow-hidden bg-white/10">
-          <span
-            className="block h-full w-1/3 bg-acid"
-            style={{ animation: "route-scan 1.1s cubic-bezier(0.76, 0, 0.24, 1) infinite" }}
-          />
+    <div className="g-cream fixed inset-0 z-[65]" data-ground="cream">
+      <div className="sheet-frame" aria-hidden="true" />
+      <RegMark corner="tl" />
+      <RegMark corner="tr" />
+      <RegMark corner="bl" />
+      <RegMark corner="br" />
+      <p role="status" className="absolute bottom-[170px] left-[var(--cl)] text-[16px] font-bold text-ink">
+        Loading
+      </p>
+      <div className="rp-road" aria-hidden="true">
+        <i className="rp-bar" />
+        <span className="rp-car">
+          <Ambassador variant="ink" width={54} paper="var(--color-cream)" />
         </span>
       </div>
     </div>

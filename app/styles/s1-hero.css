@@ -1,0 +1,587 @@
+/* ============================================================
+   SHEET 01: THE HERO (Hero.tsx, HeroScene.tsx, TaxiDrawing.tsx,
+   Exposure.tsx), the loader and the Exposure.
+
+   The sheet's height follows the viewport. The copy is in normal flow,
+   top left; the art lives in one design box (.h-stage, 980 x 830 units)
+   anchored bottom right, and every piece in it is placed as
+   calc(N * var(--u)). --u is a length worked out once by CSS from the
+   viewport (never per frame), so the whole drawing scales as one and
+   the kerb, the taxi and the route always meet. A phone has its own
+   composition in px, with the kerb at 720 of an 844px box.
+
+   The Exposure stacks the hero in six layers (Hero.tsx): the ink back,
+   the blueprint back (masked), the portrait canvas, the ink front, the
+   blueprint front (masked) and the copy line. A mask is a clipping box
+   moved down to the line with an inner box moved back up by the same
+   amount, so the print inside stands still while its window opens:
+   transforms only, on the compositor.
+   ============================================================ */
+
+.sheet.hero {
+  height: max(600px, 100svh);
+  --u: min(1px, calc((100svh - 70px) / 830), calc((100vw - 500px) / 980));
+  /* The kerb the taxi stands on: 80 units above the stage's bottom. */
+  --kerb: calc(100% - 70px - 80 * var(--u));
+  /* The Home stop, just behind the taxi's tail (it faces left, so the
+     tail is its right end, at 622 units). */
+  --home: calc(100% - 328 * var(--u));
+}
+/* The frame and the top marks sit under the status strip. */
+.hero > .sheet-frame { top: 54px; }
+.hero > .reg-mark.tl,
+.hero > .reg-mark.tr { top: 41px; }
+
+/* ---- the layers ------------------------------------------------- */
+.h-layer {
+  position: absolute;
+  inset: 0;
+}
+.h-ink-back { z-index: 3; }
+.h-bp-back { z-index: 4; }
+.h-canvas { z-index: 5; pointer-events: none; }
+.h-ink-front { z-index: 6; pointer-events: none; }
+.h-bp-front { z-index: 7; }
+/* The copy over the whole street, so the big taxi, driven off by the
+   scroll, passes behind the role, the billing and the buttons. Its
+   blueprint copy is at 9 with the copy line, which comes after it in
+   the markup and so paints over it. */
+.h-ink-copy { z-index: 8; }
+.h-ink-copy .h-copy { pointer-events: auto; }
+.h-bp-copy { z-index: 9; }
+/* The blueprint prints start fully masked (the line at the bottom). */
+.h-mask {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translate3d(0, 100%, 0);
+}
+.h-mask-in {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(0, -100%, 0);
+}
+/* The ink copy's window, the other way up: the clipping box sits a
+   whole hero above and is moved down by the same transform, so its
+   bottom edge is the line; at rest (and without scripts) it covers the
+   hero exactly. The inner box starts a hero lower to cancel that. */
+.h-mask-ink { top: -100%; bottom: 100%; }
+.h-mask-ink > .h-mask-in { top: 100%; bottom: -100%; }
+/* Promoted only while the line is on the hero. */
+.hero.is-exposing .h-mask,
+.hero.is-exposing .h-mask-in,
+.hero.is-exposing .h-xline { will-change: transform; }
+
+/* ---- the copy --------------------------------------------------- */
+.h-copy {
+  position: relative;
+  z-index: 3;
+  padding: clamp(76px, 13vh, 118px) 0 0 var(--cl);
+  width: max-content;
+  max-width: 100%;
+}
+.h-ribbon {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--brick);
+  color: #f8f0e0;
+  font-weight: 750;
+  font-size: 15px;
+  line-height: 1.55;
+  letter-spacing: 0.02em;
+  padding: 7px 26px;
+  margin-left: 4px;
+  clip-path: polygon(0 0, 100% 0, calc(100% - 12px) 50%, 100% 100%, 0 100%, 12px 50%);
+}
+.h-ribbon i {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--taxi);
+  display: block;
+}
+/* Under 900px tall the copy's spacing and the name draw in a little
+   with the height (not stepped, so no height jumps), so the buttons end
+   well above the kerb on a laptop: the big taxi drives off under them
+   as About comes up (THE HERO'S DRIVE in lib/motion.ts), and at 1280 x
+   720 they used to stand on the kerb itself. From 900px tall nothing
+   changes. */
+.h-name {
+  margin-top: clamp(12px, calc(4.5vh - 22px), 18px);
+  font-weight: 850;
+  font-stretch: 96%;
+  letter-spacing: -0.04em;
+  line-height: 0.84;
+  font-size: min(186px, 20.6vh, 13vw, calc(29.4vh - 80px));
+  color: var(--ink-deep);
+  text-shadow: var(--shade-hero);
+}
+.h-name > span { display: block; }
+/* The name keeps one layer of its own for good: the loader writes it in
+   place and the street fades in round it, and a browser that moves text
+   in and out of layers while things animate near it re-rasterises its
+   edges (subpixel, then greyscale, then subpixel again). On its own
+   layer it paints the same through the whole intro and every scroll. */
+.h-ink-copy .h-name { will-change: transform; }
+.h-name > .l2 { margin-left: 0.04em; }
+/* Narrower than the whole role, so it sets as two lines, breaking only
+   after its "&" (Hero.tsx keeps every other space unbreakable): on a
+   laptop the one long line ran under the taxi's roof rack. */
+.h-role {
+  margin-top: clamp(18px, calc(9.2vh - 52px), 30px);
+  max-width: 14em;
+  font-weight: 750;
+  font-size: clamp(28px, 2.8vw, 40px);
+  letter-spacing: -0.025em;
+  line-height: 1.1;
+  color: var(--ink-deep);
+}
+.h-billing {
+  margin-top: clamp(5px, calc(2vh - 10px), 8px);
+  font-size: 18px;
+  line-height: 1.55;
+  color: var(--muted);
+  font-weight: 500;
+}
+.h-ctas {
+  display: flex;
+  gap: 12px;
+  margin-top: clamp(14px, calc(6vh - 32px), 22px);
+}
+/* The outline button's see-through wash, made solid at the same colour
+   it shows on the cream, so the taxi driving behind it is hidden by the
+   button, not seen through its label. */
+.h-ink-copy .btn.line:not(:hover) { background: color-mix(in srgb, rgb(251 248 240) 70%, var(--color-cream)); }
+
+/* ---- the art box ------------------------------------------------ */
+.h-stage {
+  position: absolute;
+  right: 0;
+  bottom: 70px;
+  width: calc(980 * var(--u));
+  height: calc(830 * var(--u));
+  pointer-events: none;
+}
+.h-stage > * { position: absolute; }
+.h-facades {
+  left: 0;
+  top: calc(230 * var(--u));
+  width: calc(660 * var(--u));
+  height: calc(520 * var(--u));
+  max-width: none;
+  opacity: 0.1;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 24%);
+  mask-image: linear-gradient(90deg, transparent 0, #000 24%);
+}
+/* The Victoria Memorial behind Parth: its centre line (300 of 600) at
+   684 units, behind his head, the angel just under the frame. Strokes are
+   screen px at every size (non-scaling), so the keyline stays 1.5px. */
+.h-vm {
+  left: calc(384 * var(--u));
+  top: calc(10 * var(--u));
+  width: calc(600 * var(--u));
+  height: calc(620 * var(--u));
+  overflow: visible;
+}
+.h-vm path { vector-effect: non-scaling-stroke; }
+.h-vm .k { stroke-width: 1.5px; }
+.h-vm .d { stroke-width: 1px; }
+.h-vm .vm-bugle { stroke-width: 2px; }
+/* The relief's canvas: 0.9 wide per 1 high, the photo (1080 x 1456)
+   filling 1 / 1.05 of its height and standing on its bottom edge, so
+   the photo itself lands on 452, 80, 491 x 662 units, with room each
+   side for the turn. */
+.h-portrait {
+  left: calc(384.7 * var(--u));
+  top: calc(46.9 * var(--u));
+  width: calc(625.6 * var(--u));
+  height: calc(695.1 * var(--u));
+}
+/* The cut-out without scripts (noscript), on the photo's own box. The
+   noscript element itself stays out of the way, so the stage is the
+   photo's containing block. */
+.h-stage > noscript { position: static; }
+.h-photo {
+  position: absolute;
+  left: calc(452 * var(--u));
+  top: calc(80 * var(--u));
+  width: calc(491 * var(--u));
+  height: calc(662 * var(--u));
+  max-width: none;
+  object-fit: contain;
+}
+/* The orb, when there is no photo: on the memorial's dome. */
+.h-orb {
+  left: calc(470 * var(--u));
+  top: calc(140 * var(--u));
+  width: calc(420 * var(--u));
+  height: calc(420 * var(--u));
+}
+.h-railing {
+  left: calc(420 * var(--u));
+  top: calc(600 * var(--u));
+  width: calc(560 * var(--u));
+  height: calc(150 * var(--u));
+}
+/* The taxi and the robot on its rack move together: .h-car is the
+   intro's box (it drives in), .h-drive the journey's (the scroll drives
+   it off and shrinks it into the route taxi; lib/motion.ts sets its
+   transform-origin on the body's wheel line). */
+.h-car,
+.h-drive {
+  position: absolute;
+  inset: 0;
+}
+.h-drive > * { position: absolute; }
+/* Its own layer with scripts (only they move it), painted once at full
+   size: the drive then only scales that layer, never repaints the car. */
+html[data-motion] .h-drive { will-change: transform; }
+.h-taxi {
+  left: calc(-15 * var(--u));
+  top: calc(508 * var(--u));
+  width: calc(640 * var(--u));
+  height: calc(248.2 * var(--u));
+}
+/* Over the rack, which the left-facing taxi carries a little right of
+   its middle. */
+.h-bot {
+  left: calc(298 * var(--u));
+  top: calc(405 * var(--u));
+  width: calc(62 * var(--u));
+  height: calc(104 * var(--u));
+}
+.h-dim {
+  left: calc(-15 * var(--u));
+  top: calc(778 * var(--u));
+  width: calc(640 * var(--u));
+  height: calc(20 * var(--u));
+}
+.h-dimlab {
+  left: calc(-15 * var(--u));
+  top: calc(800 * var(--u));
+  width: calc(640 * var(--u));
+  display: flex;
+  justify-content: space-between;
+  font-size: max(16px, calc(19 * var(--u)));
+  color: var(--ink);
+  z-index: 3;
+}
+.h-kerb {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--kerb);
+  height: 0;
+  border-top: 1.6px solid var(--ink);
+}
+
+/* ---- the blueprint copy ----------------------------------------- */
+.h-bp .h-name { color: var(--bline); text-shadow: var(--shade-bphero); }
+.h-bp .h-ribbon {
+  background: transparent;
+  color: var(--bline);
+  outline: 1.4px solid var(--bline);
+  outline-offset: -1.4px;
+  clip-path: none;
+  border-radius: 2px;
+}
+.h-bp .h-ribbon i { background: var(--bline); }
+.h-bp .h-role,
+.h-bp .h-dimlab { color: var(--bline); }
+.h-bp .h-billing { color: var(--bline-2); }
+.h-bp .btn.solid { background: var(--bline); color: var(--blue); box-shadow: none; }
+.h-bp .btn.line { border-color: var(--bline); color: var(--bline); background: transparent; }
+.h-bp .h-kerb { border-color: var(--bline); }
+.h-bp .h-facades { opacity: 0.16; }
+
+/* ---- the copy line ---------------------------------------------- */
+/* It leads the About sheet up the hero; Exposure.tsx moves it with a
+   transform and shows it only while it is on the hero. */
+.h-xline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 0;
+  z-index: 9;
+  pointer-events: none;
+  visibility: hidden;
+  transform: translate3d(0, 100vh, 0);
+}
+.h-xline::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -1px;
+  height: 2.5px;
+  background: var(--cream);
+  box-shadow: 0 0 0 1px rgb(19 26 74 / 0.18);
+}
+.h-xline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 2px;
+  height: 9px;
+  background:
+    repeating-linear-gradient(90deg, rgb(243 238 227 / 0.85) 0 1.5px, transparent 1.5px 12px),
+    repeating-linear-gradient(90deg, rgb(243 238 227 / 0.85) 0 1.5px, transparent 1.5px 60px);
+  background-size: auto 6px, auto 9px;
+  background-repeat: repeat-x;
+}
+.h-xc {
+  position: absolute;
+  top: -13px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1.5px solid var(--cream);
+}
+.h-xc::before,
+.h-xc::after {
+  content: "";
+  position: absolute;
+  background: var(--cream);
+}
+.h-xc::before { left: 50%; top: -6px; bottom: -6px; width: 1.5px; translate: -50% 0; }
+.h-xc::after { top: 50%; left: -6px; right: -6px; height: 1.5px; translate: 0 -50%; }
+.h-xc.l { left: 20px; }
+.h-xc.r { right: 20px; }
+/* The riding tab: About's, on the right, never over the name or the
+   buttons (it steps aside while the line crosses them). */
+.sheet-tab.h-xt {
+  top: -36px;
+  left: auto;
+  right: 64px;
+  --g: var(--blue);
+  --ri: var(--bline);
+  color: var(--bline);
+  transition: opacity 0.2s ease;
+}
+.sheet-tab.h-xt.off { opacity: 0; }
+
+/* ---- the hero's route: from the Home stop at the taxi's tail, along
+   the road under the taxi, round the corner and down the gutter. The
+   road is the big taxi's own stretch (stand="road"): the scroll drives
+   it to the corner, where it has shrunk to the small route taxi ----- */
+.hero > .rail,
+.hero > .elbow,
+.hero > .stop,
+.hero > .stoplab { z-index: 8; }
+.rail.r-hero {
+  left: calc(var(--rx) + var(--R) - var(--rw) / 2);
+  width: calc(var(--home) - var(--rx) - var(--R) + var(--rw) / 2);
+  top: calc(var(--kerb) + 9px);
+}
+.elbow.e-hero {
+  left: calc(var(--rx) - var(--rw) / 2);
+  top: calc(var(--kerb) + 9px);
+}
+.rail.r-hero-v {
+  top: calc(var(--kerb) + 9px + var(--R));
+  bottom: 0;
+}
+/* The ring centred on the road's end (kerb + 9 + half the stroke), its
+   word beside it, on the road's line and clear of the dimension line. */
+.stop.s-home {
+  left: calc(var(--home) - 10px);
+  top: calc(var(--kerb) + 1px);
+}
+.stoplab.s-home-lab {
+  position: absolute;
+  left: calc(var(--home) + 16px);
+  top: calc(var(--kerb) + 2px);
+}
+
+/* ---- the loader: Span closed ------------------------------------ */
+/* The loader is the hero itself (Hero.tsx, LoaderBridge.ts): the
+   Howrah Bridge is erected on the sheet while the name is lowered onto
+   its plan in the h1, in place. These rules hold the street back from the first paint,
+   but only with scripts (the boot script sets data-motion before the
+   body is parsed) and only until Hero.tsx marks the sheet data-landed,
+   so a page without scripts shows the finished hero. The facades stay:
+   the sheet is set up from the first paint. The taxi waits for
+   data-span, set once the loader has placed it small by the barrier. */
+html[data-motion] .hero:not([data-landed]) .h-ink-back > .h-stage > .h-vm,
+html[data-motion] .hero:not([data-landed]) .h-ink-back > .h-stage > .h-dim,
+html[data-motion] .hero:not([data-landed]) .h-ink-back > .h-stage > .h-dimlab,
+html[data-motion] .hero:not([data-landed]) .h-ink-front .h-railing,
+html[data-motion] .hero:not([data-landed]):not([data-span]) [data-intro-car],
+html[data-motion] .hero:not([data-landed]) > .rail,
+html[data-motion] .hero:not([data-landed]) > .elbow,
+html[data-motion] .hero:not([data-landed]) > .stop,
+html[data-motion] .hero:not([data-landed]) > .stoplab,
+html[data-motion] .hero:not([data-landed]) > .route-car {
+  opacity: 0;
+}
+/* The sheets after the hero are held back with it from the first paint.
+   From hydration page.tsx keeps them hidden (autoAlpha) and fades them up
+   at the hand-off, so without this the next sheet's tab would show under
+   the loader, vanish at hydration and come back. Full motion only: in
+   soft mode page.tsx never hides them, so they may show from the start.
+   Visibility only (no transform, filter or contain), so the pin wall's
+   containing block is untouched. Once data-landed is set, page.tsx's
+   inline visibility holds the slots and wins over this rule. */
+html[data-motion="full"] .sheet-stack:has(.hero:not([data-landed])) > .sheet-slot ~ .sheet-slot {
+  visibility: hidden;
+}
+/* The name while it is lowered in: its plan, a hairline outline, from
+   the first paint (no script needed, so the hand-over at hydration
+   cannot be seen) until LoaderBridge.ts hands it back. The letters are
+   an overlay inside the h1 (.bb-name); the plain text paints only the
+   outline and, once a line's letters are all down, its shade. :is() so
+   a browser without :has() still keeps the first half. */
+:is(html[data-motion] .hero:not([data-landed]) h1.h-name, h1.h-name:has(> .bb-name)) > span {
+  color: transparent;
+  -webkit-text-stroke: var(--lsw, 1px) color-mix(in srgb, var(--ink) 32%, transparent);
+  text-shadow: var(--lsh, none);
+}
+.h-name > span[data-sh]:not([data-sh="0"]) { --lsw: 0px; } /* the letters are all down and opaque over it */
+/* LoaderBridge.ts sets data-sh 0 to 9 on each line as its letters land:
+   step n is the first n layers of --shade-hero, so step 9 is the hero's
+   own shade and the handed-back h1 paints the same. Fixed values: a
+   step repaints once, never per frame. */
+.h-name > span[data-sh="1"] { --lsh: 0.006em 0.006em 0 var(--cream); }
+.h-name > span[data-sh="2"] { --lsh: 0.006em 0.006em 0 var(--cream), 0.012em 0.012em 0 var(--cream); }
+.h-name > span[data-sh="3"] { --lsh: 0.006em 0.006em 0 var(--cream), 0.012em 0.012em 0 var(--cream), 0.018em 0.018em 0 var(--brick); }
+.h-name > span[data-sh="4"] { --lsh: 0.006em 0.006em 0 var(--cream), 0.012em 0.012em 0 var(--cream), 0.018em 0.018em 0 var(--brick), 0.024em 0.024em 0 var(--brick); }
+.h-name > span[data-sh="5"] { --lsh: 0.006em 0.006em 0 var(--cream), 0.012em 0.012em 0 var(--cream), 0.018em 0.018em 0 var(--brick), 0.024em 0.024em 0 var(--brick), 0.030em 0.030em 0 var(--brick); }
+.h-name > span[data-sh="6"] { --lsh: 0.006em 0.006em 0 var(--cream), 0.012em 0.012em 0 var(--cream), 0.018em 0.018em 0 var(--brick), 0.024em 0.024em 0 var(--brick), 0.030em 0.030em 0 var(--brick), 0.036em 0.036em 0 var(--brick); }
+.h-name > span[data-sh="7"] { --lsh: 0.006em 0.006em 0 var(--cream), 0.012em 0.012em 0 var(--cream), 0.018em 0.018em 0 var(--brick), 0.024em 0.024em 0 var(--brick), 0.030em 0.030em 0 var(--brick), 0.036em 0.036em 0 var(--brick), 0.042em 0.042em 0 var(--brick); }
+.h-name > span[data-sh="8"] { --lsh: 0.006em 0.006em 0 var(--cream), 0.012em 0.012em 0 var(--cream), 0.018em 0.018em 0 var(--brick), 0.024em 0.024em 0 var(--brick), 0.030em 0.030em 0 var(--brick), 0.036em 0.036em 0 var(--brick), 0.042em 0.042em 0 var(--brick), 0.048em 0.048em 0 var(--brick); }
+.h-name > span[data-sh="9"] { --lsh: var(--shade-hero); }
+/* The overlay: each letter on its measured origin in the h1's own font,
+   the cables and rivets in a rig behind them. Sizes in em, so one set
+   of rules fits every breakpoint. */
+.bb-name { position: absolute; inset: 0; pointer-events: none; color: var(--ink-deep); text-shadow: none; letter-spacing: 0; }
+.bb-nl { position: absolute; white-space: pre; }
+.bb-rig { position: absolute; inset: 0; z-index: 0; }
+.bb-cab { position: absolute; width: 1.5px; margin-left: -0.75px; background: var(--ink); transform-origin: 50% 0; }
+.bb-cab i { position: absolute; bottom: 0; left: 50%; height: 0.032em; transform: translateX(-50%); background: var(--brick); border-radius: 1px; } /* the girder it carries */
+.bb-cab i::before { content: ""; position: absolute; left: 50%; bottom: 100%; width: 0.05em; height: 0.03em; margin-left: -0.025em; border: 1.5px solid var(--ink); border-bottom: 0; border-radius: 50% 50% 0 0 / 100% 100% 0 0; box-sizing: border-box; } /* its shackle */
+.bb-nr { position: absolute; width: 0.05em; height: 0.05em; margin: -0.025em 0 0 -0.025em; border-radius: 50%; background: var(--ink-deep); opacity: 0; }
+.bb-nr i { position: absolute; inset: 0; border-radius: inherit; background: var(--brick); }
+
+/* The bridge (LoaderBridge.ts), built by script into the ink back layer
+   and removed at the end of the push. Its members are drawn by their
+   dashes (pathLength 1); the far-side truss is a faint layer behind. */
+.bb-clip { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.bb,
+.bb-far { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; } /* own layers for their short life: the push moves a texture, never repaints the sheet */
+.bb > svg,
+.bb-far > svg { position: absolute; left: 0; top: 0; overflow: visible; }
+.bb .m,
+.bb-far .m { fill: none; stroke: var(--ink); stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 1 2; }
+.bb .ghost { fill: none; stroke: var(--ink); stroke-opacity: 0.34; }
+.bb .cl { fill: none; stroke: var(--brick); stroke-opacity: 0.75; }
+.bb .rv { fill: var(--ink-deep); }
+.bb .rh { fill: var(--brick); }
+.bb .hand { fill: var(--ink); }
+/* "Loading 050" on the centre line, over the gap. */
+.bb-read {
+  position: absolute;
+  display: flex;
+  gap: 12px;
+  align-items: baseline;
+  white-space: nowrap;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--ink);
+  transform: translate(-50%, -100%);
+}
+.bb-read b { font-size: 1.75em; font-weight: 800; font-stretch: 88%; font-variant-numeric: tabular-nums; }
+.bb-stamp {
+  position: absolute;
+  padding: 7px 14px 6px;
+  border: 2.5px solid var(--brick);
+  outline: 1px solid var(--brick);
+  outline-offset: 2.5px;
+  border-radius: 3px;
+  color: var(--brick);
+  font-weight: 850;
+  font-stretch: 112%;
+  font-size: 17px;
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+  background: color-mix(in srgb, var(--cream) 82%, transparent);
+  /* a rubber stamp never inks evenly */
+  -webkit-mask-image: radial-gradient(circle at 30% 40%, #000 0 55%, rgb(0 0 0 / 0.78) 80%), repeating-radial-gradient(circle at 70% 20%, #000 0 1.4px, rgb(0 0 0 / 0.86) 1.6px 2.6px);
+  -webkit-mask-composite: source-in;
+  mask-image: radial-gradient(circle at 30% 40%, #000 0 55%, rgb(0 0 0 / 0.78) 80%), repeating-radial-gradient(circle at 70% 20%, #000 0 1.4px, rgb(0 0 0 / 0.86) 1.6px 2.6px);
+  mask-composite: intersect;
+  opacity: 0;
+}
+
+/* ---- tablet held upright: the art box sits under the copy -------- */
+@media (max-width: 1023px) and (min-width: 761px) and (orientation: portrait) {
+  .sheet.hero { --u: min(1px, calc((100svh - 600px) / 830), calc(96vw / 980)); }
+}
+
+/* ---- short laptop screens (browser bars, 125%, 150%) ------------- */
+/* The big taxi shrinks in the scroll between the buttons and About's
+   tab, so the copy sets tighter here to leave it room to drive rather
+   than pop (THE HERO'S DRIVE in lib/motion.ts). */
+@media (max-height: 820px) and (min-width: 761px) {
+  .h-copy { padding-top: 100px; }
+  .h-ribbon { font-size: 13.5px; padding: 5px 22px; }
+  .h-name { margin-top: 10px; font-size: min(186px, 13.5vh, 13vw); }
+  .h-role { margin-top: 10px; font-size: clamp(24px, 2.4vw, 34px); }
+  .h-billing { margin-top: 4px; font-size: 16.5px; }
+  .h-ctas { margin-top: 10px; }
+  /* The art box reaches the top of the sheet here: drop the memorial a
+     little so the angel clears the status strip. */
+  .h-vm { top: calc(30 * var(--u)); }
+}
+@media (max-height: 640px) and (min-width: 761px) {
+  .h-name { font-size: min(186px, 11.5vh, 13vw); }
+}
+
+/* ---- phone: its own composition, anchored to the kerb at 720 ----- */
+@media (max-width: 760px) {
+  .sheet.hero {
+    height: max(844px, 100svh);
+    --kerb: calc(100% - 124px);
+    --home: 296px;
+  }
+  .hero > .sheet-frame { top: 44px; }
+  .hero > .reg-mark.tl,
+  .hero > .reg-mark.tr { top: 30px; }
+  /* The copy is set tight enough that the buttons end above the
+     memorial's angel and the robot (the two-line role costs a line the
+     old one did not). */
+  .h-copy { padding: 94px var(--cr) 0 var(--cl); width: auto; }
+  .h-ribbon { font-size: 13.5px; padding: 6px 22px; }
+  .h-name { font-size: 88px; margin-top: 10px; }
+  .h-role { font-size: 25px; margin-top: 14px; }
+  .h-billing { font-size: 16px; margin-top: 4px; }
+  .h-ctas { margin-top: 12px; gap: 10px; }
+  .h-stage { left: 0; right: 0; bottom: 0; top: auto; width: auto; height: 844px; }
+  .h-facades { left: 0; top: 330px; width: 330px; height: 390px; opacity: 0.09; }
+  /* The memorial on the photo's scale (200 / 491), anchored right as
+     the photo is, so its centre line stays behind his head; the right
+     pavilion runs off the sheet. */
+  .h-vm { left: auto; right: -26px; top: 441px; width: 244px; height: 252px; }
+  .h-vm .k { stroke-width: 1.1px; }
+  .h-vm .d { stroke-width: 0.8px; }
+  .h-vm .vm-bugle { stroke-width: 1.2px; }
+  /* The photo on 200 x 270 at right -8, top 454; the canvas round it. */
+  .h-portrait { left: auto; right: -35.6px; top: 440.5px; width: 255.2px; height: 283.5px; }
+  .h-photo { left: auto; right: -8px; top: 454px; width: 200px; height: 270px; }
+  .h-orb { left: auto; right: -10px; top: 432px; width: 170px; height: 170px; }
+  .h-railing { left: 170px; top: 640px; width: 220px; height: 80px; }
+  .h-taxi { left: 8px; top: 614px; width: 280px; height: 108.6px; }
+  .h-bot { left: 133px; top: 550px; width: 39px; height: 66px; }
+  /* Below the road (kerb + 9 to 12.5), not on it, and ending short of
+     the Home stop's ring. */
+  .h-dim { left: 40px; top: 737px; width: 238px; height: 14px; }
+  .h-dimlab { left: 40px; top: 753px; width: 238px; font-size: 16px; }
+  .stop.s-home { left: calc(var(--home) - 9px); top: calc(var(--kerb) + 1.75px); }
+  .stoplab.s-home-lab { left: calc(var(--home) + 14px); top: calc(var(--kerb) + 2px); }
+  .sheet-tab.h-xt { top: -32px; right: 40px; }
+  .h-xc.l { left: 6px; }
+  .h-xc.r { right: 6px; }
+}

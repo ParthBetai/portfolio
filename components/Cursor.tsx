@@ -2,7 +2,6 @@
 
 import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
-import { reduced } from "@/lib/motion";
 
 /* An engineering reticle instead of the usual dot and trailing ring.
 
@@ -33,6 +32,63 @@ const FIELD = 'input, textarea, select, [contenteditable="true"]';
    the reticle would freeze at its edge next to a second cursor. */
 const STEP_ASIDE = `${FIELD}, iframe`;
 const DISABLED = ':disabled, [aria-disabled="true"]';
+
+/* The reticle is drawn in one of two inks, picked by what is painted
+   under it: the deep display navy on the light grounds (the cream and
+   grid-paper sheets, the strip and the nav, cream buttons, the taxi
+   yellow) and cream on the dark ones (the blue and night sheets, the
+   navy buttons). No blend mode: a blended fixed layer makes the browser
+   recomposite the page under it on every move.
+
+   What is under a point is read from the page, not from a list: the first
+   solid background there, so a navy button on the cream sheet counts as
+   much as a whole night sheet does. data-ground (which every sheet sets,
+   for the focus ring) is the fallback when nothing solid is found. */
+const GROUND = "[data-ground]";
+const groundOf = (el: Element | null) => el?.closest(GROUND)?.getAttribute("data-ground") ?? "";
+const LIGHT_GROUNDS = new Set(["cream", "paper"]);
+
+/* Whether a computed background colour is a light one, or null when it
+   comes in a notation this does not read. Plain rgb() is what solid
+   colours report; a Tailwind opacity modifier comes back as oklab(),
+   whose first figure is its lightness. */
+function isLightColour(c: string): boolean | null {
+  let m = /^rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)/.exec(c);
+  if (m) return (0.2126 * +m[1] + 0.7152 * +m[2] + 0.0722 * +m[3]) / 255 > 0.5;
+  m = /^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)/.exec(c);
+  if (m) return 0.2126 * +m[1] + 0.7152 * +m[2] + 0.0722 * +m[3] > 0.5;
+  m = /^okl(?:ab|ch)\(\s*([\d.]+)(%?)/.exec(c);
+  if (m) return (m[2] ? +m[1] / 100 : +m[1]) > 0.62;
+  return null;
+}
+
+/* Whether the point sits on a light ground. The top of the stack comes
+   first; anything see-through (most wrappers, text, pictures, the hero's
+   canvas) is passed over. Things that ignore the pointer are missing from
+   the stack, so a decorative drawing reads as the sheet it is drawn on.
+   Small misses, worth a read this cheap. */
+function onLight(x: number, y: number) {
+  for (const el of document.elementsFromPoint(x, y)) {
+    const c = getComputedStyle(el).backgroundColor;
+    const alpha = c.includes("/")
+      ? parseFloat(c.split("/")[1])
+      : c.startsWith("rgba")
+        ? parseFloat(c.split(",")[3])
+        : 1;
+    if (!(alpha >= 0.5)) continue;
+    const light = isLightColour(c);
+    if (light !== null) return light;
+    break;
+  }
+  return LIGHT_GROUNDS.has(groundOf(document.elementFromPoint(x, y)));
+}
+
+/* A press often changes colours under a still pointer: a service row
+   opens, a panel slides in, the page moves on. The ground is read again once
+   that has had time to happen. */
+const AFTER_PRESS_MS = 600;
+/* Least time between two scroll-driven hit-tests (see the loop). */
+const RECHECK_MS = 200;
 
 const HALF = 13; // idle reticle is a 26px square
 const ARM = 7; // bracket arm length, matches the SVG box below
@@ -131,7 +187,7 @@ export default function Cursor() {
     const cBR = br.current;
     const cBL = bl.current;
     if (!box || !dotEl || !text || !cTL || !cTR || !cBR || !cBL) return;
-    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches || reduced()) return;
+    if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
 
     box.style.display = "block";
 
@@ -148,6 +204,13 @@ export default function Cursor() {
     let recheckDue = false;
     let lastRecheck = -Infinity;
     let releasedAt = -Infinity;
+    /* On a light ground the reticle is navy and its idle readout is
+       drawn heavier: at the dark grounds' strength it came out a washed
+       grey on the pale paper. */
+    let light: boolean | null = null;
+    let groundDue = false;
+    let groundEl: Element | null = null;
+    let pressTimer = 0;
 
     let vw = document.documentElement.clientWidth;
     let vh = document.documentElement.clientHeight;
@@ -168,12 +231,25 @@ export default function Cursor() {
     };
     const coords = () => `X ${pad4(px)}  Y ${pad4(py)}`;
 
+    const paint = (next: boolean) => {
+      if (next === light) return;
+      light = next;
+      box.style.color = next ? "var(--color-ink-deep)" : "var(--color-cream)";
+    };
+
     const setLock = (next: Element | null) => {
       if (next === lock) return;
       /* Same clock as the rAF timestamp the loop compares it with. */
       if (lock && !next) releasedAt = performance.now();
       lock = next;
       rect = null;
+      /* A locked reticle frames its target and prints the label under
+         it, often on a different ground from the pointer's (a link in the
+         cream nav floating over a night sheet). The loop reads the
+         ground where the label lands once it knows where that is. Let go,
+         the pointer's own ground is read again. */
+      groundDue = !!lock;
+      groundEl = null;
       /* The readout blinks off and fades back in with its new text, the
          way an instrument display refreshes, instead of the old label
          sliding across the page. */
@@ -181,7 +257,9 @@ export default function Cursor() {
       setText(lock ? labelFor(lock) : coords());
     };
 
-    const resolve = (el: EventTarget | null) => {
+    /* `fresh` when the page may have moved under the pointer, so the
+       same element can now sit on a different colour. */
+    const resolve = (el: EventTarget | null, fresh = false) => {
       if (!(el instanceof Element)) {
         inField = false;
         setLock(null);
@@ -194,9 +272,16 @@ export default function Cursor() {
         if (hit && !hit.matches(DISABLED)) next = hit;
       }
       setLock(next);
+      /* Idle, the reticle is drawn for whatever is under the pointer.
+         Read only when that changes: it is a hit-test and a style read,
+         and pointermove fires constantly. */
+      if (!lock && (fresh || el !== groundEl)) {
+        groundEl = el;
+        paint(onLight(px, py));
+      }
     };
 
-    const hitTest = () => resolve(document.elementFromPoint(px, py));
+    const hitTest = () => resolve(document.elementFromPoint(px, py), true);
 
     /* ---- the loop -------------------------------------------------- */
     let raf = 0;
@@ -290,8 +375,9 @@ export default function Cursor() {
       tgt[11] = Math.min(Math.max(ry, EDGE), vh - EDGE - TEXT_H);
 
       opT[0] = seen && inWindow && !inField ? 1 : 0;
+      /* Locked, the centre point gives way to the brackets. */
       opT[1] = lock ? 0 : 1;
-      opT[2] = lock ? 0.9 : 0.55;
+      opT[2] = lock ? 0.9 : light ? 0.8 : 0.6;
     };
 
     const tick = (t: number) => {
@@ -303,17 +389,25 @@ export default function Cursor() {
       moved = false;
 
       /* Scrolling slides content under a still pointer, and no pointer
-         event reports it. Hit-testing is a forced layout, so it is
-         throttled to a few times a second while the page moves. */
-      if (recheckDue && t - lastRecheck >= 80) {
+         event reports it. Hit-testing is a forced layout and the ground
+         read walks the whole stack under the point, which profiled at
+         over a tenth of a throttled hero scroll at 12 a second, so it is
+         held to about 5 a second while the page moves. recheckDue keeps
+         the loop awake, so the last one still lands after the scroll
+         stops. */
+      if (recheckDue && t - lastRecheck >= RECHECK_MS) {
         recheckDue = false;
         lastRecheck = t;
         hitTest();
+        /* The page may have slid a new ground under a label that stays
+           put, say the fixed nav's. */
+        if (lock) groundDue = true;
       }
 
-      /* Locked targets are re-measured every frame: magnetic buttons lean
-         toward the pointer, and the brackets have to ride along. Reads
-         happen before any write, so the layout is still clean. */
+      /* Locked targets are re-measured every frame: the page, and a sheet
+         sliding over another, move a target under a pointer that stays
+         still, and the brackets have to ride along. Reads happen before
+         any write, so the layout is still clean. */
       let rectMoved = false;
       if (lock && !lock.isConnected) hitTest();
       if (lock) {
@@ -349,6 +443,15 @@ export default function Cursor() {
       }
 
       targets();
+
+      /* Where the label is headed, not where it is: one hit-test per lock
+         (and per scroll recheck), and the pointer-events-none reticle is
+         never what it finds. Read at the middle of the label, where most
+         of it lands, which may be a different ground from where it starts. */
+      if (groundDue && lock && rect) {
+        groundDue = false;
+        paint(onLight(tgt[10] + (textLen * CHAR_W) / 2, tgt[11] + TEXT_H / 2));
+      }
 
       let settled = !wasMoved && !rectMoved && !recheckDue;
       if (snap) {
@@ -459,15 +562,17 @@ export default function Cursor() {
       wake();
     };
 
-    const onUp = () => {
-      if (!pressed) return;
-      pressed = false;
-      wake();
-    };
-
     const onScroll = () => {
       if (!seen) return;
       recheckDue = true;
+      wake();
+    };
+
+    const onUp = () => {
+      if (!pressed) return;
+      pressed = false;
+      window.clearTimeout(pressTimer);
+      pressTimer = window.setTimeout(onScroll, AFTER_PRESS_MS);
       wake();
     };
 
@@ -502,6 +607,7 @@ export default function Cursor() {
     return () => {
       cancelAnimationFrame(raf);
       raf = 0;
+      window.clearTimeout(pressTimer);
       recheck.current = () => {};
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerover", onOver);
@@ -517,6 +623,7 @@ export default function Cursor() {
       delete document.body.dataset.cursor;
       box.style.display = "";
       box.style.opacity = "";
+      box.style.color = "";
     };
   }, []);
 
@@ -527,13 +634,13 @@ export default function Cursor() {
 
   return (
     /* A 0×0 fixed origin: children are placed only by transform, and
-       difference blending keeps the bone-white strokes readable on the
-       black page, the copper rows and the white buttons alike. Hidden until
-       the effect decides this device gets a custom cursor at all. */
+       its ink is set by the loop for the ground under it (see onLight).
+       Hidden until the effect decides this device gets a
+       custom cursor at all. */
     <div
       ref={root}
       aria-hidden="true"
-      className="pointer-events-none fixed left-0 top-0 z-[70] hidden h-0 w-0 text-bone mix-blend-difference"
+      className="pointer-events-none fixed left-0 top-0 z-[70] hidden h-0 w-0 text-cream"
       style={{ opacity: 0 }}
     >
       <Corner r={tl} d="M0.75 7V0.75H7" />

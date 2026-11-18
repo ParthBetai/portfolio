@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { CSSProperties } from "react";
-import { gsap, reduced } from "@/lib/motion";
+import type { CSSProperties, ReactNode } from "react";
+import { gsap } from "@/lib/motion";
 import { identity, resume } from "@/lib/content";
 import ResumePreview, { warmResumePreview } from "./ResumePreview";
 import type { DiskDrive, DiskFrame, FloppyArtProps, PreviewApi } from "./ResumePreview";
+import { C } from "./drawings/kit";
 
 /* ============================================================
    THE RESUME DISK
@@ -51,37 +52,42 @@ const CHAMFER = "polygon(0 0, 95.4% 0, 100% 4.4%, 100% 100%, 0 100%)";
    the distance that puts its slot over the window. */
 const SHUTTER_TRAVEL = (15.5 / 48) * 100; // 15.5% of the disk, in shutter widths
 
-/* How high it lifts off the desk when hovered. */
-const LIFT = 30;
+/* How high it lifts off the desk when hovered, for a 100px disk. The
+   sheet sets the disk's width (--disk), so the lift is scaled by the
+   width it actually has, read as it opens, and keeps the same feel at
+   any size. */
+const LIFT = 18;
 
 /* The perspective on the link, below. The preview's copy scales it with
    its own size so the tilt reads the same at any size. */
 const PERSPECTIVE = 900;
 
-/* Thickness, front to back, 6px on a 210px disk (a real one is about
-   3.3mm on 90mm). The front layers are lit plastic and each one behind is
-   darker, so when the disk tilts the edge reads as a rounded, shaded side
-   rather than a flat black band lost against the page. */
+/* Thickness, front to back, in units of --d (1px on the page). The front
+   layers are lit plastic and each one behind is darker, so when the disk
+   tilts the edge reads as a rounded, shaded side rather than a flat band
+   lost against the page. The plastic is the drawing set's navy-black
+   (#0e1332, the keyline every painted part shares), so the disk reads as
+   one more printed object on the blueprint. */
 const LAYERS = [
-  { z: -1, c: "#3a3a41" },
-  { z: -2, c: "#2e2e34" },
-  { z: -3, c: "#242429" },
-  { z: -4, c: "#1b1b1f" },
-  { z: -5, c: "#131316" },
-  { z: -6, c: "#0a0a0c" },
+  { z: -1, c: "#2a3266" },
+  { z: -2, c: "#1f2655" },
+  { z: -3, c: "#171d47" },
+  { z: -4, c: "#11163a" },
+  { z: -5, c: "#0b0f2c" },
+  { z: -6, c: "#06091e" },
 ] as const;
 
 const RIM: CSSProperties = {
   clipPath: CHAMFER,
   /* The moulded edge: light catches the top-left lip. */
-  background: "linear-gradient(150deg, #5c5c64 0%, #2e2e34 14%, #18181b 48%, #0c0c0e 100%)",
+  background: "linear-gradient(150deg, #4a5384 0%, #1f2655 14%, #0e1332 48%, #070a20 100%)",
 };
 
 const BODY: CSSProperties = {
   clipPath: CHAMFER,
   background: [
-    "radial-gradient(130% 85% at 12% 0%, rgba(255,255,255,0.065), transparent 55%)",
-    "linear-gradient(172deg, #232327 0%, #1a1a1d 42%, #131315 100%)",
+    "radial-gradient(130% 85% at 12% 0%, rgba(226,235,255,0.08), transparent 55%)",
+    "linear-gradient(172deg, #151b45 0%, #10153b 42%, #0c1031 100%)",
   ].join(","),
 };
 
@@ -156,35 +162,28 @@ const PLATE: CSSProperties = {
 };
 
 const TRACK: CSSProperties = {
-  background: "linear-gradient(180deg, #0c0c0e, #121214 70%, #151517)",
+  background: "linear-gradient(180deg, #060920, #0a0e2a 70%, #0d1230)",
 };
 
 const ARROW: CSSProperties = { clipPath: "polygon(50% 0, 100% 100%, 0 100%)" };
 
+/* The label: cream stock with a brick band across its head, the way a
+   pack of disks came pre-printed. */
 const PAPER: CSSProperties = {
   background: [
-    "linear-gradient(180deg, rgba(255,255,255,0.45), transparent 26%)",
-    "radial-gradient(120% 90% at 80% 110%, rgba(120,100,60,0.08), transparent 60%)",
-    "linear-gradient(180deg, #efeee6, #e5e2d6)",
+    "linear-gradient(180deg, transparent 0 15%, var(--color-stamp) 15% 20%, transparent 20%)",
+    "linear-gradient(180deg, rgba(255,255,255,0.4), transparent 26%)",
+    "linear-gradient(180deg, #f3ead6, #ece2cb)",
   ].join(","),
 };
 
 const RULES: CSSProperties = {
   background:
-    "repeating-linear-gradient(180deg, transparent 0, transparent calc(33.333% - 1px), rgba(60,86,150,0.2) calc(33.333% - 1px), rgba(60,86,150,0.2) 33.333%)",
+    "repeating-linear-gradient(180deg, transparent 0, transparent calc(50% - 1px), rgba(29,42,110,0.3) calc(50% - 1px), rgba(29,42,110,0.3) 50%)",
 };
 
-/* Flat printed vinyl, not a bead: the colour is even, with only a faint
-   sheen and a slightly darker rim where it has been pressed down. */
-const STICKER: CSSProperties = {
-  background: [
-    "linear-gradient(150deg, rgba(255,255,255,0.18), transparent 55%)",
-    "radial-gradient(circle, #e0895a 0 84%, #c47547 92%, #e0895a 100%)",
-  ].join(","),
-};
-
-/* Blue-black ballpoint. */
-const INK = "#1f2a5c";
+/* Navy ballpoint, the page's ink (kit.ts). */
+const INK = C.ink;
 
 /* The face and every layer of the stack read their opacity from --fo, so
    the preview's copy can fade the whole disk without flattening it (an
@@ -198,7 +197,6 @@ const FADE = "var(--fo, 1)";
    preview flies to the middle of the screen, so the copy is the same
    object down to the handwriting. */
 function FloppyArt({ faceRef, shutterRef, discRef, mediaRef }: FloppyArtProps) {
-  const pages = `${resume.pages} page${resume.pages === 1 ? "" : "s"}`;
   return (
     <>
       {LAYERS.map((l) => (
@@ -270,49 +268,26 @@ function FloppyArt({ faceRef, shutterRef, discRef, mediaRef }: FloppyArtProps) {
         <span className="absolute right-[3.8%] top-[87.4%] block aspect-square w-[6.2%] rounded-[1.5px] bg-[#030304] shadow-[inset_0_1px_2px_rgba(0,0,0,1),0_1px_0_rgba(255,255,255,0.07)]" />
 
         {/* The label area is moulded a step down; the paper sits in it. */}
-        <span className="absolute bottom-0 left-[11%] right-[11%] top-[47%] block rounded-t-[3px] bg-[#141417] shadow-[inset_0_1px_1.5px_rgba(0,0,0,0.75),0_-1px_0_rgba(255,255,255,0.05)]" />
+        <span className="absolute bottom-0 left-[11%] right-[11%] top-[47%] block rounded-t-[3px] bg-[#070a20] shadow-[inset_0_1px_1.5px_rgba(0,0,0,0.75),0_-1px_0_rgba(226,235,255,0.06)]" />
+        {/* The label, as the drawing set prints it: the name written on
+            in his hand over two ruled lines, and the file under it. */}
         <span
           className="absolute bottom-[2.6%] left-[12.8%] right-[12.8%] top-[49%] block rounded-[2px] shadow-[0_1px_1px_rgba(0,0,0,0.55)]"
           style={PAPER}
         >
-          <span className="absolute inset-x-[6%] bottom-[20%] top-[31%] block" style={RULES} />
-          <span className="absolute left-[7%] right-[26%] top-[8%] block whitespace-nowrap font-mono text-[3.2cqw] uppercase leading-none tracking-[0.08em] text-[#55565e]">
-            PDF · {resume.size} · {pages}
-          </span>
+          <span className="absolute inset-x-[7%] bottom-[22%] top-[22%] block" style={RULES} />
           <span
-            className="font-serif italic absolute left-[8%] top-[27%] block origin-left -rotate-[4deg] whitespace-nowrap text-[10.5cqw] leading-none"
-            style={{ color: INK }}
+            className="absolute left-[7%] top-[29%] block origin-left -rotate-[3deg] whitespace-nowrap text-[12.5cqw] leading-none"
+            style={{ color: INK, fontFamily: "var(--font-hand)" }}
           >
             {identity.fullName}
           </span>
           <span
-            className="font-serif italic absolute left-[24%] top-[52%] block origin-left -rotate-[2.5deg] whitespace-nowrap text-[11.5cqw] leading-none"
-            style={{ color: INK }}
+            className="absolute bottom-[8%] left-[7%] block whitespace-nowrap text-[6.4cqw] leading-none"
+            style={{ color: INK, fontFamily: "var(--font-mono)" }}
           >
-            Resume
-            <svg
-              viewBox="0 0 60 8"
-              fill="none"
-              className="absolute -bottom-[0.18em] left-[-4%] h-[0.3em] w-[108%]"
-              focusable={false}
-            >
-              <path
-                d="M1.5 5.2C14 3.4 30 2.6 58.5 3.4"
-                stroke={INK}
-                strokeWidth="1.1"
-                strokeLinecap="round"
-                opacity="0.8"
-              />
-            </svg>
+            Resume · {resume.size}
           </span>
-          <span className="absolute bottom-[7%] left-[7%] block whitespace-nowrap font-mono text-[2.9cqw] uppercase leading-none tracking-[0.08em] text-[#6c6d74]">
-            Updated {resume.updated}
-          </span>
-          {/* A colour-coding dot, stuck on a little crooked. */}
-          <span
-            className="absolute right-[6%] top-[-5%] block h-[8cqw] w-[8cqw] rounded-full shadow-[0_0.5px_0.5px_rgba(0,0,0,0.35)]"
-            style={STICKER}
-          />
         </span>
 
         <span className="pointer-events-none absolute inset-0 block rounded-[2.4%]" style={SHEEN} />
@@ -324,12 +299,25 @@ function FloppyArt({ faceRef, shutterRef, discRef, mediaRef }: FloppyArtProps) {
 export default function ResumeDisk({
   className = "",
   diskClassName = "",
+  under,
+  over,
 }: {
-  /* Where the disk and its hint sit. */
+  /* The box the disk lies in, centred. Without one it is just the disk's
+     own size; with one (the About sheet's) the hint hangs under that box
+     instead of under the disk. */
   className?: string;
   /* The angle it lies at. Only the disk turns, so the hint under it stays
      level and reads as interface rather than as part of the object. */
   diskClassName?: string;
+  /* Static art that travels with the disk's angle but not with its
+     motion: drawn inside the link, under the disk (`under`) and over it
+     (`over`), on the desk with the shadows. The About sheet's paper sleeve
+     is the pair: its back panel under the disk, its front panel over the
+     disk's foot. Inside the link, the whole sleeve is part of what you
+     click; and it is not part of the disk, so while the preview's copy is
+     out the sleeve stays behind, empty, the way a pulled disk leaves it. */
+  under?: ReactNode;
+  over?: ReactNode;
 }) {
   const frame = useRef<HTMLDivElement>(null);
   const turn = useRef<HTMLDivElement>(null);
@@ -388,10 +376,7 @@ export default function ResumeDisk({
       return;
     }
 
-    /* Motion off: nothing moves, but the shutter still answers hover and
-       focus, instantly, because it is how the disk says "this is live".
-       Reduced-motion from the OS is not "off": it gets all of this. */
-    const still = reduced();
+    /* Reduced motion from the OS gets all of this. */
     const fine = window.matchMedia("(hover: hover) and (pointer: fine)").matches;
     const MAX = 14;
 
@@ -407,7 +392,6 @@ export default function ResumeDisk({
        It drops onto the desk: tipped back on its bottom edge, it falls
        flat as it scrolls in, and its shadow arrives as it lands. */
     const ctx = gsap.context(() => {
-      if (still) return;
       gsap
         .timeline({ scrollTrigger: { trigger: a, start: "top 92%" } })
         .fromTo(
@@ -428,13 +412,12 @@ export default function ResumeDisk({
        Always "running" but at timeScale 0 until the shutter opens, so it
        can spin up and wind down like a drive motor instead of starting
        and stopping dead. */
-    const spin = still ? null : gsap.to(discEl, { rotation: 360, duration: 8, ease: "none", repeat: -1, paused: true });
-    spin?.timeScale(0);
+    const spin = gsap.to(discEl, { rotation: 360, duration: 8, ease: "none", repeat: -1, paused: true });
+    spin.timeScale(0);
     /* Once it has wound all the way down it is paused as well, so a disk
        nobody is touching is not still being rendered every frame at zero
        speed. A new spin-up cancels the pending pause via overwrite. */
     const spinTo = (v: number, d: number) => {
-      if (!spin) return;
       if (v > 0) spin.resume();
       gsap.to(spin, {
         timeScale: v,
@@ -449,10 +432,6 @@ export default function ResumeDisk({
     const setOpen = (next: boolean) => {
       if (next === open) return;
       open = next;
-      if (still) {
-        gsap.set(shutterEl, { xPercent: next ? SHUTTER_TRAVEL : 0 });
-        return;
-      }
       /* Driven open, sprung shut: the close is quicker than the open. */
       gsap.to(
         shutterEl,
@@ -460,7 +439,7 @@ export default function ResumeDisk({
           ? { xPercent: SHUTTER_TRAVEL, duration: 0.55, ease: "power2.inOut", overwrite: "auto" }
           : { xPercent: 0, duration: 0.3, ease: "power3.out", overwrite: "auto" }
       );
-      gsap.to(tiltEl, { z: next ? LIFT : 0, duration: 0.6, ease: "power3.out", overwrite: "auto" });
+      gsap.to(tiltEl, { z: next ? LIFT * (a.offsetWidth / 100) : 0, duration: 0.6, ease: "power3.out", overwrite: "auto" });
       /* Lifting off, the tight contact shadow gives way to a wider, softer
          one further below it. */
       gsap.to(nearEl, { opacity: next ? 0.25 : 1, duration: 0.5, ease: "power2.out", overwrite: "auto" });
@@ -563,7 +542,7 @@ export default function ResumeDisk({
     };
 
     let io: IntersectionObserver | undefined;
-    if (!still && fine && typeof IntersectionObserver !== "undefined") {
+    if (fine && typeof IntersectionObserver !== "undefined") {
       io = new IntersectionObserver(
         (entries) => {
           const vis = entries[entries.length - 1].isIntersecting;
@@ -640,11 +619,9 @@ export default function ResumeDisk({
         gsap.set(nearEl, { opacity: 1 });
         gsap.set(farEl, { opacity: 0.55, x: 0, y: 0, scale: 1 });
         open = false;
-        if (spin) {
-          gsap.killTweensOf(spin);
-          spin.timeScale(0);
-          spin.pause();
-        }
+        gsap.killTweensOf(spin);
+        spin.timeScale(0);
+        spin.pause();
         sync();
         return;
       }
@@ -672,7 +649,7 @@ export default function ResumeDisk({
     const release = () => {
       if (!pressed) return;
       pressed = false;
-      if (!still && !lent) gsap.to(tiltEl, { scaleX: 1, scaleY: 1, duration: 0.5, ease: "back.out(3)", overwrite: "auto" });
+      if (!lent) gsap.to(tiltEl, { scaleX: 1, scaleY: 1, duration: 0.5, ease: "back.out(3)", overwrite: "auto" });
     };
     const onLeave = (e: PointerEvent) => {
       release();
@@ -687,7 +664,7 @@ export default function ResumeDisk({
       if (e.button !== 0 || lent) return;
       void warmResumePreview();
       pressed = true;
-      if (!still) gsap.to(tiltEl, { scaleX: 0.975, scaleY: 0.955, duration: 0.14, ease: "power2.out", overwrite: "auto" });
+      gsap.to(tiltEl, { scaleX: 0.975, scaleY: 0.955, duration: 0.14, ease: "power2.out", overwrite: "auto" });
     };
     /* Only keyboard focus opens it. A mouse click focuses the link too,
        and the shutter would then stay open after the pointer had gone. */
@@ -734,10 +711,8 @@ export default function ResumeDisk({
       a.removeEventListener("click", onClick);
       drive.current = null;
       ctx.revert();
-      if (spin) {
-        gsap.killTweensOf(spin);
-        spin.kill();
-      }
+      gsap.killTweensOf(spin);
+      spin.kill();
       gsap.killTweensOf([tiltEl, shutterEl, nearEl, farEl, proxy]);
       gsap.set([flipEl, tiltEl, shutterEl, discEl, nearEl, farEl], { clearProps: "all" });
       hide(false);
@@ -747,7 +722,7 @@ export default function ResumeDisk({
   }, []);
 
   return (
-    <div ref={frame} className={`relative flex w-fit flex-col items-center ${className}`}>
+    <div ref={frame} className={`relative flex flex-col items-center justify-center ${className || "w-fit"}`}>
       <div ref={turn} className={diskClassName}>
         <a
           ref={link}
@@ -757,7 +732,7 @@ export default function ResumeDisk({
           data-cursor="PREVIEW"
           aria-haspopup="dialog"
           draggable={false}
-          className="relative block aspect-[90/94] w-40 select-none rounded-[6px] outline-offset-[6px] [-webkit-tap-highlight-color:transparent] [perspective:900px] sm:w-44 lg:w-[210px]"
+          className="relative block aspect-[90/94] w-[var(--disk,82px)] select-none rounded-[4px] outline-offset-[6px] [-webkit-tap-highlight-color:transparent] [perspective:900px] min-[761px]:w-[var(--disk,100px)]"
         >
           {/* The link's name, as text rather than an aria-label, so the
               parts about the preview can step aside without scripts
@@ -767,18 +742,19 @@ export default function ResumeDisk({
             {`${identity.fullName}'s resume, PDF, ${resume.size}.`}
             <span data-js-only> Opens a preview you can download from.</span>
           </span>
+          {under}
           {/* Shadows on the desk. They stay flat while the disk moves above
               them: a tight dark one where it touches, a wide soft one that
               takes over as it lifts. */}
           <span
             ref={near}
             aria-hidden
-            className="pointer-events-none absolute inset-x-[3%] bottom-[-2.5%] top-[5%] rounded-[5%] bg-black/80 blur-[5px]"
+            className="pointer-events-none absolute inset-x-[3%] bottom-[-2.5%] top-[5%] rounded-[5%] bg-[rgb(3_9_38/0.8)] blur-[3px]"
           />
           <span
             ref={far}
             aria-hidden
-            className="pointer-events-none absolute inset-x-[1%] bottom-[-7%] top-[10%] rounded-[8%] bg-black/70 opacity-[0.55] blur-[18px]"
+            className="pointer-events-none absolute inset-x-[1%] bottom-[-7%] top-[10%] rounded-[8%] bg-[rgb(3_9_38/0.7)] opacity-[0.55] blur-[10px]"
           />
 
           <span ref={flip} aria-hidden className="absolute inset-0 block [transform-style:preserve-3d]">
@@ -786,23 +762,30 @@ export default function ResumeDisk({
               <FloppyArt faceRef={face} shutterRef={shutter} discRef={disc} />
             </span>
           </span>
+          {over}
         </a>
       </div>
 
-      {/* The hint under the disk. Hover-only on a mouse; always shown on
-          touch, where there is no hover to reveal it. While the preview
-          has the disk the hint steps out of the way. Without scripts the
-          disk is a plain download, so there is no preview to promise. */}
+      {/* The hint under the disk's box. Shown at rest on a mouse as well
+          as on touch: a floppy does not say "open me" on its own, and a
+          hint that only came up on hover was only ever seen by someone
+          already hovering. While the preview has the disk the hint steps
+          out of the way. Without scripts the disk is a plain download, so
+          there is no preview to promise. It hangs below the box out of
+          flow, so the box and its note stay one row on the sheet. Under a
+          bare disk it hangs lower on a mouse, clear of the cursor's
+          PREVIEW readout under the disk's brackets; a box (the About
+          sheet's, round the disk and its sleeve) already keeps it that far
+          away. */}
       <span
         aria-hidden
         data-js-only
-        data-phase={phase === "idle" || phase === "read" ? undefined : phase}
-        className={`t-mono relative mt-6 flex h-4 [@media(hover:hover)]:mt-10 items-center gap-2 whitespace-nowrap text-[10px] text-ash opacity-0 transition-opacity duration-300 data-[phase]:opacity-100 ${
-          phase === "read" ? "" : "[@media(hover:none)]:opacity-100"
-        }`}
+        className={`absolute left-1/2 top-full mt-4 flex h-5 -translate-x-1/2 items-center gap-2 whitespace-nowrap text-[14px] leading-none text-bline transition-opacity duration-300 ${
+          phase === "read" ? "opacity-0" : "opacity-100"
+        } ${className ? "" : "[@media(hover:hover)]:mt-9"}`}
       >
         {/* An eye: it opens for a look first, the download is inside. */}
-        <svg width="11" height="9" viewBox="0 0 12 10" fill="none" className="text-acid" focusable={false}>
+        <svg width="13" height="11" viewBox="0 0 12 10" fill="none" focusable={false}>
           <path
             d="M1 5s1.9-3.4 5-3.4S11 5 11 5 9.1 8.4 6 8.4 1 5 1 5Z"
             stroke="currentColor"

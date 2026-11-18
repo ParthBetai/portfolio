@@ -1,0 +1,574 @@
+/* ============================================================
+   SHEET 06: CONTACT, THE FOOTER STREET, THE INFO PAGES AND THE 404
+   Imported into @layer components by app/globals.css (no @layer here).
+
+   The pin wall contract holds for everything below: nothing on the
+   Contact sheet, its slot or main carries a transform, filter,
+   will-change, contain or content-visibility. The wall's window (the
+   clip-path) lives on the inner .pinwin box beside the phone, and the
+   footer's moving pieces (.swing, .ftaxi) are siblings of the wall,
+   never its ancestors.
+   ============================================================ */
+
+/* ---------------- Contact: copy and phone ---------------- */
+.contact .ct-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: 64px;
+  align-items: center;
+  padding: 118px var(--cr) 36px var(--cl);
+}
+.ct-copy { position: relative; z-index: 6; min-width: 0; }
+.contact .ct-head { font-size: 128px; color: var(--nline); }
+/* The hand underline under "touch": a yellow marker stroke, drawn on once. */
+.ct-head .ul { position: relative; display: inline-block; }
+.ct-head .ul svg {
+  position: absolute;
+  left: 0;
+  bottom: -0.1em;
+  width: 100%;
+  height: 0.2em;
+  overflow: visible;
+}
+.ctb { font-size: 19.5px; line-height: 1.55; color: var(--nline-2); margin-top: 40px; max-width: 480px; }
+.ct-mail {
+  display: inline-flex;
+  gap: 12px;
+  align-items: center;
+  max-width: 100%;
+  font-size: clamp(24px, 2.3vw, 34px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin-top: 30px;
+  border-bottom: 2px solid rgb(239 231 214 / 0.35);
+  padding-bottom: 6px;
+  color: var(--nline);
+  overflow-wrap: anywhere;
+  transition: border-color 0.25s ease;
+}
+.ct-mail:hover { border-color: var(--taxi); }
+.ct-mail .arr { width: 26px; height: 26px; flex: none; color: var(--taxi); }
+
+/* --phw is the phone's width (PhoneChat's stage), shared with the balloon
+   and the arrow so they sit on the phone at every size; --phh
+   is its height (9 : 19.5). 0.4615 is 9/19.5, so each height budget
+   becomes the width that makes the phone exactly that tall.
+     Stacked: as wide as a phone screen allows, but short enough to fit
+     whole with the browser bars showing (svh), so the composer and the
+     conversation are on screen together.
+     Two columns: 80% of the viewport height, the same idea.
+   Both keep a floor of 280px. The chat text is in px so it stays
+   readable, and below about 280 the file card and the status bar no
+   longer fit. A short laptop gets a phone slightly taller than its window
+   rather than a cramped one. */
+.ct-phone {
+  --phw: clamp(min(280px, 86vw), calc((100svh - 48px) * 0.4615), min(372px, 86vw));
+  --phh: calc(var(--phw) * 2.1667);
+  position: relative;
+  min-height: 660px;
+  padding: 28px 0;
+  display: grid;
+  place-items: center;
+}
+@media (min-width: 1024px) {
+  .ct-phone { --phw: clamp(280px, calc(80svh * 0.4615), 372px); }
+}
+/* The pin wall's window. The fixed canvas (PinField) is its child, and
+   this box clips it: clip-path clips a fixed descendant without becoming
+   its containing block. The printed dots under it are what shows before
+   the wall is built, and without WebGL or scripts. */
+.pinwin {
+  position: absolute;
+  inset: 0 -24px;
+  border-radius: 20px;
+  clip-path: inset(0 round 20px);
+  background:
+    radial-gradient(ellipse 60% 55% at 50% 48%, rgb(239 226 190 / 0.16), transparent 70%),
+    radial-gradient(circle, rgb(239 231 214 / 0.34) 1.6px, transparent 2.1px) 0 0 / 17px 17px,
+    radial-gradient(circle, rgb(14 19 50 / 0.5) 2.4px, transparent 3px) 1px 2px / 17px 17px;
+  background-color: #11163a;
+  -webkit-mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 55%, transparent 100%);
+  mask-image: radial-gradient(ellipse 75% 70% at 50% 50%, #000 55%, transparent 100%);
+}
+.ct-dev { position: relative; z-index: 6; width: 100%; }
+
+/* The printed balloon behind the phone (Contact.tsx): the hero's yellow
+   halftone disc drawn out into a speech balloon. Its top edge stands
+   --peek above the phone's, so the round rises behind the phone's head
+   the way the disc rises behind Parth's, and its tail sweeps out to the
+   lower left toward the copy; the label and its arrow sit below the
+   tail's tip at every width. Static paint, under the phone (.ct-dev is
+   6) and over the wall's window, a sibling of it and never an ancestor.
+   It is at most the column's width (plus the window's own overhang), so
+   it never reaches the route in the gutter. The box is 600 x 640. */
+.ct-balloon {
+  --peek: 30px;
+  --bw: min(calc(var(--phh) * 0.74), calc(100% + 12px));
+  position: absolute;
+  z-index: 1;
+  /* Centred by its left edge, not translate: the print-in tweens this
+     element's transform, and GSAP folds a CSS translate into it as fixed
+     pixels, which a later resize would leave off centre. */
+  left: calc(50% - var(--bw) / 2);
+  top: calc(50% - var(--phh) / 2 - var(--peek));
+  width: var(--bw);
+  height: auto;
+  aspect-ratio: 600 / 640;
+  overflow: visible;
+}
+/* The margin note is the label of the message box. --inb is the box's
+   centre line, measured up from the bottom of .ct-phone: the phone's
+   foot (50% - --phh / 2) plus the composer, 33px and 2.2% of the phone's
+   height (its padding is in cqw), read off the tilted phone at 1024 to
+   1920. Beside the phone the note sits on that line, right aligned, and
+   the arrow runs from its last word to the box, its tip 3px short of
+   the phone's edge. In the stacked layouts both go under the phone
+   (below). */
+.ct-phone { --inb: calc(50% - var(--phh) * 0.478 + 33px); }
+.ctn {
+  position: absolute;
+  z-index: 6;
+  right: calc(50% + var(--phw) / 2 + 86px);
+  bottom: calc(var(--inb) - 16px);
+  width: max-content;
+  margin: 0;
+  font-size: 23px;
+  color: var(--nline-2);
+  transform: rotate(-2deg);
+  transform-origin: 100% 50%;
+}
+.ct-point {
+  position: absolute;
+  z-index: 6;
+  overflow: visible;
+}
+.ct-point-side {
+  right: calc(50% + var(--phw) / 2 - 2px);
+  bottom: calc(var(--inb) - 20px);
+  width: 84px;
+  height: 40px;
+}
+.ct-point-under { display: none; }
+/* The route down the gutter beside the copy and the phone. */
+.ct-grid .r-ct { top: 0; bottom: 0; }
+
+/* ---------------- the footer ---------------- */
+.foot { position: relative; }
+.footsheet .foot { padding-top: 20px; }
+
+/* The hanging signboard: a bar with two wall brackets; the sign hangs
+   from it on real chain links and drops in from behind it, then swings
+   once (Footer.tsx). .hang clips it above the bar. */
+.hang-wrap { position: relative; }
+.r-foot-hang { top: 0; bottom: 0; }
+.hang {
+  position: relative;
+  padding: 22px var(--cr) 10px var(--cl);
+  clip-path: inset(22px -80px -90px -80px);
+}
+.hang .bar {
+  position: relative;
+  z-index: 2;
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(#3a4280, #232a5c);
+  box-shadow: 0 3px 0 #0b0f2a;
+  max-width: 820px;
+  margin: 0 auto;
+}
+.hang .brk {
+  position: absolute;
+  top: -10px;
+  width: 16px;
+  height: 32px;
+  border-radius: 3px;
+  background: #2a3166;
+  border: 1.5px solid #0b0f2a;
+}
+.hang .brk::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--chrome);
+}
+.hang .brk.l { left: -6px; }
+.hang .brk.r { right: -6px; }
+.swing { position: relative; max-width: 720px; margin: 0 auto; transform-origin: 50% 0; }
+.hang .chains { display: flex; justify-content: space-between; padding: 0 16%; height: 60px; margin-top: -6px; }
+.hang .chain { display: block; flex: none; }
+/* Teal enamel: a cream keyline inside a teal margin, four flourishes in
+   the corners, the sign-painted name with its brick shade. */
+.sign {
+  position: relative;
+  background: var(--teal);
+  border-radius: 12px;
+  padding: 26px 40px 24px;
+  text-align: center;
+  color: #f3ead6;
+  box-shadow:
+    0 40px 60px -24px rgb(0 0 0 / 0.9),
+    inset 0 0 0 7px var(--teal),
+    inset 0 0 0 9px rgb(243 234 214 / 0.85),
+    inset 0 0 0 15px var(--teal),
+    inset 0 0 0 16px rgb(243 234 214 / 0.45);
+}
+.sign .fl { position: absolute; width: 30px; height: 30px; }
+.sign .fl.bl { left: 22px; bottom: 22px; }
+.sign .fl.br { right: 22px; bottom: 22px; transform: scaleX(-1); }
+.sign .fl.tl { left: 22px; top: 22px; transform: scaleY(-1); }
+.sign .fl.tr { right: 22px; top: 22px; transform: scale(-1, -1); }
+.sign .word { display: block; font-size: 150px; line-height: 0.8; padding: 6px 0 12px; }
+.sign .under { display: block; font-size: 17px; font-weight: 700; letter-spacing: 0.01em; line-height: 1.3; }
+/* Both positioned: .sign is, so its long drop shadow would otherwise be
+   painted over the sub-board and dim its cream under the brick lettering
+   below AA. The hooks stay on top, over the board's edge. */
+.hang .subwires { position: relative; z-index: 1; display: flex; justify-content: center; gap: 200px; height: 26px; }
+.subsign {
+  position: relative;
+  width: max-content;
+  max-width: 100%;
+  margin: 0 auto;
+  background: #f3ead6;
+  color: var(--brick);
+  font-weight: 800;
+  font-size: 25px;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  padding: 10px 26px;
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 3px #f3ead6, inset 0 0 0 4.5px var(--brick), 0 18px 26px -18px rgb(0 0 0 / 0.85);
+}
+
+/* The night street. Everything on it is placed in cqw of the street's
+   own width, the same units the drawing scales by, so the kerb, the
+   route's end and the parked taxi stay on the drawing at every width:
+   the drawing is 1440 x 380 (26.389cqw tall), and the route runs along
+   the road 60 units above its foot (4.167cqw), just under the kerb
+   line, as on the drawing set. The container query unit needs container-type on
+   this box only; it is a sibling of the pin wall, not an ancestor. */
+.streetwrap {
+  --kerb: 4.167cqw;
+  position: relative;
+  container-type: inline-size;
+  min-height: 26.389cqw;
+  padding: 14px 0 calc(var(--kerb) + 64px);
+}
+@supports not (width: 1cqw) {
+  .streetwrap { --kerb: 4.167vw; min-height: 26.389vw; }
+}
+.nstreet {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 26.389cqw;
+  display: block;
+}
+.nstreet.m { display: none; }
+/* The parked taxi: its tail 10px past the terminus ring's edge (the ring
+   is a fixed 24px, so this is ring centre + 12px + 10px rather than a
+   cqw of its own, which put the tail on the ring at tablet widths). On
+   the home page this is also where the journey's last stretch ends: the
+   route drives this taxi along the kerb to here (Footer.tsx). */
+.ftaxi {
+  position: absolute;
+  left: calc(67.6cqw + 22px);
+  bottom: 2.43cqw;
+  width: 20.6cqw;
+  line-height: 0;
+  /* Over the route's pieces (rails 4, stops 5): driving in, it passes
+     over the terminus ring rather than wearing it on a wheel. The copy
+     and the label (6, later in the markup) stay over it. */
+  z-index: 6;
+}
+.ftaxi svg { width: 100%; height: auto; display: block; }
+.arrive { position: relative; z-index: 6; padding: 0 var(--cr) 0 var(--cl); max-width: calc(560px + var(--cl)); }
+.signoff {
+  font-size: 25px;
+  color: var(--nline);
+  transform: rotate(-3deg);
+  transform-origin: 0 50%;
+  width: max-content;
+  max-width: 100%;
+}
+.fmail {
+  display: block;
+  width: max-content;
+  max-width: 100%;
+  font-size: clamp(22px, 2.15vw, 31px);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  margin-top: 18px;
+  color: var(--nline);
+  border-bottom: 2px solid var(--taxi);
+  padding-bottom: 3px;
+  overflow-wrap: anywhere;
+}
+.fblurb { font-size: 16.5px; color: var(--nline-2); margin-top: 12px; }
+.arrive .btn { margin-top: 18px; }
+/* The route's last run: down the gutter, round the corner onto the
+   kerb, along it to the terminus by the taxi's tail. */
+.streetwrap .r-foot { top: 0; bottom: calc(var(--kerb) - var(--rw) / 2 + var(--R)); }
+.streetwrap .e-foot { left: calc(var(--rx) - var(--rw) / 2); bottom: calc(var(--kerb) - var(--rw) / 2); }
+.streetwrap .r-kerb {
+  left: calc(var(--rx) - var(--rw) / 2 + var(--R));
+  width: calc(67.6cqw - var(--rx) + var(--rw) / 2 - var(--R));
+  bottom: calc(var(--kerb) - var(--rw) / 2);
+}
+.streetwrap .s-end { left: calc(67.6cqw - 12px); bottom: calc(var(--kerb) - 12px); }
+.streetwrap .arrived {
+  position: absolute;
+  z-index: 6;
+  left: calc(67.6cqw - 160px);
+  top: calc(100% - var(--kerb) + 14px);
+  width: 160px;
+  text-align: right;
+  transform: rotate(-2deg);
+}
+
+/* The drawing's title block and the legal line. */
+/* No z-index: the sheet frame and its two lower registration marks (z 1
+   and 2) are drawn over this band, as on the drawing. */
+.foot-in { position: relative; padding: 28px var(--cr) 120px var(--cl); background: #0a0e26; }
+/* Four cells. The rules are the grid's own 1px gaps over a keyline-coloured
+   ground, each cell painted the band's navy, so every layout below (four
+   across, two by two, stacked) is ruled correctly with no per-cell border
+   bookkeeping. */
+.tblock2 {
+  --tbl: rgb(239 231 214 / 0.28);
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 1fr 1.15fr;
+  gap: 1px;
+  background: var(--tbl);
+  border: 1px solid var(--tbl);
+}
+.tblock2 > * { padding: 14px 16px; min-width: 0; background: #0a0e26; }
+.tblock2 dt { font-size: 13.5px; line-height: 1.4; color: var(--nline-2); }
+.tblock2 dd { font-size: 16px; font-weight: 650; line-height: 1.4; margin-top: 3px; color: var(--nline); }
+.tblock2 .tb-name dt { font-size: 16px; font-weight: 700; color: var(--nline); }
+.tblock2 .tb-name dd { font-weight: 500; color: var(--nline-2); font-size: 14.5px; }
+/* Connections: the label on top like its neighbours, the four logos under
+   it. Each link is a 44px target; the row is pulled left by the gap
+   between the first glyph and its target's edge, so the GitHub mark lines
+   up under the label's first letter. */
+.tblock2 .tb-soc dd { margin-top: 0; }
+.tblock2 .soc { display: flex; flex-wrap: wrap; gap: 2px 6px; margin: 0 0 -10px -11px; }
+.tblock2 .soc a {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  color: var(--nline);
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+.tblock2 .soc a:hover { color: var(--taxi); background-color: rgb(239 231 214 / 0.08); }
+.tblock2 .soc a:focus-visible { outline-offset: 1px; border-radius: 50%; }
+.tblock2 .soc svg { display: block; }
+.flegal {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 22px;
+  font-size: 14px;
+  color: var(--nline-2);
+}
+.flegal ul { display: flex; gap: 4px 20px; flex-wrap: wrap; }
+.flegal a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: var(--nline-2);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+.flegal a:hover { color: var(--nline); text-decoration-color: currentColor; }
+.flegal a[aria-current="page"] { color: var(--nline); text-decoration-color: var(--taxi); text-decoration-thickness: 1.5px; }
+
+/* ---------------- the info pages ---------------- */
+.legalsheet .lg { position: relative; z-index: 6; padding: 150px var(--cr) 130px var(--cl); max-width: 900px; }
+.lg h1 { font-size: min(104px, 9.6vw); color: var(--ink-deep); overflow-wrap: anywhere; padding-bottom: 0.06em; }
+.lg-upd { margin-top: 22px; font-size: 15px; color: var(--muted); }
+/* Home, in the room between the inner tab and the title. */
+.lg-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  margin: -54px 0 14px;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1.5px;
+  transition: text-decoration-color 0.2s ease;
+}
+.lg-back:hover { text-decoration-color: var(--ink); }
+.lg-back svg { width: 18px; height: 18px; flex: none; }
+.lg-body { margin-top: 10px; }
+.lg-body p { font-size: 18.5px; line-height: 1.62; margin-top: 22px; max-width: 680px; color: var(--ink); overflow-wrap: break-word; }
+.lg-body h2 {
+  font-size: 30px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin-top: 44px;
+  color: var(--ink-deep);
+}
+.lg-body ul { margin: 16px 0 0 22px; font-size: 18px; line-height: 1.7; list-style: disc; max-width: 680px; }
+.lg-body li { margin-top: 4px; color: var(--ink); overflow-wrap: break-word; }
+.lg-body li::marker { color: var(--ink); }
+.lg-body strong { font-weight: 700; color: var(--ink-deep); }
+.lg-body a { color: var(--ink); text-decoration: underline; text-decoration-color: rgb(29 42 110 / 0.4); text-underline-offset: 4px; text-decoration-thickness: 1.5px; }
+.lg-body a:hover { text-decoration-color: var(--ink); }
+
+/* ---------------- the 404 ---------------- */
+.nfsheet .nf {
+  position: relative;
+  z-index: 6;
+  min-height: 860px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 120px var(--cr) 120px var(--cl);
+}
+.nfnum { font-size: 220px; color: var(--nline); }
+.nfroad { position: relative; width: min(560px, 80vw); height: 70px; border-bottom: 1.6px solid rgb(239 231 214 / 0.5); margin-top: 6px; }
+.nftaxi { position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); line-height: 0; }
+.nftaxi svg { width: 150px; height: auto; }
+.nftaxi .roll { display: block; }
+.nft { font-size: 56px; margin-top: 40px; }
+.nfb { font-size: 18px; color: var(--nline-2); margin-top: 14px; }
+.nf .btn { margin-top: 28px; }
+/* The taxi rolls in once from the right and stops, CSS only so the 404
+   needs no script. With reduced motion it is simply parked there. */
+@media (prefers-reduced-motion: no-preference) {
+  .nftaxi .roll { transition: translate 1.4s cubic-bezier(0.25, 1, 0.5, 1) 0.2s; }
+  @starting-style {
+    .nftaxi .roll { translate: 140% 0; }
+  }
+}
+
+/* ---------------- widths in between ---------------- */
+@media (max-width: 1180px) {
+  .contact .ct-head { font-size: 104px; }
+}
+/* Stacked: the phone is centred with no room beside it for the note, so
+   the note and its arrow go under it: the arrow rises from the note's
+   first word to the phone's foot under the message box (the box starts
+   about 38px in from the frame), and the note reads on from its tail.
+   The margin makes room for them below the phone without moving the
+   phone off the box's centre, which the balloon is placed from. */
+@media (max-width: 1023px) {
+  .ct-phone { margin-bottom: 44px; }
+  .ctn {
+    left: calc(50% - var(--phw) / 2 + 72px);
+    right: 0;
+    top: calc(50% + var(--phh) / 2 + 30px);
+    bottom: auto;
+    width: auto;
+    text-wrap: balance;
+    transform-origin: 0 50%;
+  }
+  .ct-point-side { display: none; }
+  .ct-point-under {
+    display: block;
+    left: calc(50% - var(--phw) / 2 + 26px);
+    top: calc(50% + var(--phh) / 2 + 3px);
+    width: 44px;
+    height: 50px;
+  }
+}
+@media (max-width: 1023px) and (min-width: 761px) {
+  .contact .ct-grid { grid-template-columns: 1fr; }
+  /* Two by two: name and role beside Connections, the two locations
+     under them. */
+  .tblock2 { grid-template-columns: 1fr 1fr; }
+  .tblock2 .tb-soc { order: 2; }
+  .tblock2 > :not(.tb-name, .tb-soc) { order: 3; }
+}
+
+/* ---------------- phone ---------------- */
+@media (max-width: 760px) {
+  .contact .ct-grid { grid-template-columns: 1fr; gap: 36px; padding: 92px var(--cr) 50px var(--cl); }
+  .contact .ct-head { font-size: 76px; }
+  .ctb { font-size: 17px; margin-top: 28px; }
+  .ct-mail { font-size: 21px; margin-top: 22px; gap: 8px; }
+  .ct-mail .arr { width: 20px; height: 20px; }
+  .ctn { font-size: 19px; }
+  .ct-phone { min-height: 560px; padding: 24px 0; margin-bottom: 56px; }
+  .pinwin { inset: 0 -10px; }
+
+  .hang { padding: 12px var(--cr) 0 var(--cl); clip-path: inset(12px -80px -90px -80px); }
+  .hang .bar { margin: 0 6px; }
+  .hang .chains { height: 40px; padding: 0 14%; }
+  .sign { padding: 18px 14px 16px; }
+  .sign .fl { width: 20px; height: 20px; }
+  .sign .fl.bl { left: 12px; bottom: 12px; }
+  .sign .fl.br { right: 12px; bottom: 12px; }
+  .sign .fl.tl { left: 12px; top: 12px; }
+  .sign .fl.tr { right: 12px; top: 12px; }
+  .sign .word { font-size: min(88px, 23vw); padding: 4px 0 10px; }
+  .sign .under { font-size: 14px; }
+  .hang .subwires { gap: 110px; height: 20px; }
+  .subsign { font-size: 19px; padding: 9px 18px; }
+
+  /* The phone street is the right-hand end of the same drawing (from x
+     840): 600 x 380, so 63.33cqw tall with the route 10cqw up. The
+     copy sits above it in the flow. */
+  .streetwrap { --kerb: 10cqw; min-height: 0; padding: 14px 0 calc(63.333cqw + 6px); }
+  .nstreet.d { display: none; }
+  .nstreet.m { display: block; height: 63.333cqw; }
+  /* tail 8px past the 22px ring, as on desktop */
+  .ftaxi { left: calc(21.5cqw + 19px); bottom: 5.83cqw; width: 49.4cqw; }
+  .signoff { font-size: 20px; }
+  .fmail { font-size: 21px; }
+  .fblurb { font-size: 15px; }
+  .streetwrap .r-kerb { width: calc(21.5cqw - var(--rx) + var(--rw) / 2 - var(--R)); }
+  .streetwrap .s-end { left: calc(21.5cqw - 11px); bottom: calc(var(--kerb) - 11px); }
+  /* Under the kerb, as on desktop, from the gutter's corner: above it,
+     where it used to be, "arrived" ran into the parked taxi's boot (both
+     taxi yellow), since the phone's kerb is shorter than the label. */
+  .streetwrap .arrived {
+    left: calc(var(--rx) + 2px);
+    top: calc(100% - var(--kerb) + 9px);
+    width: auto;
+    text-align: left;
+  }
+
+  .foot-in { padding: 22px var(--cr) 100px var(--cl); }
+  /* Name and role across the top, the two locations side by side, then
+     Connections across the bottom. */
+  .tblock2 { grid-template-columns: 1fr 1fr; }
+  .tblock2 .tb-name,
+  .tblock2 .tb-soc { grid-column: 1 / -1; }
+  .tblock2 .tb-soc { order: 2; }
+  .flegal { font-size: 13.5px; }
+  .flegal ul { gap: 6px 14px; }
+
+  .legalsheet .lg { padding: 110px var(--cr) 90px var(--cl); }
+  .lg h1 { font-size: min(56px, 13vw); }
+  .lg h1.is-long { font-size: min(56px, 10.6vw); }
+  .lg-back { margin-top: -30px; }
+  .lg-body p { font-size: 17px; }
+  .lg-body ul { font-size: 17px; }
+  .lg-body h2 { font-size: 24px; }
+  .nfsheet .nf { min-height: 720px; }
+  .nfnum { font-size: 130px; }
+  .nftaxi svg { width: 110px; }
+  .nft { font-size: 38px; }
+}

@@ -13,7 +13,7 @@ export default function TermsPage() {
   const mail = `mailto:${identity.email}`;
 
   return (
-    <LegalPage eyebrow="Legal" title="Terms of use" updated={legal.updated} path="/terms">
+    <LegalPage title="Terms of use" updated={legal.updated} path="/terms">
       <P>
         These are the ground rules for using this site. They&apos;re short, because it&apos;s a
         portfolio and there isn&apos;t much to agree to. By using the site you accept them.

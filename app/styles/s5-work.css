@@ -1,0 +1,473 @@
+/* ============================================================
+   SHEETS 04 WORK AND 05 JOURNEY
+   Imported into @layer components by app/globals.css, after
+   styles/f0-base.css. Every rule is scoped to its sheet (.work or
+   .journey, the classes WorkSheet and JourneySheet give the Sheet), so
+   the short class names ported from the drawings never meet another
+   sheet's.
+
+   04 Work: green engineering grid paper pasted up over Services. Its
+   torn (deckle) top edge rides the slide, and with scripts the paste-up
+   (a paper roll on that edge, wet paste streaks on the old sheet above
+   it) rides with it (PasteUp.tsx). Then the heading with a four-row
+   index, and four projects split by dashed cutting lines: copy,
+   badge, tags, a taped photo (stamped on 02 and 04) and a drawing plate
+   with an HTML legend.
+
+   05 Journey: blueprint blue. Its top edge is the cream copy line of
+   the Exposure in miniature (ticks and crosshairs), riding the normal
+   slide. Then the heading, the ghat with two moored boats and their
+   HTML tags, the railway timeline with the turnout, and two title-block
+   venture cards.
+   ============================================================ */
+
+/* ============================================================
+   04 WORK
+   ============================================================ */
+.work.sheet { overflow-x: clip; }
+/* The deckle edge is the seam: no drop shadow along a torn edge. */
+.sheet-slot + .sheet-anchor + .sheet-slot > .work.sheet { box-shadow: none; }
+/* The tab sits above the paste roll. */
+.work .sheet-tab { top: -50px; z-index: 10; }
+.work .deckle path { vector-effect: non-scaling-stroke; }
+
+/* --- the paste-up (scripts only) ---------------------------------- */
+/* It rides the sheet's own top edge: the roll on the edge, the wet
+   streaks on the old sheet just above. Clipped to its own
+   box, so the roll's overhang never widens the page. */
+.work .pasteedge {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -150px;
+  height: 206px;
+  z-index: 9;
+  pointer-events: none;
+  overflow: hidden;
+}
+.work .pasteedge .streaks {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 126px;
+  background: repeating-linear-gradient(97deg, rgb(255 255 255 / 0) 0 34px, rgb(239 231 214 / 0.10) 34px 46px, rgb(255 255 255 / 0) 46px 90px);
+  -webkit-mask-image: linear-gradient(transparent, #000);
+  mask-image: linear-gradient(transparent, #000);
+}
+.work .pasteedge .roll {
+  position: absolute;
+  left: -10px;
+  right: -10px;
+  bottom: 0;
+  height: 56px;
+  border-radius: 30px;
+  background: linear-gradient(180deg, #9aa58d 0%, #c3ccb7 16%, #e3eadb 38%, #fbfdf8 60%, #e8eee0 78%, #b9c2ae 100%);
+  box-shadow: 0 -14px 22px -12px rgb(10 14 40 / 0.55);
+}
+
+/* --- the sheet's column ------------------------------------------ */
+.work .wk-in {
+  position: relative;
+  z-index: 6;
+  padding: 118px var(--cr) 130px var(--cl);
+  color: var(--color-ink);
+}
+.work .wk-head {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 64px;
+  align-items: end;
+}
+.work .t-head { font-size: 136px; color: var(--color-ink-deep); }
+.work .blurb { font-size: 18.5px; line-height: 1.55; color: var(--color-muted); max-width: 440px; }
+
+/* The index: number, title, kind, one row per project. */
+.work .index { list-style: none; margin: 24px 0 0; padding: 0; border-top: 1.6px solid var(--color-ink); }
+.work .index a {
+  display: grid;
+  grid-template-columns: 2.4em 1fr auto;
+  column-gap: 12px;
+  align-items: baseline;
+  padding: 11px 2px;
+  border-bottom: 1px solid rgb(29 42 110 / 0.2);
+  font-size: 16.5px;
+  color: var(--color-ink);
+  text-decoration: none;
+}
+.work .index a:hover .it { text-decoration: underline; text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+.work .index .ix { font-weight: 800; font-size: 14px; }
+.work .index .it { font-weight: 650; letter-spacing: -0.01em; }
+.work .index .ik { color: var(--color-muted); font-size: 14.5px; white-space: nowrap; }
+
+/* --- a project ---------------------------------------------------- */
+.work .proj {
+  position: relative;
+  display: grid;
+  grid-template-columns: 5fr 7fr;
+  gap: 72px;
+  margin-top: 100px;
+  align-items: start;
+  scroll-margin-top: 96px;
+}
+.work .cut + .proj { margin-top: 76px; }
+.work .pcopy { min-width: 0; }
+
+/* The stop: a spur from the gutter to the project's numbered circle,
+   with the kind beside it in the hand. */
+.work .pidx { position: relative; display: flex; align-items: center; gap: 14px; margin: 0; }
+.work .pn {
+  position: relative;
+  z-index: 5;
+  width: 42px;
+  height: 42px;
+  border: var(--rw) solid var(--color-ink);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--color-ink);
+  background: var(--color-paper);
+  font-weight: 800;
+  font-size: 14.5px;
+}
+.work .pidx .stoplab { font-size: 21px; transform: rotate(-3deg); }
+
+/* The title: weight contrast, the asterisked word light. */
+.work .ptitle {
+  font-family: var(--font-display);
+  font-size: 60px;
+  font-weight: 800;
+  font-stretch: 92%;
+  letter-spacing: -0.045em;
+  line-height: 0.92;
+  color: var(--color-ink-deep);
+  margin: 20px 0 22px;
+  overflow-wrap: anywhere;
+}
+.work .ptitle span { font-weight: 280; letter-spacing: -0.03em; }
+
+.work .badge { display: flex; align-items: center; gap: 12px; margin: 0; font-weight: 700; font-size: 17.5px; line-height: 1.35; color: var(--color-ink); }
+.work .badge .medal { width: 36px; flex: none; }
+.work .badge .medal-type { font-family: var(--font-display); font-weight: 800; font-stretch: 75%; }
+.work .pbody { font-size: 16.5px; line-height: 1.64; color: #3d4778; margin: 20px 0 0; }
+
+/* The tags, set like a parts list: a brick dot between each. Every tag
+   carries its dot in the gap to its left, and the list is pulled one gap
+   to the left and clipped there, so the first tag on each line (wrapped
+   or not) has its dot cut off: a line never starts on a dot. */
+.work .tags { display: flex; flex-wrap: wrap; gap: 4px 0; list-style: none; margin: 18px 0 0 -22px; padding: 0; font-size: 14.5px; font-weight: 650; color: var(--color-ink); clip-path: inset(-6px -6px -6px 22px); }
+.work .tags li { position: relative; margin-left: 22px; white-space: nowrap; }
+.work .tags li::before { content: "·"; position: absolute; left: -22px; width: 22px; text-align: center; color: var(--color-stamp); font-weight: 800; }
+.work .plinks { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 22px; }
+
+/* The photo: a print with kraft tape, tilted; it drops in once (the
+   outer .pdrop is what moves, the tilt stays on .photo). */
+.work .pdrop { margin-top: 34px; }
+.work .photo {
+  position: relative;
+  width: 88%;
+  background: var(--color-cream-2);
+  padding: 10px 10px 14px;
+  transform: rotate(-2.4deg);
+  box-shadow: 0 22px 30px -18px rgb(20 35 25 / 0.6);
+}
+.work .proj:nth-of-type(even) .photo { transform: rotate(1.8deg); margin-left: 8%; }
+.work .photo img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; background: var(--color-paper-2); }
+.work .kraft {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  z-index: 2;
+  width: 118px;
+  height: 30px;
+  transform: translateX(-50%) rotate(-2deg);
+  background: linear-gradient(180deg, rgb(198 164 106 / 0.92), rgb(186 150 92 / 0.92));
+  -webkit-mask: linear-gradient(90deg, transparent 0, #000 4px calc(100% - 4px), transparent 100%);
+  mask: linear-gradient(90deg, transparent 0, #000 4px calc(100% - 4px), transparent 100%);
+}
+/* The stamp's holder: static, so the multiply blend is never isolated
+   by the press (the inner span is what scales). */
+.work .stampwrap {
+  position: absolute;
+  right: -26px;
+  bottom: -30px;
+  z-index: 3;
+  width: 136px;
+  transform: rotate(-12deg);
+  mix-blend-mode: multiply;
+  opacity: 0.92;
+  pointer-events: none;
+}
+.work .stampwrap > span { display: block; }
+.work .stamp-svg { display: block; width: 100%; height: auto; }
+.work .stamp-type { font-family: var(--font-display); font-weight: 800; font-stretch: 76%; }
+
+/* The drawing plate. */
+.work .plate {
+  position: relative;
+  margin: 0;
+  background: #f5f8f0;
+  border: 1.4px solid rgb(29 42 110 / 0.5);
+  padding: 24px 24px 20px;
+  box-shadow: 0 26px 44px -22px rgb(20 35 25 / 0.65);
+}
+.work .plate::before { content: ""; position: absolute; inset: 6px; border: 1px solid rgb(29 42 110 / 0.18); pointer-events: none; }
+.work .dwrap { position: relative; }
+.work .dw { display: block; width: 100%; height: auto; overflow: visible; }
+.work .dw .bal text, .work .dw-type { font-family: var(--font-display); }
+.work .legend {
+  list-style: none;
+  counter-reset: n;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  border-top: 1px solid rgb(29 42 110 / 0.25);
+  padding: 14px 0 0;
+  margin: 10px 0 0;
+  font-size: 18.5px;
+  color: var(--color-ink);
+}
+.work .legend li { counter-increment: n; display: flex; gap: 9px; align-items: center; }
+.work .legend li::before {
+  content: counter(n);
+  flex: none;
+  width: 25px;
+  height: 25px;
+  border: 1.5px solid var(--color-ink);
+  border-radius: 50%;
+  font: 700 13px/1 var(--font-display);
+  display: grid;
+  place-items: center;
+}
+.work .pnote { margin: 12px 0 0; font-size: 22px; color: var(--color-ink); text-align: right; transform: rotate(-2deg); }
+.work .red { position: absolute; left: 30%; top: 0; margin: 0; font-size: 19px; color: var(--color-stamp); transform: rotate(-2deg); }
+.work .paycard {
+  position: absolute;
+  left: 4%;
+  bottom: 2%;
+  display: flex;
+  flex-direction: column;
+  background: #fffdf6;
+  border: 1.3px solid var(--color-ink);
+  border-radius: 7px;
+  padding: 9px 14px 10px;
+  font-size: 15px;
+  box-shadow: 0 10px 18px -12px rgb(20 35 25 / 0.5);
+}
+.work .paycard b { font-weight: 700; margin-bottom: 2px; }
+.work .paycard .hand { font-size: 17.5px; line-height: 1.3; }
+
+/* The divider between projects: a dashed cutting line with a
+   registration mark at its middle, no lettered ends. */
+.work .cut { display: flex; align-items: center; gap: 12px; margin-top: 100px; color: var(--color-ink); }
+.work .cut span { flex: 1; border-top: 1.6px dashed rgb(29 42 110 / 0.45); }
+.work .cut .reg-mark { position: static; opacity: 0.7; flex: none; transform: none; }
+
+/* ============================================================
+   05 JOURNEY
+   ============================================================ */
+/* The leading edge: the cream copy line with its ticks and two
+   crosshairs. It rides the sheet's own slide; nothing clips. */
+.journey .xedge { position: absolute; left: 0; right: 0; top: 0; height: 0; z-index: 7; pointer-events: none; }
+.journey .xedge::before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 2.5px; background: var(--color-cream); }
+.journey .xedge::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 3px;
+  height: 9px;
+  background: repeating-linear-gradient(90deg, rgb(243 238 227 / 0.85) 0 1.5px, transparent 1.5px 12px), repeating-linear-gradient(90deg, rgb(243 238 227 / 0.85) 0 1.5px, transparent 1.5px 60px);
+  background-size: auto 6px, auto 9px;
+  background-repeat: repeat-x;
+}
+.journey .jr-xc { position: absolute; top: -13px; width: 26px; height: 26px; border-radius: 50%; border: 1.5px solid var(--color-cream); }
+.journey .jr-xc::before, .journey .jr-xc::after { content: ""; position: absolute; background: var(--color-cream); }
+.journey .jr-xc::before { left: 50%; top: -6px; bottom: -6px; width: 1.5px; transform: translateX(-50%); }
+.journey .jr-xc::after { top: 50%; left: -6px; right: -6px; height: 1.5px; transform: translateY(-50%); }
+.journey .jr-xc.l { left: 20px; }
+.journey .jr-xc.r { right: 20px; }
+.journey .sheet-tab { z-index: 9; }
+
+.journey .jr-in { position: relative; z-index: 6; padding: 96px var(--cr) 0 var(--cl); }
+.journey .jr-head { display: grid; grid-template-columns: 1.2fr 1fr; gap: 64px; align-items: end; }
+.journey .t-head { font-size: 128px; color: var(--color-bline); }
+.journey .blurb { font-size: 18.5px; line-height: 1.55; color: var(--color-bline-2); max-width: 440px; margin: 0; }
+
+/* The ghat: one self-hosted drawing, the tags and the note in HTML. */
+.journey .ghat { position: relative; z-index: 6; margin-top: 28px; }
+.journey .ghatsvg { width: 100%; height: auto; }
+.journey .btag {
+  position: absolute;
+  transform: translateX(-50%);
+  text-align: center;
+  background: var(--color-blue);
+  padding: 7px 14px 8px;
+  border: 1.3px solid rgb(226 235 255 / 0.6);
+  border-radius: 6px;
+  white-space: nowrap;
+  line-height: 1.35;
+}
+.journey .btag::after { content: ""; position: absolute; left: 50%; bottom: -22px; height: 21px; border-left: 1.3px solid rgb(226 235 255 / 0.6); }
+.journey .btag b { display: block; font-size: 20px; font-weight: 800; letter-spacing: -0.02em; }
+.journey .btag span { font-size: 14px; color: var(--color-bline-2); }
+.journey .btag.b1 { left: 68.4%; top: 24%; }
+.journey .btag.b2 { left: 87.4%; top: 31%; }
+.journey .jnote { position: absolute; left: 34%; bottom: 7%; margin: 0; font-size: 25px; color: var(--color-bline); transform: rotate(-3deg); }
+
+/* The railway timeline. The lower column opens with the same 96px as
+   the heading's, then the track sits 48px further down, so the water
+   has room before the line. A solid line for Psquare to its buffer, the
+   turnout across, Afferex's line fading out. */
+.journey .jr-low { position: relative; z-index: 6; padding: 96px var(--cr) 110px var(--cl); }
+.journey .rail-tl { position: relative; height: 110px; margin-top: 48px; }
+.journey .rail-tl .track { position: absolute; left: 0; right: 0; top: 42px; height: 14px; }
+.journey .seg { position: absolute; top: 0; height: 14px; border-top: 2px solid var(--color-bline); border-bottom: 2px solid var(--color-bline); background: repeating-linear-gradient(90deg, rgb(226 235 255 / 0.55) 0 2px, transparent 2px 13px); }
+.journey .seg.s1 { left: 0; width: 40%; }
+.journey .seg.s2 { left: 66.7%; right: 0; -webkit-mask-image: linear-gradient(90deg, #000 25%, transparent 96%); mask-image: linear-gradient(90deg, #000 25%, transparent 96%); }
+.journey .turnout { position: absolute; left: 40%; width: 26.7%; top: -8px; height: 30px; overflow: visible; }
+.journey .buf { position: absolute; top: -7px; width: 7px; height: 28px; background: var(--color-bline); border-radius: 2px; }
+.journey .buf.b-a { left: calc(40% - 3px); }
+.journey .buf.b-b { left: calc(66.7% - 4px); }
+.journey .tick { position: absolute; top: -12px; height: 38px; border-left: 1px solid rgb(226 235 255 / 0.45); }
+.journey .yr { position: absolute; top: 80px; font-size: 14px; color: var(--color-bline-2); padding-left: 6px; }
+.journey .tl-lab { position: absolute; top: 6px; font-weight: 700; font-size: 16px; letter-spacing: -0.01em; }
+.journey .tl-sw { position: absolute; top: 66px; margin-left: 24px; font-size: 19px; color: var(--color-bline); transform: rotate(-2deg); }
+
+/* The venture cards, drawn as title blocks. */
+.journey .vcards { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin: 30px 0 0; padding: 0; list-style: none; }
+.journey .vcard { height: 100%; border: 1.2px solid rgb(226 235 255 / 0.45); background: rgb(26 58 124 / 0.55); }
+.journey .vcard header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 16px 20px; border-bottom: 1px solid rgb(226 235 255 / 0.3); }
+.journey .vcard h3 { margin: 0; font-size: 27px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; }
+.journey .vcard header span { font-size: 14px; color: var(--color-bline-2); text-align: right; }
+.journey .vst { margin: 0; padding: 12px 20px 0; font-size: 14px; color: var(--color-bline-2); }
+.journey .vbody { margin: 0; padding: 6px 20px 18px; font-size: 15.5px; line-height: 1.6; }
+.journey .vfacts { display: grid; grid-template-columns: repeat(3, 1fr); margin: 0; padding: 0; list-style: none; border-top: 1px solid rgb(226 235 255 / 0.3); }
+.journey .vfacts li { padding: 12px 16px; font-weight: 650; font-size: 14.5px; line-height: 1.4; border-right: 1px solid rgb(226 235 255 / 0.3); }
+.journey .vfacts li:last-child { border-right: 0; }
+
+/* ============================================================
+   MID WIDTHS, TABLET, SHORT SCREENS
+   ============================================================ */
+@media (max-width: 1180px) {
+  .work .t-head { font-size: 112px; }
+  .journey .t-head { font-size: 104px; }
+}
+/* Two columns on a narrower screen (a 1280 or 1366 laptop included): the
+   plate shrinks, so the balloons grow to keep their numerals at 14px and
+   up. A large phone or small tablet (561 to 760) has a plate about as
+   wide, so it takes the same size. */
+@media (max-width: 1366px) and (min-width: 561px) {
+  .work .plate .bal circle { r: 19px; }
+  .work .plate .bal text { font-size: 22px; }
+}
+/* A phone: the drawing is a third of its desktop size, so the balloons
+   take the full bump to keep 14px numerals. The wide drawings (viewBox
+   660 to 680 units) shrink more, so they need more. Above 560 the same
+   bump would give numerals near 35px, heavier than the drawing. */
+@media (max-width: 560px) {
+  .work .plate .bal circle { r: 27px; }
+  .work .plate .bal text { font-size: 30px; }
+  .work .plate .dw-wide .bal circle { r: 29px; }
+  .work .plate .dw-wide .bal text { font-size: 34px; }
+}
+@media (max-width: 1023px) and (min-width: 761px) {
+  .work .wk-head { grid-template-columns: 1fr; gap: 24px; }
+  .work .proj { gap: 40px; }
+  .journey .jr-head { grid-template-columns: 1fr; gap: 20px; }
+}
+/* Under 1241px the ghat drawing scales down faster than the tags, so
+   hanging over the boats they would run into each other (and the note the
+   oar). Here they sit in a row above the drawing, right-aligned towards
+   the boats, and the note goes under it, as on a phone. */
+@media (max-width: 1240px) and (min-width: 761px) {
+  .journey .ghat { display: grid; grid-template-columns: 1fr auto auto; gap: 14px; margin-top: 36px; padding: 0 var(--cr) 0 var(--cl); }
+  .journey .ghat .ghatsvg { grid-column: 1 / -1; margin: 0 calc(-1 * var(--cr)) 0 calc(-1 * var(--cl)); width: calc(100% + var(--cl) + var(--cr)); max-width: none; }
+  .journey .btag { position: relative; transform: none; grid-row: 1; }
+  .journey .btag.b1, .journey .btag.b2 { left: auto; top: auto; }
+  .journey .btag.b1 { grid-column: 2; }
+  .journey .btag.b2 { grid-column: 3; }
+  .journey .btag::after { display: none; }
+  .journey .jnote { position: static; grid-column: 1 / -1; justify-self: end; font-size: 22px; margin-top: -4px; }
+}
+/* Two narrow columns just above 900px: the placing badge would wrap
+   beside its medal, so it steps down to the phone size there. */
+@media (max-width: 1100px) and (min-width: 901px) {
+  .work .badge { font-size: 16px; gap: 8px; letter-spacing: -0.01em; }
+  .work .badge .medal { width: 26px; }
+}
+@media (max-width: 900px) and (min-width: 761px) {
+  .work .proj { grid-template-columns: 1fr; gap: 36px; }
+  .work .photo { width: 70%; }
+}
+
+/* ============================================================
+   PHONE
+   ============================================================ */
+@media (max-width: 760px) {
+  .work .sheet-tab { top: -46px; }
+  .work .wk-in { padding: 92px var(--cr) 96px var(--cl); }
+  .work .wk-head { grid-template-columns: 1fr; gap: 20px; }
+  .work .t-head { font-size: 84px; }
+  .work .blurb { font-size: 16.5px; }
+  .work .index a { font-size: 15.5px; grid-template-columns: 2.2em 1fr; column-gap: 10px; }
+  .work .index .ik { display: none; }
+  .work .proj { grid-template-columns: 1fr; gap: 30px; margin-top: 64px; }
+  .work .cut + .proj { margin-top: 52px; }
+  .work .cut { margin-top: 64px; }
+  .work .pn { width: 38px; height: 38px; }
+  .work .ptitle { font-size: 44px; margin: 16px 0 18px; }
+  /* A smaller medal, gap and tracking keep a placing on one line down
+     to a 360 phone. */
+  .work .badge { font-size: 16px; gap: 8px; letter-spacing: -0.01em; }
+  .work .badge .medal { width: 26px; }
+  .work .pbody { font-size: 16px; }
+  .work .pdrop { margin-top: 28px; }
+  .work .photo { width: 92%; }
+  .work .proj:nth-of-type(even) .photo { margin-left: 6%; }
+  .work .stampwrap { width: 104px; right: -12px; bottom: -26px; }
+  .work .plate { padding: 14px 12px; }
+  /* The relay's viewBox keeps room above and below the hops for the red
+     note and the payload card, which hang over it on a wide screen. Here
+     both sit in the flow under the drawing, so that room would be an
+     empty band: trimmed with negative margins (a share of the width, so
+     they scale with the drawing), and the art still paints in full. */
+  .work .plate .dw-sos { margin: -10% 0 -22%; }
+  .work .legend { font-size: 16.5px; gap: 6px 16px; }
+  .work .legend li::before { width: 23px; height: 23px; }
+  .work .pnote { font-size: 19px; }
+  .work .red { position: static; margin-bottom: 6px; font-size: 17px; text-align: center; }
+  .work .paycard { position: static; margin-top: 10px; flex-direction: row; flex-wrap: wrap; gap: 2px 12px; align-items: baseline; }
+  .work .paycard b { width: 100%; }
+  .work .paycard .hand { font-size: 16.5px; }
+
+  .journey .jr-in { padding-top: 84px; }
+  .journey .jr-head { grid-template-columns: 1fr; gap: 18px; }
+  .journey .t-head { font-size: 76px; }
+  .journey .blurb { font-size: 16.5px; }
+  /* Phone: the tags in a row above the drawing, the note under it. */
+  .journey .ghat { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 30px; padding: 0 var(--cr) 0 var(--cl); }
+  .journey .ghat .ghatsvg { grid-column: 1 / -1; margin: 0 calc(-1 * var(--cr)) 0 calc(-1 * var(--cl)); width: calc(100% + var(--cl) + var(--cr)); max-width: none; }
+  .journey .btag { position: relative; left: auto; top: auto; transform: none; white-space: normal; padding: 6px 8px 7px; grid-row: 1; line-height: 1.55; }
+  .journey .btag.b1, .journey .btag.b2 { left: auto; top: auto; }
+  .journey .btag::after { display: none; }
+  .journey .btag b { font-size: 16px; }
+  .journey .btag span { font-size: 14px; display: block; text-wrap: balance; }
+  .journey .jnote { position: static; grid-column: 1 / -1; font-size: 19px; justify-self: end; margin-top: -6px; }
+  .journey .jr-low { padding-top: 84px; padding-bottom: 92px; }
+  .journey .rail-tl { margin-top: 30px; height: 120px; }
+  .journey .yr { font-size: 14px; top: 84px; }
+  .journey .tl-lab { font-size: 14px; }
+  .journey .tl-sw { top: 60px; font-size: 16px; margin-left: -18px; }
+  .journey .vcards { grid-template-columns: 1fr; gap: 20px; }
+  .journey .vcard header { flex-direction: column; gap: 2px; padding: 14px 16px; }
+  .journey .vcard header span { text-align: left; }
+  .journey .vcard h3 { font-size: 23px; }
+  .journey .vbody { padding: 6px 16px 16px; font-size: 15px; }
+  .journey .vst { padding: 10px 16px 0; }
+  .journey .vfacts li { padding: 10px; font-size: 13.5px; }
+}
+
+/* A project without a drawing (a new entry in content.ts) runs the copy
+   column alone. */
+.work .proj.no-plate { grid-template-columns: minmax(0, 640px); }
