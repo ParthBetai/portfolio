@@ -70,8 +70,10 @@ whenever something is added, removed or decided (see
   CODEBASE.md explains each one, with versions.
 - **Where it lives:** the code is on GitHub at
   `https://github.com/ParthBetai/portfolio`, branch `main` (repository
-  created 29 Sep 2026). It is **not deployed yet**. The planned host is
-  Vercel.
+  created 29 Sep 2026). The host is **Cloudflare Pages** (set up on 19
+  November); a working live deploy has **not been confirmed yet**. The
+  address the site uses for its links and preview cards is
+  `https://parthcodz.ext.io`.
 
 ---
 
@@ -534,7 +536,7 @@ The same footer closes every page.
 
 All five info pages are sheets of the same drawing set: one cream sheet
 with an index tab reading "Legal", a "Back to home" link, the title, a
-"Last updated" date (currently **12 October 2026**), the text, and then
+"Last updated" date (currently **19 November 2026**), the text, and then
 the same night footer street. They are written in plain words and match
 how the site really behaves. They have **not been reviewed by a lawyer**.
 
@@ -673,8 +675,9 @@ most 10 sends a minute for the whole site. Bots that trip a trap are told
 
 **What it needs to work:** a Resend key in the variable `RESEND_API_KEY`.
 Without it, every send fails politely and the chat offers the email-app
-route instead. The key is set up locally, but a real end-to-end test
-message has **not been sent yet**.
+route instead. The key is set up locally (on Cloudflare it goes in as a
+secret variable, see section 10), but a real end-to-end test message has
+**not been sent yet**.
 
 The full technical detail (every check, every response code) is in
 CODEBASE.md.
@@ -728,7 +731,8 @@ framing by other sites, HTTPS enforcement in production, and more. The
 contact endpoint accepts only same-site JSON posts and can only ever email
 Parth. The development server listens only on this computer (`127.0.0.1`),
 after it was once found reachable on a public Wi-Fi. The Resend key lives
-only in `.env.local` (never committed) and in the host's settings; a real
+only in `.env.local` (never committed) and in the host's settings (a
+secret variable in Cloudflare Pages); a real
 key was once found in `.env.example` and removed before it was pushed, so
 always scan for keys before committing. Details are in CODEBASE.md.
 
@@ -755,6 +759,9 @@ Notes:
   same Wi-Fi can reach it.
 - **Stop the dev server before running a build.** Both use the `.next`
   folder, and a build breaks a running dev server.
+- `.npmrc` sets `legacy-peer-deps=true`, so `npm install` does not stop on
+  peer dependency conflicts (added with the Cloudflare setup; it applies
+  to Cloudflare's build too).
 - For the contact form to send real email locally, copy `.env.example` to
   `.env.local` and put a Resend key in `RESEND_API_KEY`. `.env.local` is
   never committed, and `.env.example` must never hold a real key. Without
@@ -778,20 +785,39 @@ Notes:
 
 CODEBASE.md lists the exact sizes and checks used.
 
-### Deploy to Vercel (planned)
+### Deploy to Cloudflare Pages
 
-1. Import the GitHub repository at vercel.com/new.
-2. In Project Settings, Environment Variables, add `RESEND_API_KEY`, and
-   optionally `CONTACT_TO_EMAIL` (where mail is delivered) and
-   `CONTACT_FROM_EMAIL` (the sender). Add `NEXT_PUBLIC_SITE_URL` set to the
-   live address (important with a custom domain; without one, Vercel's own
-   `*.vercel.app` address is used for the sitemap, robots.txt, canonical
-   links and previews).
-3. Deploy, then send one real message through the chat to confirm it
-   arrives.
-4. Paste the live link into LinkedIn's Post Inspector
+The site is hosted on Cloudflare Pages through a build tool called
+`@cloudflare/next-on-pages`. It turns the Next.js build into a Pages
+site: every page is a static file, and the contact route
+(`/api/contact`) runs on Cloudflare Workers, which is why it uses the
+Edge runtime. There is no `wrangler.toml`, and the project is a normal
+Next.js build, not a static export.
+
+1. Create a Cloudflare Pages project from the GitHub repository
+   (`ParthBetai/portfolio`, branch `main`).
+2. Build command: `npx @cloudflare/next-on-pages@1`. Build output
+   directory: `.vercel/output/static`.
+3. In Settings, Functions, Compatibility flags, add **`nodejs_compat`**
+   for both Production and Preview.
+4. Environment variables: `RESEND_API_KEY` as a secret (required for the
+   email), and optionally `CONTACT_TO_EMAIL` (where mail is delivered),
+   `CONTACT_FROM_EMAIL` (the sender) and `NEXT_PUBLIC_SITE_URL` (the live
+   address; it is read when the site is built, so changing it needs a
+   new build, and without it the site uses `https://parthcodz.ext.io`).
+   Never set `CONTACT_UPSTREAM_URL` there; it is for local testing only.
+5. Deploy and check the build passes, then send one real message through
+   the chat to confirm it arrives.
+6. Paste the live link into LinkedIn's Post Inspector
    (linkedin.com/post-inspector) or a WhatsApp chat to check the preview
    card.
+
+Not verified yet: the build tool works poorly on Windows, so it has not
+been run locally, and a passing Cloudflare build has not been seen. The
+first Cloudflare build failed because icon and preview image files in
+`app/` count as routes there; they now live in `public/` (see section 13).
+Locally, the contact route on the Edge runtime refuses bad requests as it
+should, but no real email has gone through it yet.
 
 One catch with Resend: the default sender `onboarding@resend.dev` can only
 deliver to the email address the Resend account was created with. To send
@@ -815,7 +841,14 @@ address on it.
   pages and the 404 were toured at desktop and phone sizes in full motion,
   soft mode and without JavaScript (42 runs), with no sideways overflow,
   no security-policy violations and no console errors.
-- **Not deployed yet.**
+- **Hosting moved to Cloudflare Pages** on 19 November, in two pushed
+  commits: `a448d29` (the contact route on the Edge runtime, the
+  Cloudflare build settings, `.npmrc`) and `60cfa24` (the icons and
+  preview images moved from `app/` to `public/` after the first
+  Cloudflare build failed on them, and the site address now falls back
+  to `https://parthcodz.ext.io`).
+- **Not confirmed live yet:** a passing Cloudflare build and a real
+  email through the edge route are still to be seen.
 - The closing review of the sixteenth round was skipped to ship fast, at
   Parth's request.
 
@@ -827,8 +860,10 @@ address on it.
   older (high). Fixing them means downloading updated packages, which
   waits for Parth's go-ahead. Run `npm audit --omit=dev` again after
   updating.
-- **Deploy to Vercel** and set `RESEND_API_KEY` and `NEXT_PUBLIC_SITE_URL`
-  there, then check the preview card in LinkedIn's Post Inspector.
+- **Deploy on Cloudflare Pages** with the build settings, `RESEND_API_KEY`
+  (and the optional variables) and the `nodejs_compat` flag (section 10),
+  confirm the build passes, then check the preview card in LinkedIn's
+  Post Inspector.
 - **Send one real test message** through the chat (it sends a real email,
   so it needs his say-so).
 - **See the new loader on his own PC** (soft mode plays it) before it goes
@@ -905,6 +940,7 @@ is in the changelog in CODEBASE.md.
 | 17 Nov | **The new loader, Span closed.** Parth picked it from four concepts: the Howrah Bridge erected as the progress bar. |
 | 18 Nov | **Round sixteen.** A full code review's 25 fixes (nothing visible lost), and the name craned in letter by letter inside the loader (chosen from three prototypes: forge, crane, split-flap). The redesign is committed and pushed. |
 | 19 Nov | **Polish pass,** pushed: balanced headings, aligned venture cards, the craned name lands sooner. |
+| 19 Nov | **Hosting moved to Cloudflare Pages,** pushed: the contact route runs on the Edge runtime, and the icons and preview images moved to `public/` so the Cloudflare build accepts them. Nothing on screen changed. |
 
 ---
 
@@ -982,6 +1018,11 @@ when changing anything.
 - Never reorder the `sheets` list in `lib/content.ts`; components read it
   by position.
 - Never add a `loading.tsx` file; it blanks the site without JavaScript.
+- Never put an `icon`, `apple-icon`, `favicon`, `opengraph-image` or
+  `twitter-image` file in `app/` or any folder under it. Each one becomes
+  a route that breaks the Cloudflare build; they live in `public/`.
+- The contact route stays on the Edge runtime (`runtime = "edge"`), and
+  any new server route must too.
 - Read the hard-won lessons in CODEBASE.md before editing motion code.
 
 ---
@@ -1008,8 +1049,9 @@ when changing anything.
 | Add an info page | New `app/<slug>/page.tsx`, add it to `legal.pages` and to `app/sitemap.ts` | "Info pages" and "How to make common changes" |
 | Spam limits, email format | `app/api/contact/route.ts` | "Contact backend" |
 | Security headers, allowed outside hosts | `next.config.mjs` (and the privacy page) | "Security headers" |
-| The link preview card and icons | `node scripts/make-share-image.mjs`, then the two `.alt.txt` files | "Assets and helper scripts" |
-| The live site address | `NEXT_PUBLIC_SITE_URL` (read by `lib/site.ts`) | "SEO and share images" |
+| The link preview card and icons | `node scripts/make-share-image.mjs` (writes them to `public/`), then `SHARE_ALT` in `app/layout.tsx` if the card's words changed | "Assets and helper scripts" |
+| The live site address | `NEXT_PUBLIC_SITE_URL` on the host, then a new build (read by `lib/site.ts`; without it, `https://parthcodz.ext.io`) | "SEO and share images" |
+| Hosting and build settings | The Cloudflare Pages dashboard (build command, output folder, variables, the `nodejs_compat` flag); see section 10 | "Running, checking, building and deploying" |
 | Anything else, or why something is built the way it is | Start from the file map | "File map", "Contracts" and "Hard-won lessons" |
 
 After any change: typecheck, build, check screenshots in soft mode, and
@@ -1039,4 +1081,5 @@ update README.md and CODEBASE.md (with a changelog line).
 | **WebGL / three.js** | The browser's 3D graphics, and the library used to draw with it (portrait relief, pin wall). |
 | **GSAP / ScrollTrigger** | The animation library and its plug-in that ties animations to scrolling. |
 | **Lenis** | The library that gives scrolling its smooth inertia. |
-| **Vercel** | The planned hosting service. |
+| **Cloudflare Pages / next-on-pages** | The hosting service, and the build tool (`@cloudflare/next-on-pages`) that turns the Next.js build into a Pages site: static pages plus the contact route, which runs on Cloudflare Workers. |
+| **Edge runtime** | The lighter server runtime the contact route uses, so it can run on Cloudflare Workers. |

@@ -73,8 +73,8 @@ export default function PrivacyPage() {
         <LI>
           <Strong>The hosting provider.</Strong> It keeps standard access logs (things like your IP
           address, the page asked for, your browser type and the time) to run and protect the
-          service. If the site is hosted on Vercel, that&apos;s Vercel, under{" "}
-          <A href="https://vercel.com/legal/privacy-policy">Vercel&apos;s privacy policy</A>. I
+          service. The site is hosted on Cloudflare Pages, so that&apos;s Cloudflare, under{" "}
+          <A href="https://www.cloudflare.com/privacypolicy/">Cloudflare&apos;s privacy policy</A>. I
           don&apos;t use these logs to identify anyone.
         </LI>
         <LI>

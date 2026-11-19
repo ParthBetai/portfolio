@@ -476,7 +476,7 @@ export const legal = {
   owner: "Parth Betai",
   /* The index tab on the info pages' sheet (the pages' eyebrow). */
   tabLabel: "Legal",
-  updated: "12 October 2026",
+  updated: "19 November 2026",
   pages: [
     { label: "Privacy policy", href: "/privacy" },
     { label: "Terms of use", href: "/terms" },
