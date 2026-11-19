@@ -4775,3 +4775,20 @@ Dates are 2026.
     real email has been sent through the edge route. Later the same day the
     privacy page and `.env.example` were switched to Cloudflare (Cloudflare's
     privacy policy linked) and `legal.updated` moved to 19 November 2026.
+
+- **19 Nov, second polish pass, pushed.** A tour at seven sizes in full
+  and soft motion found two things, both fixed without changing anything
+  drawn. (1) Pressing Space in the contact phone's Message field before
+  the chat takes text made the page jump a screen (a read-only input lets
+  Space through to the page): the single-line input in `PhoneChat.tsx`
+  now blocks Space while the field is locked. (2) On touch screens
+  (`@media (pointer: coarse)` in `f0-base.css`) the controls drawn under
+  44px (the sheet tabs, the strip's name, the stack pause button, the
+  Contact and footer email links, the chat's Send button, which gained a
+  `ph-send` class) get an invisible 44px hit area from an `::after`.
+  Left as they are: the footer legal links (24px, rows only 6px apart,
+  already WCAG 2.2 AA) and the hero's 01 tab (the copy layer sits over
+  its edges; changing the stacking risks the loader hand-over).
+  Checked: the tour against a fresh baseline (no change but the date
+  line), the loader in soft mode, the hero drive, the plotter following
+  the scroll, the footer taxi parking, and the 42-run check.

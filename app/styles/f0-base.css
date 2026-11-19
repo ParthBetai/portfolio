@@ -396,6 +396,18 @@
   .sheet-tab.is-inner { top: 52px; left: 20px; padding: 0 14px 0 2px; }
 }
 
+/* Touch screens: the small controls drawn under 44px get an invisible
+   44px hit area around them (centred, never smaller than the control). */
+@media (pointer: coarse) {
+  .strip .sname, .ct-mail, .fmail, .ph-send { position: relative; }
+  :is(.sheet-tab, .strip .sname, .about .pause, .ct-mail, .fmail, .ph-send)::after {
+    content: "";
+    position: absolute;
+    inset: min(0px, (100% - 44px) / 2);
+    inset-inline: min(0px, (100% - 44px) / 2);
+  }
+}
+
 /* ============================================================
    THE ROUTE
    One 4px inked line in the left gutter, built per sheet from static

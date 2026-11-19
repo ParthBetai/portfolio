@@ -941,6 +941,7 @@ is in the changelog in CODEBASE.md.
 | 18 Nov | **Round sixteen.** A full code review's 25 fixes (nothing visible lost), and the name craned in letter by letter inside the loader (chosen from three prototypes: forge, crane, split-flap). The redesign is committed and pushed. |
 | 19 Nov | **Polish pass,** pushed: balanced headings, aligned venture cards, the craned name lands sooner. |
 | 19 Nov | **Hosting moved to Cloudflare Pages,** pushed: the contact route runs on the Edge runtime, and the icons and preview images moved to `public/` so the Cloudflare build accepts them. Nothing on screen changed. |
+| 19 Nov | **Second polish pass,** pushed: on phones the small controls get a finger-sized tap area, and Space in the chat no longer jumps the page. Nothing drawn changed. |
 
 ---
 

@@ -1127,6 +1127,8 @@ const Composer = memo(function Composer({
             spellCheck={step === "email" || step === "name" ? false : undefined}
             enterKeyHint="send"
             onChange={(e) => onChange(e.target.value)}
+            /* A read-only field lets Space through to the page, which then jumps a screen down. */
+            onKeyDown={(e) => { if (f.locked && e.key === " ") e.preventDefault(); }}
             className={inputClass}
           />
         )}
@@ -1136,7 +1138,7 @@ const Composer = memo(function Composer({
         aria-label="Send"
         data-cursor="SEND"
         aria-disabled={!canSend}
-        className={`grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full transition-[background-color,opacity] duration-300 ${
+        className={`ph-send grid h-[36px] w-[36px] shrink-0 place-items-center rounded-full transition-[background-color,opacity] duration-300 ${
           canSend ? "bg-ink text-cream" : "bg-ink/[0.08] text-muted"
         }`}
       >
