@@ -41,9 +41,9 @@ export const identity = {
 export const resume = {
   href: "/Parth-Betai-Resume.pdf",
   fileName: "Parth-Betai-Resume.pdf",
-  size: "184 KB",
+  size: "185 KB",
   pages: 1,
-  updated: "May 2026",
+  updated: "November 2026",
   /* Printed on the floppy's label and on the About sleeve. */
   label: "Resume",
 };
