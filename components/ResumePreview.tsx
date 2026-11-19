@@ -4,7 +4,7 @@ import { useCallback, useEffect, useId, useImperativeHandle, useLayoutEffect, us
 import type { ComponentType, CSSProperties, MouseEvent as ReactMouseEvent, Ref, RefObject } from "react";
 import { createPortal } from "react-dom";
 import { gsap } from "@/lib/motion";
-import { identity, resume } from "@/lib/content";
+import { identity, resume, ui } from "@/lib/content";
 
 /* ============================================================
    RESUME PREVIEW
@@ -1221,7 +1221,7 @@ export default function ResumePreview({
               >
                 {img !== "ok" && (
                   <span className="mono absolute inset-x-0 top-1/2 -translate-y-1/2 px-6 text-center text-[13px] text-muted">
-                    {img === "broken" ? "Preview unavailable. The PDF download still works." : "Loading preview"}
+                    {img === "broken" ? ui.previewBroken : ui.loadingPreview}
                   </span>
                 )}
                 {/* eslint-disable-next-line @next/next/no-img-element */}

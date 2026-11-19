@@ -10,9 +10,10 @@
    the kerb, the taxi and the route always meet. A phone has its own
    composition in px, with the kerb at 720 of an 844px box.
 
-   The Exposure stacks the hero in six layers (Hero.tsx): the ink back,
+   The Exposure stacks the hero in eight layers (Hero.tsx): the ink back,
    the blueprint back (masked), the portrait canvas, the ink front, the
-   blueprint front (masked) and the copy line. A mask is a clipping box
+   blueprint front (masked), the ink copy (masked to above the line),
+   the blueprint copy (masked) and the copy line. A mask is a clipping box
    moved down to the line with an inner box moved back up by the same
    amount, so the print inside stands still while its window opens:
    transforms only, on the compositor.

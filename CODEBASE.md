@@ -113,9 +113,9 @@ A few words used throughout:
 |---|---|
 | Design | "The Drawing Set, Kolkata edition", approved by Parth on 5 Oct 2026, refined in rounds thirteen to sixteen and a polish pass |
 | Loader | "Span closed" (picked 17 Nov), with his name craned in letter by letter (18 Nov) |
-| GitHub (`main`) | the redesign pushed as `f234d68` on 18 Nov 2026; the polish pass as `04bad0d`, the Cloudflare move as `a448d29` and the public/ icons as `60cfa24`, all on 19 Nov 2026 |
+| GitHub (`main`) | the redesign pushed as `f234d68` on 18 Nov 2026; the polish pass as `04bad0d`, the Cloudflare move as `a448d29` the public/ icons as `60cfa24`, the tap areas as `3ebe50a`, the security updates as `4c50108` and the moving-text pause round after them, all on 19 Nov 2026 |
 | Deployed | not confirmed yet. Host: Cloudflare Pages through `@cloudflare/next-on-pages`. The first Cloudflare build failed on the app/ icon and preview image routes (fixed in `60cfa24`); a passing Cloudflare build is still to be seen ([Deploying](#deploying)) |
-| Dependency advisories | three (next 15.5.26, sharp, source-map-js), waiting for Parth's go-ahead to update |
+| Dependency advisories | none: next 15.5.29, sharp 0.35.5 and source-map-js 1.2.3 since `4c50108` (19 Nov); `npm audit --omit=dev` reports 0 |
 | Contact email | key set up locally; no real test message sent yet; not yet confirmed on the host |
 | Last full check | a production build on 18 Nov, served on 127.0.0.1:3001: 42 runs clean (see below). On 19 Nov the edge contact route was checked locally (see below) |
 
@@ -181,7 +181,8 @@ round. It is the evidence of what was checked and how.
     denial-of-service on crafted source maps). Fixing them means
     downloading package updates, so it waits for Parth's go-ahead (still
     waiting after Span closed, 17 Nov). The site itself was not changed
-    for them.
+    for them. Closed on 19 Nov in `4c50108` (next 15.5.29, sharp 0.35.5,
+    source-map-js 1.2.3; the audit reports 0).
   - **Checked for the fifteenth round** (dev server, headless Edge; the
     full list is in its Changelog entry): the typecheck; the hero drive
     stepped down and back up in full and soft motion at six laptop sizes
@@ -316,9 +317,8 @@ helper scripts.
 - The hosting build tool `@cloudflare/next-on-pages` is not in
   `package.json` either: Cloudflare's build runs it with
   `npx @cloudflare/next-on-pages@1` (see [Deploying](#deploying)).
-- There is **no** `eslint` in the dependencies, so `npm run lint` is likely
-  to prompt or fail (not tried; see
-  [Known issues](#26-known-issues-and-open-items)).
+- There is **no** `eslint` and no lint script (`next lint` was removed on
+  19 Nov, since it could not run without it); the typecheck is the check.
 
 **Configuration files**
 
@@ -342,7 +342,6 @@ npm run dev      # dev server on http://127.0.0.1:3000, this machine only
 npm run build    # production build; must pass before calling anything done
 npm run start    # serves the production build on 127.0.0.1:3000
 npm run audit    # npm audit --omit=dev (runtime dependencies only)
-npm run lint     # next lint; eslint is not installed, so expect it to fail
 ```
 
 | Script | Command |
@@ -350,7 +349,6 @@ npm run lint     # next lint; eslint is not installed, so expect it to fail
 | `dev` | `next dev -H 127.0.0.1 -p 3000` |
 | `build` | `next build` |
 | `start` | `next start -H 127.0.0.1 -p 3000` |
-| `lint` | `next lint` |
 | `audit` | `npm audit --omit=dev` |
 
 `-H 127.0.0.1` binds the server to this machine only, so nobody on the
@@ -1136,15 +1134,17 @@ re-exports `gsap` and `ScrollTrigger`. **Always import GSAP from
   stamps. They are never undone on the way back up, like ink on
   paper. The markup is always the final state, so without JavaScript all
   of it is simply there.
-- **Loops:** the strip's one-liner (4 s hold, holds under the pointer and in
-  a hidden tab), the stack rows (pausable), the grain, the ticket's rolling
-  roles (holds under the pointer and off screen), the portrait's idle sway
+- **Loops:** the strip's one-liner (4 s hold, holds under the pointer, in
+  a hidden tab and while its pause toggle is pressed), the stack rows
+  (pausable), the grain, the ticket's rolling roles (holds under the
+  pointer, off screen and with the stack rows' pause button), the portrait's idle sway
   (stopped while About covers the hero), the pin wall's idle breathing and
   the page-change sheet's taxi while a page loads.
 - **Performance rules:** no per-frame layout reads (the strip, the nav, the
   Exposure and the flat portrait all use values cached at refresh or by a
   ResizeObserver; the loader's bridge measures its boxes once at loader
-  start and again only on a resize, and its frames only write), no live SVG filters, no animated blur, no page-tall
+  start, again on a resize and once more when the fonts arrive, and its
+  frames only write), no live SVG filters, no animated blur, no page-tall
   measured overlays, and WebGL loops stop when their canvas is covered or
   off screen.
 
@@ -1445,8 +1445,9 @@ assertions, so a rename throws).
   letter has a threshold `thr = 0.02 + 0.58 * i / (n - 1)`, an alternating
   swing direction and a wall-clock birth time that survives a rebuild.
   Line 2 sits behind line 1. Each line's first child must be a single
-  text node. If the fonts are not loaded yet it builds again on
-  `document.fonts.ready`. `restore()` removes the overlay and clears
+  text node. If the fonts are not loaded yet, `document.fonts.ready`
+  calls `rebuild()` once (the bridge and the name, so the fit comes from
+  the real name box), if the bridge is still in the page. `restore()` removes the overlay and clears
   `data-sh`.
 - **The fit:** `k = min(0.76, (kerbY - nameB - 20) / 344, (W - 50) / 1324, (W - 74) / 1250)`,
   so the bridge clears the name by 20px and fits the sheet; the small
@@ -1695,12 +1696,18 @@ JavaScript there is no `data-motion`, so no hold-back rule matches, the
   ResizeObserver (`jumpTo` reads it). The one-liner reel holds each line
   `HOLD_MS` (4000) and rolls in `ROLL_S` (0.7 s, `power3.inOut`), with the
   first line repeated at the end so it loops, pausing in a hidden tab,
-  under the pointer and while the line is hidden (1180px and below);
+  under the pointer, while the line is hidden (1180px and below) and while
+  the `.spause` toggle beside it is pressed (WCAG 2.2.2; `aria-pressed`,
+  named by `strip.pause`, `data-js-only`, hidden with the line). The hold
+  is a module-level `lineHeld`, so it survives the strip remounting on
+  every page; a roll in flight lands before it takes;
   screen readers get one `sr-only` paragraph with every line. The name
   links to `#home` on the home page (through `jumpTo`) and is a
   `next/link` to `/` elsewhere. CSS: `s2-chrome.css`, all scoped under
   `.strip` (fixed, z-index 50, a three-column grid `.sname`, `.sline`,
-  `.seen`; the reading has tabular numbers and a 34px minimum width).
+  `.seen`; `.spause` is a 20px circle sharing the line's cell, moved just
+  past its end by a transform so the line stays centred, with a 46px
+  hit area on touch screens; the reading has tabular numbers and a 34px minimum width).
 - **`BottomNav.tsx`:** `.bnav-layer[data-bottom-nav] > nav.bnav[data-intro-hide][data-ground=cream]`
   with the labels from `content.nav` and a dashed road with a 30px outline
   Ambassador. Constants: `TAXI = 30`, `READ = 0.4` (a line 40% down the
@@ -1784,8 +1791,8 @@ Files: `AboutSheet.tsx`, `Intro.tsx`, `FactsTicket.tsx`, `ResumeDisk.tsx`,
   as) and a stub past a dashed tear line with a punched hole and the
   one-ink taxi. The roles roll one at a time on a marker band; the roller
   sits in a one-cell grid with an invisible sizer for every role, so it
-  never resizes the ticket, and it holds while the pointer rests on it and
-  while off screen. Without JavaScript every role is listed and the last
+  never resizes the ticket, and it holds while the pointer rests on it,
+  while off screen and while the stack rows' pause button is pressed. Without JavaScript every role is listed and the last
   row's cells take the full width. From 1024 to 1279px the stub narrows to
   84px and the values drop to 15.5px (and below 1181px the copy column
   gives up a little width), so "Undergraduate," never runs into the next
@@ -1823,8 +1830,8 @@ Files: `AboutSheet.tsx`, `Intro.tsx`, `FactsTicket.tsx`, `ResumeDisk.tsx`,
   crosses the screen (a reversible scrub; at rest it stands centred). Under
   it the four rows (Stack, Intelligent systems, Hardware, Learning), each
   headed by a teal enamel tin with a chrome rim. The drift is pure CSS;
-  JavaScript only adjusts it: a **pause button** stops every row (WCAG
-  2.2.2), hover eases them to a quarter speed, they pause off screen, and
+  JavaScript only adjusts it: a **pause button** stops every row and the
+  ticket's rolling roles (WCAG 2.2.2), hover eases them to a quarter speed, they pause off screen, and
   in full motion only, scroll speed surges them. The heading and the
   pause labels come from `stackLabels` in `content.ts`.
 
@@ -1854,8 +1861,9 @@ Files: `AboutSheet.tsx`, `Intro.tsx`, `FactsTicket.tsx`, `ResumeDisk.tsx`,
   a clipping box with two empty `data-slot` spans. `roll()` measures with
   `getComputedStyle` (not `getBoundingClientRect`, which a tilted ticket
   would inflate), and a repeating paused `clock` timeline calls it (no
-  drift from chained `delayedCall`s). It pauses off screen and under the
-  pointer. The swaps run outside `gsap.context`, so the cleanup kills them
+  drift from chained `delayedCall`s). It pauses off screen, under the
+  pointer and on `holdAbout(true)` (the stack band's pause button; a roll
+  in flight lands first). The swaps run outside `gsap.context`, so the cleanup kills them
   by hand and restores the static list. The slots must stay empty in JSX,
   so React never owns text there; with fewer than two roles it stays a
   static list.
@@ -1903,7 +1911,9 @@ Files: `AboutSheet.tsx`, `Intro.tsx`, `FactsTicket.tsx`, `ResumeDisk.tsx`,
   `HOVER_RATE = 0.25` (pointer only), full motion boosts from scroll
   velocity (1 to 4, reset after 120 ms idle), an IntersectionObserver
   pauses the rows off screen, and `toggle()` is the WCAG 2.2.2 pause
-  button (`aria-pressed`, `data-js-only`). An `sr-only` h2
+  button (`aria-pressed`, `data-js-only`); it also calls `holdAbout()`
+  from `FactsTicket.tsx`, whose module-level hold the button starts from
+  (`aboutHeld`), so a pause outlives a remount or a trip to another page. An `sr-only` h2
   (`stackLabels.heading`) and per-row `sr-only` h3 and list carry the
   content; tins and moving copies are `aria-hidden`.
 - **`TramBand.tsx`:** a decorative 1440x230 SVG street (poles at 150, 570,
@@ -2603,10 +2613,11 @@ photos win; for Afferex, say what it offered, never delivered work.
 | Export | What it holds | Read by |
 |---|---|---|
 | `identity` | `fullName`, `role`, `email`, `locations.primary` / `secondary` (no phone, on purpose) | the layout, the contact route, the info pages, Contact, FactsTicket, Footer, Hero, PhoneChat, ResumeDisk, ResumePreview, `lib/site.ts` |
-| `resume` | `href`, `fileName`, `size` ("184 KB"), `pages` (1), `updated` ("May 2026") | Intro, PhoneChat, ResumeDisk, ResumePreview |
+| `resume` | `href`, `fileName`, `size` ("184 KB"), `pages` (1), `updated` ("May 2026"), `label` ("Resume", on the floppy's label and the About sleeve) | Intro, PhoneChat, ResumeDisk, ResumePreview |
+| `ui` | small interface words: `loading`, `loadingPreview`, `previewBroken`, `previewKey`, `previewTap`, `previewClick`, `diskDensity` ("HD"), `today`, `newTab`, `plotterTitle`, `plotterNote` | LoaderBridge, RouteProgress, ResumeDisk, ResumePreview, PhoneChat, Footer, ServicePlotter |
 | `nav` | the five bottom-nav links (`#home` ...) | BottomNav, Hero (the Contact button's label) |
 | `sheets` | the six sheets `{ n, label, id }` | the six sheet wrappers (by index), Exposure (`sheets[1]`) |
-| `strip` | `name`, `seen`, `arrived`, six one-liners in `lines` | StatusStrip, Footer |
+| `strip` | `name`, `seen`, `arrived`, `pause` (the line's pause toggle), six one-liners in `lines` | StatusStrip, Footer |
 | `notFound` | the 404's title, body and button | `not-found.tsx`, LegalPage (the back link) |
 | `notes` | handwritten notes: `resume`, `journey`, `contact`, `signoff` | Intro, Contact, Footer, `ventures.note` |
 | `hero` | `ribbon`, `billing`, `dimension` (built from `identity`) | Hero, HeroScene |
@@ -2614,7 +2625,7 @@ photos win; for Afferex, say what it offered, never delivered work.
 | `socials` | GitHub, LinkedIn, Instagram, X | the layout (JSON-LD `sameAs`), Footer, `lib/site.ts` |
 | `intro` | heading, `body`, `factsTitle`, `facts`, `availableLabel`, `available` (the rolling roles) | Intro, FactsTicket |
 | `stacks` | the four rows: Stack, Intelligent systems, Hardware, Learning | Marquee, TramBand |
-| `stackLabels` | the sr-only heading and the pause button's two labels | Marquee |
+| `stackLabels` | the sr-only heading and the pause button's name (it holds the rows and the rolling roles) | Marquee |
 | `services` | `heading`, `note`, `shortcut` (the board), seven `items` `{ title, points[5], body }` | Services, ServicePlotter, ShortOnTimeBoard |
 | `Project`, `ProjectDrawing` (types) | the shape of a project and its drawing | Work |
 | `work` | heading, blurb, four `projects` (`index` "01" to "04") | Work, Hero |
@@ -3061,7 +3072,8 @@ fallback. The 20 s client timeout is longer than the server's 10 s.
 
 ## 19. Security
 
-- **Dependencies:** Next.js 15.5.26 (an early 15.5.4 had 31 advisories including
+- **Dependencies:** Next.js 15.5.29, sharp 0.35.5 and source-map-js 1.2.3
+  since `4c50108` (19 Nov; before that 15.5.26; an early 15.5.4 had 31 advisories including
   critical ones and was upgraded). `postcss` is pinned through `overrides`.
   `npm audit --omit=dev` reports 0.
 - **Local servers** bind to 127.0.0.1 only (`npm run dev` and `npm run start`), so
@@ -3209,8 +3221,8 @@ and `Cross-Origin-Resource-Policy: same-site`.
   miniature: the cream drafting sheet with its frame and registration
   marks, the brick ribbon, the name in the hero's shade, the role on two
   highlighter swipes ("Software Developer &" over "Robotics Engineer"),
-  and the taxi on the kerb with its front half drawn as the blueprint
-  copy.
+  and the taxi on the kerb, facing left as on the hero (`flip`), with its
+  back half drawn as the blueprint copy.
 - **After deploying,** check the card with LinkedIn's Post Inspector
   (linkedin.com/post-inspector) or a WhatsApp chat.
 
@@ -3862,8 +3874,8 @@ way, by hand and with `scripts/screenshots.mjs`, in this order:
    screens at 1440x900, 5.3 at 1366x768, 5.6 at 1280x720, 6.0 at 390x844
    and 6.6 at 360x740 (scripts on, natural flow). The figures per round
    are in [Project status](#2-project-status-and-verification-history).
-10. **Dependencies:** `npm run audit` should report 0 (three advisories are
-    open now; see [Known issues](#26-known-issues-and-open-items)).
+10. **Dependencies:** `npm run audit` should report 0 (it does since
+    `4c50108`).
 11. **Source checks:** no em dash and no tool names anywhere in
     the source or docs; before a commit, `git status` shows no `.env.local`
     and the staged-key scan is clean (see [Security](#19-security)).
@@ -3881,9 +3893,6 @@ way, by hand and with `scripts/screenshots.mjs`, in this order:
 
 ## 26. Known issues and open items
 
-- **Three dependency advisories** (next, sharp, source-map-js; see
-  [Project status](#2-project-status-and-verification-history)) wait for Parth's go-ahead, since fixing them downloads package
-  updates. Run `npm audit --omit=dev` again after updating.
 - **Commit and push the redesign** when Parth asks (as ParthBetai, with no
   co-author lines; `git add -A` first, since the drawing set is unstaged;
   scan the staged files for keys first, see [Security](#19-security)).
@@ -3906,16 +3915,6 @@ way, by hand and with `scripts/screenshots.mjs`, in this order:
 - **JavaScript** is not listed anywhere (TypeScript appears only under
   Learning) although React and React Native are; ask Parth what he writes
   before adding it.
-- **Accessibility (WCAG 2.2.2):** the stack rows now have a pause button,
-  but the status strip's one-liner (4 s per line) and the ticket's rolling
-  roles still have no keyboard pause; both hold while the pointer rests on
-  them, the strip's also in a hidden tab and the roles' off screen, and
-  screen readers get the strip's lines once as plain text. Parth's call
-  whether to add a keyboard control (the smallest compliant change: let the
-  About sheet's pause button hold the roles too, and give the strip a small
-  pause toggle beside its line at 1180px and up). The Accessibility page
-  lists both as known limitations. Without scripts the stack rows hold
-  still, since their pause button needs JavaScript.
 - **Bottom nav at rest on the hero:** once the intro hands off, the nav sits
   over the bottom of the hero's drawing (at 1024x768 and 768x1024 it
   covers the dimension line's labels, and at 360x740 part of the taxi;
@@ -3940,9 +3939,8 @@ way, by hand and with `scripts/screenshots.mjs`, in this order:
   ships. Caveat, the Archivo font swap: the fonts load with
   `display: swap`, so on a slow first visit the name can paint in the
   fallback face and change size when Archivo arrives (during the 80%
-  hold, or at `BAIL_MS`). The bridge is fitted from the name's box when
-  it is built and is not refitted on a font swap, only on a resize, so
-  the towers could sit nearer the name than their 20px for that visit.
+  hold, or at `BAIL_MS`). Since 19 Nov the bridge and the name are
+  measured again once the fonts are in, so the towers keep their 20px.
 - **The hero name is smaller on short desktop screens** (820px tall and
   under, fifteenth round) to give the taxi's drive room. Parth should
   see it before it ships; the only other way to that room is a hold,
@@ -3962,11 +3960,6 @@ way, by hand and with `scripts/screenshots.mjs`, in this order:
   taxi is one shared `<use>` symbol (`AmbassadorDefs.tsx`), so its wheels
   cannot be rolled on their own without redrawing the car, and there is
   no rolling helper any more (`ROLL` was deleted in the twelfth round).
-- **The link preview card's taxi still faces right**, as the hero's did
-  before the fourteenth round (it has no robot or note, so nothing else
-  is out of date). Passing `flip` to the card's taxis in
-  `scripts/make-share-image.mjs` and running it again ([Assets and helper scripts](#21-assets-and-helper-scripts))
-  would match the hero, with `SHARE_ALT` in `app/layout.tsx` checked after.
 - **The route taxi is brisk on the bridge and the kerb on desktop.** The
   hero's road no longer is: the big taxi drives it from scroll 0, in the
   same scroll that brings About up (no run-out since the fifteenth
@@ -3979,12 +3972,6 @@ way, by hand and with `scripts/screenshots.mjs`, in this order:
   wings sit just under the "Selected work" button, where they can read
   as an antenna on his hair. On short laptops (1280x650 and similar) it
   is moved down 30 units and the dome's crown sits just behind his hair.
-- **Cursor over the floppy:** when the reticle locks onto the disk, its
-  "PREVIEW" label can come out in the pale ink while half of it sits on
-  the cream paper sleeve, because the colour is read at a point still
-  over the disk's dark body (over the sleeve itself the cursor locks to
-  the link box). Sampling at the label's centre, or a data
-  attribute that sets the ink, would fix it.
 - **Contact details:** at 768x1024 a mouse wheel over the chat log scrolls the
   chat, not the page (probably what a chat should do; not tried on a
   touch screen). On short screens (1100x700, 1280x720, 390x844,
@@ -3997,20 +3984,7 @@ way, by hand and with `scripts/screenshots.mjs`, in this order:
   shader-log read, which a production build skips). It is older than the fourteenth
   round, but the hero's drive is now the first thing people scroll, so
   check it on a real machine with the production build.
-- **One frame without a taxi at the kerb hand-over** at 1440x900: the
-  small taxi slides just under the screen's bottom edge one frame before
-  the footer's taxi shows. Older than the fourteenth round.
-- **Small code notes:** `socials` spells "Github", which is now the logo
-  link's accessible name and tooltip (the brand writes "GitHub");
-  a few UI
-  words are written in the components rather than in `content.ts`
-  ("Loading", "Click to preview", "Tap to preview", "Press Enter to
-  preview", "Today", "HD", "Opens in a new tab", and since the fourteenth
-  round the sleeve's "Resume" and the plotter's "Title" and "Note"; if
-  the rule should be strict, a `resume.label` in `content.ts` could
-  serve the sleeve and the disk's label); `tsc --noUnusedLocals`
-  reports unused imports in `app/cookies/page.tsx` (`LI`, `UL`);
-  each visit to the home page leaves paused
+- **Small code note:** each visit to the home page leaves paused
   tweens in GSAP's global timeline (`playOnce`'s batch calls and the
   `quickTo` tweens; 14 when first counted, up to about 26 in the
   fourteenth round's review), small and harmless.
@@ -4033,12 +4007,10 @@ way, by hand and with `scripts/screenshots.mjs`, in this order:
 - Still unknown (ask before using): the humanoid's exact servo count and which
   servo driver board, how many obstacle-test runs the car did, the solar panel's
   rating.
-- **`npm run lint` probably does not work:** the script runs `next lint`,
-  but neither `eslint` nor `eslint-config-next` is in the dependencies, so
-  it is likely to prompt or fail. Not tried. Adding them means a download,
-  so it needs Parth's go-ahead.
-- **A stale comment in `s1-hero.css`:** its header says the hero has "six
-  layers"; the code has eight (see [Sheet 01](#8-sheet-01-the-loader-and-the-hero)).
+- **The moving-text pause is not remembered between visits:** the strip's
+  toggle and the stack band's button hold until played again or a reload
+  (module-level flags, since the site keeps no local storage). The
+  Accessibility page says so.
 
 
 ## 27. Changelog
@@ -4792,3 +4764,34 @@ Dates are 2026.
   Checked: the tour against a fresh baseline (no change but the date
   line), the loader in soft mode, the hero drive, the plotter following
   the scroll, the footer taxi parking, and the 42-run check.
+
+- **19 Nov, the open items closed (pushed after `4c50108`).** Nothing
+  drawn, animated or smoothed was lost; each item was fixed on its own.
+  (1) WCAG 2.2.2: every piece of text that moves on its own can now be
+  paused from the keyboard. The status strip has a small circled pause
+  toggle (`.spause`, `strip.pause`) just past its one-liner at 1180px and
+  up, and the stack band's pause button also holds the ticket's rolling
+  roles (`holdAbout` in `FactsTicket.tsx`; its name is now "Pause the
+  stack rows and the rolling roles"). Both holds are module-level, so they
+  survive remounts and trips to other pages, and a roll in flight lands
+  before stopping. The Accessibility page lists the controls and drops the
+  two limitations; the choice is not remembered between visits. (2) The
+  cursor reads its ground again when a press lifts a locked label onto the
+  floppy's sleeve and when it drops back (`Cursor.tsx`). (3) The route
+  taxi's kerb hand-over: on the piece into a stand-in's rail, the stand-in
+  takes over as soon as the small taxi's centre passes the screen's foot,
+  so no frame is left without a taxi (`driveRoute` in `lib/motion.ts`,
+  the model keeps the viewport height it was chained at). (4) The loader
+  bridge and the name are measured again once the fonts arrive
+  (`LoaderBridge.ts`), so a late Archivo no longer leaves the towers fitted
+  to the fallback name. (5) The link preview card's taxi faces left like
+  the hero's, with its back half as the blueprint (`flip` in
+  `scripts/make-share-image.mjs`, images rebuilt, `SHARE_ALT` updated).
+  (6) Copy: the UI words the components wrote themselves moved to a new
+  `ui` export, the floppy and sleeve read `resume.label`, `socials`
+  spells "GitHub", the unused `LI` and `UL` imports left
+  `app/cookies/page.tsx`, the dead `lint` script left `package.json`, and
+  `s1-hero.css` now says eight layers. The docs were updated to match,
+  including the security updates in `4c50108`. Checked: the typecheck, and
+  the tour at every size diffed against the baseline taken before the
+  round.

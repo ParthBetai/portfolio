@@ -76,7 +76,7 @@ function SleeveFront() {
   return (
     <span className="sl-front" aria-hidden="true">
       <span className="sl-print">
-        <b>Resume</b>
+        <b>{resume.label}</b>
         <span>{resume.size}</span>
       </span>
     </span>

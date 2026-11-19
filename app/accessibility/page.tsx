@@ -51,9 +51,12 @@ export default function AccessibilityPage() {
           technology so they don&apos;t get in the way.
         </LI>
         <LI>
-          <Strong>The tech stack.</Strong> The scrolling rows of skills and tools also exist as a plain
-          list for screen readers, so nothing is only available as moving text, and a pause button
-          beside them stops every row.
+          <Strong>Moving text.</Strong> Every piece of text that moves on its own can be paused
+          from the keyboard, and screen readers get it once as plain text, so nothing is only
+          available as moving text. In the About section, the pause button beside the scrolling rows of skills and
+          tools stops every row and the rolling list of roles on the ticket above them. On wider
+          screens, the line in the bar at the top of the page changes every four seconds, and the
+          small pause button beside it stops it. Both stay paused as you move around the site.
         </LI>
         <LI>
           <Strong>Contact chat.</Strong> New messages are announced to screen readers as they arrive,
@@ -95,14 +98,9 @@ export default function AccessibilityPage() {
           scroll.
         </LI>
         <LI>
-          The one-liner in the bar at the top of the page changes every four seconds. It holds while
-          you point at it and while the tab is in the background, and screen readers get every line
-          once as plain text, but there is no keyboard control to stop it.
-        </LI>
-        <LI>
-          The list of roles I&apos;m open to, on the ticket in the About section, rolls through one
-          entry at a time. It holds while you point at it and while it&apos;s off screen, and screen
-          readers get the whole list once as plain text, but there is no keyboard control to stop it.
+          The moving text starts on its own each time you open the site. Once paused it stays paused
+          until you play it again or reload the page, but the choice isn&apos;t remembered for your
+          next visit.
         </LI>
         <LI>
           If the contact chat can&apos;t send your message, it offers to open your email app instead.

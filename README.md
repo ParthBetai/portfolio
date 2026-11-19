@@ -557,7 +557,8 @@ the five info pages.
 
 When a link to the site is shared (WhatsApp, LinkedIn, X), it shows a
 **preview card**: Sheet 01 in miniature, with the ribbon, the name, the
-role and the taxi with its front half drawn as a blueprint. The browser
+role and the taxi, facing left as on the hero, with its back half drawn
+as a blueprint. The browser
 tab icon is the colour taxi on a navy tile.
 
 ---
@@ -703,14 +704,16 @@ CODEBASE.md.
 - The hero name is read as "Parth Betai" even while its letters are
   animating; the rolling strip lines and roles are read once as plain
   text.
-- The stack rows have a **pause button** (WCAG 2.2.2, the guideline that
-  moving content must be pausable).
+- Every piece of text that moves on its own can be **paused from the
+  keyboard** (WCAG 2.2.2, the guideline that moving content must be
+  pausable): the stack rows' pause button also stops the ticket's rolling
+  roles, and on wider screens a small pause button sits beside the status
+  strip's rolling line. Both stay paused while moving around the site.
 - The resume preview traps keyboard focus while open, closes with Escape,
   and returns focus where it came from.
-- **Known limitations** (also listed on the Accessibility page): the
-  status strip's rolling line and the ticket's rolling roles pause under
-  the mouse (and when off screen or in a hidden tab) but have no keyboard
-  pause button yet.
+- **Known limitation** (also listed on the Accessibility page): the
+  moving text starts again on each visit, since the pause is not
+  remembered (the site keeps no local storage).
 
 ### Privacy
 
@@ -780,8 +783,8 @@ Notes:
    Parth sees), with `scripts/screenshots.mjs`, looked at critically.
 4. In those runs: no security-policy violations, no sideways scrolling, no
    em dash characters in the page text, no console errors.
-5. `npm audit --omit=dev` should report 0 vulnerabilities (three are open
-   right now, see section 11).
+5. `npm audit --omit=dev` should report 0 vulnerabilities (it does since
+   the 19 November security update).
 
 CODEBASE.md lists the exact sizes and checks used.
 
@@ -847,6 +850,13 @@ address on it.
   preview images moved from `app/` to `public/` after the first
   Cloudflare build failed on them, and the site address now falls back
   to `https://parthcodz.ext.io`).
+- On 19 November the libraries were updated for three security
+  advisories (`4c50108`: next 15.5.29, sharp 0.35.5, source-map-js
+  1.2.3; the audit reports 0), and the open items that needed no
+  decision from Parth were closed and pushed: a keyboard pause for all
+  moving text, the preview card's taxi facing left, the cursor label over
+  the floppy, the kerb hand-over frame, the loader bridge after a late
+  font, and the small code notes.
 - **Not confirmed live yet:** a passing Cloudflare build and a real
   email through the edge route are still to be seen.
 - The closing review of the sixteenth round was skipped to ship fast, at
@@ -854,12 +864,6 @@ address on it.
 
 ### Waiting on Parth
 
-- **Three security advisories in the libraries** (found by
-  `npm audit --omit=dev` on 13 October): `next` 15.5.26 (moderate; fixed
-  in 15.5.27), `sharp` below 0.35.5 (high) and `source-map-js` 1.2.1 or
-  older (high). Fixing them means downloading updated packages, which
-  waits for Parth's go-ahead. Run `npm audit --omit=dev` again after
-  updating.
 - **Deploy on Cloudflare Pages** with the build settings, `RESEND_API_KEY`
   (and the optional variables) and the `nodejs_compat` flag (section 10),
   confirm the build passes, then check the preview card in LinkedIn's
@@ -876,8 +880,6 @@ address on it.
   kerb, the smaller hero name on short laptop screens (820px tall and
   under), and whether the bottom nav should wait until the first scroll
   (at some sizes it covers the bottom of the hero drawing).
-- **Keyboard pause** for the strip's rolling line and the ticket's rolling
-  roles (an accessibility improvement; his call).
 
 ### Content that only Parth can fix
 
@@ -896,22 +898,14 @@ address on it.
 
 ### Known small issues
 
-- The link preview card's taxi still faces right (the hero's now faces
-  left). Re-running `scripts/make-share-image.mjs` with the taxi flipped
-  would fix it.
 - The hero taxi's wheels do not turn while it drives.
-- On a slow first visit the name can briefly show in a fallback font, and
-  the loader bridge is not refitted when the real font arrives.
+- On a slow first visit the name can briefly show in a fallback font (the
+  loader bridge is measured again when the real font arrives).
 - On phones the Victoria Memorial sits mostly behind the portrait.
-- The cursor's label over the floppy can pick the wrong ink colour.
-- One frame without a taxi at the kerb hand-over at 1440x900.
 - A first scroll about 7 seconds after load can stall briefly in the dev
   server while the pin wall builds (check on a real machine with a
   production build).
 - The chat's email check rejects addresses with non-Latin characters.
-- The social label is spelled "Github" (the brand writes "GitHub").
-- `app/cookies/page.tsx` has two unused imports.
-- `npm run lint` probably does not work, since ESLint is not installed.
 - On Windows, Parth should untick "Public" on the "Node.js" inbound
   firewall rules (a system setting, not part of the project).
 
@@ -942,6 +936,7 @@ is in the changelog in CODEBASE.md.
 | 19 Nov | **Polish pass,** pushed: balanced headings, aligned venture cards, the craned name lands sooner. |
 | 19 Nov | **Hosting moved to Cloudflare Pages,** pushed: the contact route runs on the Edge runtime, and the icons and preview images moved to `public/` so the Cloudflare build accepts them. Nothing on screen changed. |
 | 19 Nov | **Second polish pass,** pushed: on phones the small controls get a finger-sized tap area, and Space in the chat no longer jumps the page. Nothing drawn changed. |
+| 19 Nov | **Security update and open items closed,** pushed: the libraries updated for three advisories; a keyboard pause for all moving text; the preview card's taxi faces left; the cursor over the floppy, the kerb hand-over and the loader bridge after a late font fixed; small code notes cleared. |
 
 ---
 

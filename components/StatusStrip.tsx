@@ -10,6 +10,10 @@ import { strip } from "@/lib/content";
 const HOLD_MS = 4000;
 const ROLL_S = 0.7;
 
+/* The pause toggle's hold (WCAG 2.2.2). At module level so it outlives
+   the strip remounting on every page and the hand-off on the home page. */
+let lineHeld = false;
+
 /* ============================================================
    STATUS STRIP
    The cream title strip across the top of every page, like the strip
@@ -31,6 +35,10 @@ export default function StatusStrip({ home = false, show = true }: { home?: bool
   const lineBox = useRef<HTMLSpanElement>(null);
   const reel = useRef<HTMLSpanElement>(null);
   const [seen, setSeen] = useState(0);
+  const [held, setHeld] = useState(() => lineHeld);
+  /* Read by the reel's timers; `kick` re-arms them after a toggle. */
+  const holding = useRef(lineHeld);
+  const kick = useRef(() => {});
 
   /* --- entrance ---------------------------------------------------- */
   /* On the home page the bar carries data-intro-hide, so the boot
@@ -106,8 +114,9 @@ export default function StatusStrip({ home = false, show = true }: { home?: bool
      each roll moves it up one row, and after the copy it jumps back to
      the real first line, which looks the same. The one thing in the
      navigation that loops. It holds while the tab is hidden, while the
-     pointer rests on it, and while the line is not shown at all (1180px
-     and narrower), so a line can be read to the end. */
+     pointer rests on it, while the pause toggle beside it is pressed, and
+     while the line is not shown at all (1180px and narrower), so a line
+     can be read to the end. */
   useEffect(() => {
     const el = reel.current;
     const box = lineBox.current;
@@ -123,8 +132,12 @@ export default function StatusStrip({ home = false, show = true }: { home?: bool
     const hiddenLine = () => document.hidden || box.offsetParent === null;
     const schedule = () => {
       window.clearTimeout(timer);
-      if (resting) return;
+      if (resting || holding.current) return;
       timer = window.setTimeout(roll, HOLD_MS);
+    };
+    /* A roll in flight lands before the hold takes; its end re-checks. */
+    kick.current = () => {
+      if (!tween) schedule();
     };
 
     const roll = () => {
@@ -164,6 +177,7 @@ export default function StatusStrip({ home = false, show = true }: { home?: bool
     box.addEventListener("pointerleave", onLeave);
     return () => {
       window.clearTimeout(timer);
+      kick.current = () => {};
       tween?.kill();
       gsap.set(el, { clearProps: "transform" });
       document.removeEventListener("visibilitychange", onVisibility);
@@ -171,6 +185,13 @@ export default function StatusStrip({ home = false, show = true }: { home?: bool
       box.removeEventListener("pointerleave", onLeave);
     };
   }, [show]);
+
+  const toggle = () => {
+    const next = !holding.current;
+    holding.current = lineHeld = next;
+    setHeld(next);
+    kick.current();
+  };
 
   /* The circled initial is decoration: the link is spoken by its
      aria-label, which starts with the visible name. */
@@ -212,6 +233,27 @@ export default function StatusStrip({ home = false, show = true }: { home?: bool
           ))}
         </span>
       </span>
+
+      {/* Pause for the line, circled like the initial. Only with scripts
+          (data-js-only): without them the line never moves. Hidden with
+          the line at 1180px and narrower. */}
+      <button
+        type="button"
+        className="spause"
+        aria-label={strip.pause}
+        aria-pressed={held}
+        onClick={toggle}
+        data-hover
+        data-js-only
+      >
+        <svg viewBox="0 0 20 20" aria-hidden="true">
+          {held ? (
+            <path d="M7 4.5v11l9-5.5z" fill="currentColor" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+          ) : (
+            <path d="M7 5v10M13 5v10" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" />
+          )}
+        </svg>
+      </button>
 
       {/* Only scripts can count, so without them the reading steps aside
           (data-js-only) rather than claiming 0% all the way down. At the

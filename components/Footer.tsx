@@ -9,7 +9,7 @@ import NightStreet from "./NightStreet";
 import Sheet from "./Sheet";
 import SocialIcon from "./SocialIcon";
 import { Elbow, Rail, Terminus } from "./Route";
-import { contact, footer, identity, legal, notes, socials, strip } from "@/lib/content";
+import { contact, footer, identity, legal, notes, socials, strip, ui } from "@/lib/content";
 import { useYear } from "@/lib/useYear";
 import { gsap, canTransform, driveRoute, maxScroll, naturalTop, onStand, scrub, soft } from "@/lib/motion";
 
@@ -251,7 +251,7 @@ export default function Footer({ footerRef }: { footerRef?: React.RefObject<HTML
                     ))}
                   </ul>
                   <span id={newTab} hidden>
-                    Opens in a new tab
+                    {ui.newTab}
                   </span>
                 </>
               );

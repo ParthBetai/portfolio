@@ -44,6 +44,26 @@ export const resume = {
   size: "184 KB",
   pages: 1,
   updated: "May 2026",
+  /* Printed on the floppy's label and on the About sleeve. */
+  label: "Resume",
+};
+
+/* Small interface words the components show or speak: the loading
+   screens, the floppy's hint and HD mark, the preview's status line, the
+   chat's day stamp, the new-tab note on the social logos and the
+   plotter's title block keys. */
+export const ui = {
+  loading: "Loading",
+  loadingPreview: "Loading preview",
+  previewBroken: "Preview unavailable. The PDF download still works.",
+  previewKey: "Press Enter to preview",
+  previewTap: "Tap to preview",
+  previewClick: "Click to preview",
+  diskDensity: "HD",
+  today: "Today",
+  newTab: "Opens in a new tab",
+  plotterTitle: "Title",
+  plotterNote: "Note",
 };
 
 export const nav = [
@@ -78,6 +98,8 @@ export const strip = {
   /* Shown in place of "You've seen 100%" once the taxi reaches the end
      of the road. */
   arrived: "You've arrived",
+  /* The name of the pause toggle beside the line. */
+  pause: "Pause the one-liner",
   lines: [
     "Started with Android apps. Ended up wiring servos.",
     "Kolkata-born, Jaipur-based, usually mid-build.",
@@ -123,7 +145,7 @@ export const route = {
 /* The footer title block's "Connections": each link drawn as its logo,
    with `label` as its accessible name. */
 export const socials = [
-  { label: "Github", href: "https://github.com/ParthBetai" },
+  { label: "GitHub", href: "https://github.com/ParthBetai" },
   { label: "LinkedIn", href: "https://www.linkedin.com/in/codewithparth" },
   { label: "Instagram", href: "https://www.instagram.com/ftxparth" },
   { label: "X", href: "https://x.com/ftxparth" },
@@ -182,10 +204,11 @@ export const stacks = [
 
 /* What a screen reader hears for the stack band: its heading (the rows
    themselves are drawn without one) and the name of its pause control,
-   a toggle whose pressed state says whether the rows are held. */
+   a toggle whose pressed state says whether the rows and the ticket's
+   rolling roles are held. */
 export const stackLabels = {
   heading: "Tech stack",
-  pause: "Pause the stack rows",
+  pause: "Pause the stack rows and the rolling roles",
 };
 
 export const services = {

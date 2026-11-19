@@ -12,15 +12,16 @@
    small waiting taxi (the hero's own, scaled down) drives across and
    the view pushes in on it until it is the big hero taxi at rest.
 
-   Pure DOM, built once from measured boxes (and again on a resize),
-   then frame(t, p, o) is a function of the wall clock t (s), the
-   progress p (0 to 1) and the time since the close o (s, negative
-   before): it writes only transforms, opacities, dash offsets and a
+   Pure DOM, built once from measured boxes (and again on a resize or
+   once the fonts are in), then frame(t, p, o) is a function of the
+   wall clock t (s), the progress p (0 to 1) and the time since the
+   close o (s, negative before): it writes only transforms, opacities, dash offsets and a
    few SVG attributes, never reads layout. The geometry is the Services
    band's own (BridgeArt.ts), in its art units.
    ============================================================ */
 import { D, panels, topY } from "./BridgeArt";
 import { f1, seededPM } from "./drawings/kit";
+import { ui } from "@/lib/content";
 
 const cl = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lin = (t: number, a: number, b: number) => cl((t - a) / (b - a));
@@ -131,10 +132,6 @@ export function createSpan(hero: HTMLElement, inkBack: HTMLElement, name: HTMLEl
     N = null;
     for (const l of lines) delete l.dataset.sh;
   };
-  /* The fonts swap in (display: swap): a first measure on the fallback
-     face would misplace every letter. */
-  if (document.fonts && document.fonts.status !== "loaded") void document.fonts.ready.then(() => N && buildName());
-
   let G: ReturnType<typeof build> | null = null;
   let clip: HTMLDivElement | null = null;
 
@@ -337,7 +334,7 @@ export function createSpan(hero: HTMLElement, inkBack: HTMLElement, name: HTMLEl
     c.innerHTML =
       `<div class="bb-far" style="opacity:.32">${svg(far)}</div>` +
       `<div class="bb">${svg(`<defs>${hatch}</defs>${scene}${ghostG}${main}${barrier}${riv}${dimG}${crane(1, "bbCrL")}${crane(-1, "bbCrR")}`)}` +
-      `<div class="bb-read" style="left:${f1(cx)}px;top:${f1(Y(dimY) - 14)}px;font-size:${f1(16 * ts)}px"><span>Loading</span><b>000</b></div>` +
+      `<div class="bb-read" style="left:${f1(cx)}px;top:${f1(Y(dimY) - 14)}px;font-size:${f1(16 * ts)}px"><span>${ui.loading}</span><b>000</b></div>` +
       `<div class="bb-stamp" style="left:${f1(cx)}px;top:${f1(Y(dimY) - 8)}px">SPAN CLOSED</div></div>`;
     inkBack.append(c);
     clip = c;
@@ -559,16 +556,21 @@ export function createSpan(hero: HTMLElement, inkBack: HTMLElement, name: HTMLEl
      would be blurred by the push. */
   drive.style.willChange = "auto";
   G = build();
+  const rebuild = () => {
+    births = G!.rivets.map((r) => (r.tb < 0 ? undefined : r.tb));
+    G = build();
+    if (N) buildName();
+  };
+  /* The fonts swap in (display: swap): a first measure on the fallback
+     face would misplace every letter and fit the towers to the wrong
+     name box, so both are measured again once, if the bridge still stands. */
+  if (document.fonts && document.fonts.status !== "loaded") void document.fonts.ready.then(() => clip?.isConnected && rebuild());
   return {
     frame,
     /* the kerb line on screen, for the portrait's rise: read live, since the
        page can still be scrolled at build time (Back restoring a position) */
     kerb: () => kerbEl.getBoundingClientRect().top,
-    rebuild: () => {
-      births = G!.rivets.map((r) => (r.tb < 0 ? undefined : r.tb));
-      G = build();
-      if (N) buildName();
-    },
+    rebuild,
     remove: () => {
       clip?.remove();
       restore();

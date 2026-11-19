@@ -3,7 +3,7 @@
 import { memo, useEffect, useId, useRef, useState } from "react";
 import type { RefObject } from "react";
 import { gsap, ScrollTrigger, naturalTop } from "@/lib/motion";
-import { services } from "@/lib/content";
+import { services, ui } from "@/lib/content";
 import { INK, TONE, CARD, drawingFor } from "@/components/ServiceDrawings";
 import type { Ink, Op } from "@/components/ServiceDrawings";
 
@@ -687,11 +687,11 @@ export default function ServicePlotter({ hover, open, track }: Props) {
         ))}
       </ol>
       <figcaption className="tblock">
-        <span className="tb-k mono">Title</span>
+        <span className="tb-k mono">{ui.plotterTitle}</span>
         <span className="tb-v tb-title">{plain(ITEMS[job].title)}</span>
         {noteFor(job) && (
           <>
-            <span className="tb-k mono">Note</span>
+            <span className="tb-k mono">{ui.plotterNote}</span>
             <span className="tb-v">{noteFor(job)}</span>
           </>
         )}

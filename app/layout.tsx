@@ -49,7 +49,7 @@ const jetbrains = localFont({
    Next turns these paths into absolute URLs from metadataBase. No og:url
    or canonical here: this layout wraps every page, and each page would
    inherit the home page's address. */
-const SHARE_ALT = `${identity.fullName}, ${identity.role}, on a cream drafting sheet beside a yellow Kolkata taxi whose front half is drawn as a blueprint.`;
+const SHARE_ALT = `${identity.fullName}, ${identity.role}, on a cream drafting sheet beside a yellow Kolkata taxi whose back half is drawn as a blueprint.`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

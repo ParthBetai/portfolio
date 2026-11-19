@@ -97,6 +97,17 @@ export default function FactsTicket() {
 const HOLD = 1.25;
 const SWAP = 0.55;
 
+/* The About sheet's pause button (Marquee) holds this roller as well as
+   the stack rows (WCAG 2.2.2). Kept at module level so the hold outlives
+   a remount and a trip to another page and back. */
+let sheetHeld = false;
+const holders = new Set<(held: boolean) => void>();
+export const aboutHeld = () => sheetHeld;
+export const holdAbout = (held: boolean) => {
+  sheetHeld = held;
+  holders.forEach((f) => f(held));
+};
+
 type Watched = RefObject<HTMLElement | null>;
 
 /* The marker band goes on an inline span inside the slot, not on the
@@ -222,15 +233,21 @@ function Roller({
        long as it takes (the list never stops on its own). */
     let seen = typeof IntersectionObserver === "undefined";
     let held = false;
+    let stopped = sheetHeld;
     const run = () => {
-      if (seen && !held) {
-        clock.resume();
-        swap?.resume();
-      } else {
-        clock.pause();
-        swap?.pause();
-      }
+      const go = seen && !held && !stopped;
+      if (go) clock.resume();
+      else clock.pause();
+      /* The pause button lets a roll in flight land, so it never stops
+         between two entries. */
+      if (go || stopped) swap?.resume();
+      else swap?.pause();
     };
+    const onHold = (v: boolean) => {
+      stopped = v;
+      run();
+    };
+    holders.add(onHold);
     const hold = () => {
       held = true;
       run();
@@ -255,6 +272,7 @@ function Roller({
 
     return () => {
       io?.disconnect();
+      holders.delete(onHold);
       target.removeEventListener("pointerenter", hold);
       target.removeEventListener("pointerleave", free);
       clock.kill();

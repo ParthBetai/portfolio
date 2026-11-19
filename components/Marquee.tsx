@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { gsap, ScrollTrigger, soft } from "@/lib/motion";
 import { stackLabels, stacks } from "@/lib/content";
 import TramBand from "./TramBand";
+import { aboutHeld, holdAbout } from "./FactsTicket";
 
 /* How many times each row's list is laid end to end. The loop translates
    by exactly -50%, so half the track (two copies) has to be wider than the
@@ -42,7 +43,8 @@ const TILT = [-0.6, 0.4, -0.3, 0.6];
    JavaScript only ever adjusts those animations through the Web
    Animations API (playbackRate, pause/play), never owns them, so if the
    script fails the rows still move. On top of that:
-     · the pause button stops and restarts every row        (full + soft)
+     · the pause button stops and restarts every row, and
+       the ticket's rolling roles with them                (full + soft)
      · hover eases the rows down to a quarter speed          (full + soft)
      · off screen the loops pause                            (full + soft)
      · scroll velocity surges the loops, settling once the
@@ -54,9 +56,10 @@ const TILT = [-0.6, 0.4, -0.3, 0.6];
 export default function Marquee() {
   const root = useRef<HTMLDivElement>(null);
   const titleId = useId();
-  const [paused, setPaused] = useState(false);
+  /* Starts from the sheet's shared hold, so a pause outlives a remount. */
+  const [paused, setPaused] = useState(aboutHeld);
   /* Read by the observer and the hover handlers, which are set up once. */
-  const held = useRef(false);
+  const held = useRef(paused);
   const anims = useRef<Animation[]>([]);
 
   useEffect(() => {
@@ -70,6 +73,7 @@ export default function Marquee() {
       typeof el.getAnimations === "function" ? el.getAnimations() : []
     );
     anims.current = list;
+    if (held.current) list.forEach((a) => a.pause());
 
     /* Two independent speed factors, multiplied, each tweening toward its
        own rest value of 1. Setting playbackRate preserves currentTime, so
@@ -154,11 +158,13 @@ export default function Marquee() {
   }, []);
 
   /* The pause button (WCAG 2.2.2): stops every row where it is, and
-     plays them again from there. */
+     plays them again from there, and holds the ticket's rolling roles
+     (FactsTicket) with them: all the moving text on the sheet. */
   const toggle = () => {
     const next = !held.current;
     held.current = next;
     setPaused(next);
+    holdAbout(next);
     anims.current.forEach((a) => (next ? a.pause() : a.play()));
   };
 

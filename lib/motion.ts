@@ -655,6 +655,8 @@ type Model = {
   end: number;
   carW: number;
   carH: number;
+  /* the viewport height it was chained at */
+  vh: number;
   drive: Drive | null;
 };
 
@@ -1340,7 +1342,7 @@ function chain(root: ParentNode, car: HTMLElement): Model | null {
     anchors[i][0] = Math.min(maxS, Math.max(anchors[i][0], anchors[i - 1][0]));
     anchors[i][1] = Math.max(anchors[i][1], anchors[i - 1][1]);
   }
-  return { sheets, segs, anchors, end: L, carW, carH, drive };
+  return { sheets, segs, anchors, end: L, carW, carH, vh, drive };
 }
 
 export function driveRoute(root: ParentNode = document, { car: drive = false }: { car?: boolean } = {}): () => void {
@@ -1418,13 +1420,17 @@ export function driveRoute(root: ParentNode = document, { car: drive = false }: 
       standFns.get("road")?.forEach((fn) => fn(p ? p.t : 1, on));
     }
     const g = segAt(m.segs, L);
+    /* the small taxi's centre past the screen's foot on the piece into a
+       stand-in's rail: the stand-in takes over there, so no frame is
+       left without a taxi (the kerb at a short viewport) */
+    const below = screenTop(m.sheets[g.sheet], s) + pointAt(g, L)[1] >= m.vh;
 
     /* stand-ins first: one of them may be the taxi just now */
-    m.segs.forEach((sg) => {
+    m.segs.forEach((sg, i) => {
       const st = sg.stand;
       if (!st) return;
       const u = Math.min(1, Math.max(0, (L - sg.L0) / Math.max(1, sg.L1 - sg.L0)));
-      const on = L >= sg.L0 && (L < sg.L1 || (st.park === "rest" && L >= sg.L1));
+      const on = (L >= sg.L0 || (below && m.segs[i - 1] === g)) && (L < sg.L1 || (st.park === "rest" && L >= sg.L1));
       const cx = st.c0 + (st.c1 - st.c0) * u;
       if (on !== st.on) {
         st.on = on;

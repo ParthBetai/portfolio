@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import { gsap } from "@/lib/motion";
-import { identity, resume } from "@/lib/content";
+import { identity, resume, ui } from "@/lib/content";
 import ResumePreview, { warmResumePreview } from "./ResumePreview";
 import type { DiskDrive, DiskFrame, FloppyArtProps, PreviewApi } from "./ResumePreview";
 import { C } from "./drawings/kit";
@@ -250,7 +250,7 @@ function FloppyArt({ faceRef, shutterRef, discRef, mediaRef }: FloppyArtProps) {
               and the shadow the metal casts down into the hole. */}
           <span className="absolute left-[12.5%] top-[14.8%] block h-[76.6%] w-[27.08%] rounded-[1px] shadow-[inset_0_1px_1.5px_rgba(0,0,0,0.8),0_0_0_0.5px_rgba(58,60,66,0.9),0_1px_0_0.5px_rgba(255,255,255,0.4)]" />
           <span className="absolute bottom-[12%] right-[9%] block font-mono text-[3.4cqw] font-bold leading-none tracking-[0.06em] text-black/25 [text-shadow:0_0.5px_0_rgba(255,255,255,0.5)]">
-            HD
+            {ui.diskDensity}
           </span>
         </span>
 
@@ -286,7 +286,7 @@ function FloppyArt({ faceRef, shutterRef, discRef, mediaRef }: FloppyArtProps) {
             className="absolute bottom-[8%] left-[7%] block whitespace-nowrap text-[6.4cqw] leading-none"
             style={{ color: INK, fontFamily: "var(--font-mono)" }}
           >
-            Resume · {resume.size}
+            {`${resume.label} · ${resume.size}`}
           </span>
         </span>
 
@@ -796,11 +796,11 @@ export default function ResumeDisk({
         </svg>
         <span>
           {phase === "focus" ? (
-            "Press Enter to preview"
+            ui.previewKey
           ) : (
             <>
-              <span className="[@media(hover:hover)]:hidden">Tap to preview</span>
-              <span className="hidden [@media(hover:hover)]:inline">Click to preview</span>
+              <span className="[@media(hover:hover)]:hidden">{ui.previewTap}</span>
+              <span className="hidden [@media(hover:hover)]:inline">{ui.previewClick}</span>
             </>
           )}
         </span>

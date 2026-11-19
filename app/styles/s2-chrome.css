@@ -62,6 +62,7 @@
 /* One line tall, the reel inside rolls up a row at a time. */
 .strip .sline {
   grid-column: 2;
+  grid-row: 1;
   display: block;
   min-width: 0;
   max-width: min(560px, 46vw);
@@ -79,6 +80,43 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+/* The line's pause toggle: a small circle like the initial's, in the
+   line's muted ink. It shares the line's cell and is moved just past its
+   end by a transform, so the line stays centred on the page. */
+.strip .spause {
+  grid-area: 1 / 2;
+  justify-self: end;
+  position: relative;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border: 1.5px solid currentColor;
+  border-radius: 50%;
+  color: var(--color-muted);
+  transform: translateX(calc(100% + 10px));
+  transition: color 0.2s ease;
+}
+.strip .spause:hover,
+.strip .spause[aria-pressed="true"] {
+  color: var(--color-ink);
+}
+.strip .spause:focus-visible {
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+.strip .spause svg {
+  width: 10px;
+  height: 10px;
+}
+/* A finger-sized target on touch screens, without growing the circle. */
+@media (pointer: coarse) {
+  .strip .spause::before {
+    content: "";
+    position: absolute;
+    inset: -13px;
+  }
 }
 .strip .seen {
   grid-column: 3;
@@ -202,7 +240,8 @@
 /* 1180px and narrower: no room for a whole one-liner between the name
    and the reading, and a cut one-liner loses its point. */
 @media (max-width: 1180px) {
-  .strip .sline {
+  .strip .sline,
+  .strip .spause {
     display: none;
   }
 }

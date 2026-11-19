@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Ambassador from "./Ambassador";
 import RegMark from "./RegMark";
+import { ui } from "@/lib/content";
 
 /* ============================================================
    ROUTE PROGRESS
@@ -101,7 +102,7 @@ export default function RouteProgress() {
       <RegMark corner="bl" />
       <RegMark corner="br" />
       <p role="status" className="absolute bottom-[170px] left-[var(--cl)] text-[16px] font-bold text-ink">
-        Loading
+        {ui.loading}
       </p>
       <div className="rp-road" aria-hidden="true">
         <i className="rp-bar" />

@@ -14,8 +14,9 @@
 // The card is Sheet 01 in miniature: the cream drafting sheet with its
 // frame and registration marks, the brick "Portfolio" ribbon, the name in
 // the hero's sign-painted shade, the role on its highlighter swipe, and
-// the taxi on the kerb with its front half exposed as the blueprint copy
-// (the line drawing on the cyanotype blue, lined up with the colour car).
+// the taxi on the kerb, facing left as on the hero, with its back half
+// exposed as the blueprint copy (the line drawing on the cyanotype blue,
+// lined up with the colour car).
 // The icons are the colour taxi with a cream roof rack on a navy tile.
 //
 // Run it again after changing the name, the role, the ribbon, the taxi
@@ -106,8 +107,10 @@ const SHADE = [
 const reg = (corner) =>
   `<svg class="reg ${corner}" width="26" height="26" viewBox="0 0 26 26"><g fill="none" stroke="currentColor" stroke-width="1"><circle cx="13" cy="13" r="7.3"/><path d="M13 0 V26 M0 13 H26"/></g></svg>`;
 
-const colourCar = renderToStaticMarkup(h(Ambassador, { variant: "color", width: 600, rack: true, ink: INK }));
-const lineCar = renderToStaticMarkup(h(Ambassador, { variant: "line", width: 600, rack: true, ink: BLINE, paper: BLUE }));
+/* flip: facing left, as the hero's taxi does. Both copies flip about the
+   same 600x232 box, so the blueprint half stays lined up. */
+const colourCar = renderToStaticMarkup(h(Ambassador, { variant: "color", width: 600, flip: true, rack: true, ink: INK }));
+const lineCar = renderToStaticMarkup(h(Ambassador, { variant: "line", width: 600, flip: true, rack: true, ink: BLINE, paper: BLUE }));
 
 const card = `<!doctype html><meta charset="utf-8"><style>
 @font-face{font-family:A;src:url(data:font/woff2;base64,${archivo}) format("woff2");font-weight:100 900;font-stretch:62% 125%}

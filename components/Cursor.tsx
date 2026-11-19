@@ -559,6 +559,9 @@ export default function Cursor() {
     const onDown = (e: PointerEvent) => {
       if (e.pointerType === "touch") return;
       pressed = true;
+      /* The squeeze lifts a locked label up to 12px, onto whatever hangs
+         past the box (the floppy's sleeve), so its ground is read again. */
+      if (lock) groundDue = true;
       wake();
     };
 
@@ -571,6 +574,7 @@ export default function Cursor() {
     const onUp = () => {
       if (!pressed) return;
       pressed = false;
+      if (lock) groundDue = true; // the label drops back to its resting ground
       window.clearTimeout(pressTimer);
       pressTimer = window.setTimeout(onScroll, AFTER_PRESS_MS);
       wake();

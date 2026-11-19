@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { pageMeta } from "@/lib/site";
-import LegalPage, { A, H2, LI, P, Strong, UL } from "@/components/LegalPage";
+import LegalPage, { A, H2, P, Strong } from "@/components/LegalPage";
 import { identity, legal } from "@/lib/content";
 
 export const metadata: Metadata = pageMeta(

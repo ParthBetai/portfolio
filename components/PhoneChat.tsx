@@ -11,7 +11,7 @@ import {
   useState,
 } from "react";
 import { gsap } from "@/lib/motion";
-import { contact, identity, resume } from "@/lib/content";
+import { contact, identity, resume, ui } from "@/lib/content";
 import { PREVIEW_EVENT, warmResumePreview } from "./ResumePreview";
 
 /* ============================================================
@@ -845,7 +845,7 @@ From: ${name} (${email})`;
                   }}
                 >
                   <p aria-hidden className="pb-3 text-center text-[12px] font-semibold leading-none text-muted">
-                    Today{stamp ? ` ${stamp}` : ""}
+                    {ui.today}{stamp ? ` ${stamp}` : ""}
                   </p>
 
                   {/* Without scripts the conversation never starts, so the
