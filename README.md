@@ -737,7 +737,9 @@ after it was once found reachable on a public Wi-Fi. The Resend key lives
 only in `.env.local` (never committed) and in the host's settings (a
 secret variable in Cloudflare Pages); a real
 key was once found in `.env.example` and removed before it was pushed, so
-always scan for keys before committing. Details are in CODEBASE.md.
+always scan for keys before committing. The libraries are kept free of known
+advisories (Next.js 15.5.29 since 19 November; the audit reports 0).
+Details are in CODEBASE.md.
 
 ---
 
@@ -868,8 +870,6 @@ address on it.
   (and the optional variables) and the `nodejs_compat` flag (section 10),
   confirm the build passes, then check the preview card in LinkedIn's
   Post Inspector.
-- **Send one real test message** through the chat (it sends a real email,
-  so it needs his say-so).
 - **See the new loader on his own PC** (soft mode plays it) before it goes
   live.
 - **Design calls that are his:** whether the speech balloon makes the

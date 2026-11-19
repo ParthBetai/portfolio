@@ -171,9 +171,10 @@ round. It is the evidence of what was checked and how.
     `/privacy`, `/terms`, `/api/contact` (dynamic, edge), `/robots.txt`
     and `/sitemap.xml`. **Not verified:** `@cloudflare/next-on-pages` was
     not run locally (it works poorly on Windows), a passing Cloudflare
-    build has not been seen yet, and no real email has been sent through
-    the edge route.
-  - **Open before committing: dependency advisories.** On 13 Oct
+    build has not been seen yet. A real email did go through the edge
+    route locally on 19 Nov (Resend answered 200; sent to Parth's own inbox
+    at his go-ahead).
+  - **Closed: dependency advisories.** On 13 Oct
     `npm audit --omit=dev` reported 3 advisories published since the last
     clean audit: next 15.5.26 (moderate, SSG and ISR cache poisoning in
     self-hosted apps; fixed in 15.5.27), sharp below 0.35.5 (high, its
@@ -182,7 +183,10 @@ round. It is the evidence of what was checked and how.
     downloading package updates, so it waits for Parth's go-ahead (still
     waiting after Span closed, 17 Nov). The site itself was not changed
     for them. Closed on 19 Nov in `4c50108` (next 15.5.29, sharp 0.35.5,
-    source-map-js 1.2.3; the audit reports 0).
+    source-map-js 1.2.3 through the lockfile; the audit reports 0). 15.5.29
+    also covers two newer Next.js advisories: a critical remote code
+    execution in the image optimizer with SVG files, and a Server Actions
+    denial of service.
   - **Checked for the fifteenth round** (dev server, headless Edge; the
     full list is in its Changelog entry): the typecheck; the hero drive
     stepped down and back up in full and soft motion at six laptop sizes
@@ -287,7 +291,7 @@ helper scripts.
 
 | Package | Version | What it does here |
 |---|---|---|
-| `next` | 15.5.26 | The framework. App Router pages in `app/`, the one API route (`app/api/contact/route.ts`, on the Edge runtime), the `metadata` export (icons and share cards, which are plain files in `public/`), `robots.ts` and `sitemap.ts`, `next/font/local` for the self-hosted fonts, `next/dynamic` for code that only runs in the browser, and the security headers in `next.config.mjs`. |
+| `next` | 15.5.29 | The framework. App Router pages in `app/`, the one API route (`app/api/contact/route.ts`, on the Edge runtime), the `metadata` export (icons and share cards, which are plain files in `public/`), `robots.ts` and `sitemap.ts`, `next/font/local` for the self-hosted fonts, `next/dynamic` for code that only runs in the browser, and the security headers in `next.config.mjs`. |
 | `react`, `react-dom` | 19.1.1 | The UI library. Pages and components are React components; `react-dom/server` is also used by `scripts/make-share-image.mjs` to render the taxi into the share card. |
 | `gsap` | 3.13.0 | All animation: timelines, `ScrollTrigger` (animation tied to scroll), `DrawSVGPlugin` (lines that draw themselves), `quickTo` and `quickSetter` (fast repeated writes). Always imported through `lib/motion.ts`, which registers the plugins once. |
 | `lenis` | 1.3.11 | Smooth scrolling with inertia on the home page in full motion (`components/SmoothScroll.tsx`). An element with `data-lenis-prevent` (the chat log) scrolls on its own. |
@@ -3073,7 +3077,9 @@ fallback. The 20 s client timeout is longer than the server's 10 s.
 ## 19. Security
 
 - **Dependencies:** Next.js 15.5.29, sharp 0.35.5 and source-map-js 1.2.3
-  since `4c50108` (19 Nov; before that 15.5.26; an early 15.5.4 had 31 advisories including
+  since `4c50108` (19 Nov; before that 15.5.26, which had a critical
+  image-optimizer remote code execution with SVG files and a Server Actions
+  denial of service among its advisories; an early 15.5.4 had 31 advisories including
   critical ones and was upgraded). `postcss` is pinned through `overrides`.
   `npm audit --omit=dev` reports 0.
 - **Local servers** bind to 127.0.0.1 only (`npm run dev` and `npm run start`), so
@@ -3903,8 +3909,8 @@ way, by hand and with `scripts/screenshots.mjs`, in this order:
   least) and the `nodejs_compat` compatibility flag for Production and
   Preview ([Deploying](#deploying)). Still to verify: the first passing
   Cloudflare build (next-on-pages has not been run locally) and one real
-  send through the edge route.
-- **Send one real test message** through the chat once Parth agrees.
+  send from the live site (a local send through the edge route worked on
+  19 Nov).
 - **Resume PDF** still contains em dashes and his phone number, does not list
   the offline SOS app or React, and it is out of date against the site: "100%" detection, "sensor arrays", the humanoid
   "selected for presentation" (it won) and Afferex "Present". Parth has to edit
@@ -3998,7 +4004,9 @@ way, by hand and with `scripts/screenshots.mjs`, in this order:
   MeshStandardMaterial can log a D3D precision note as a three.js
   `WebGLProgram` warning in development; production skips that check.
 - **Cursor colour misses:** elements that ignore the pointer are invisible to
-  its colour check, so the plotter card reads as the row under it.
+  its colour check. Checked on 19 Nov: the plotter card still reads cream on
+  the night sheet, so nothing shows; and since 19 Nov a press that lifts a
+  locked label onto the floppy's sleeve reads the ground again.
 - **Windows firewall:** untick Public on the "Node.js" inbound rules.
 - **Not yet tried on a real iPhone or Android phone** (only emulated).
 - **Chat email check** is strict (rejects addresses with non-Latin characters).
@@ -4792,6 +4800,9 @@ Dates are 2026.
   spells "GitHub", the unused `LI` and `UL` imports left
   `app/cookies/page.tsx`, the dead `lint` script left `package.json`, and
   `s1-hero.css` now says eight layers. The docs were updated to match,
-  including the security updates in `4c50108`. Checked: the typecheck, and
+  including the security updates in `4c50108` (next 15.5.26 to 15.5.29 for
+  a critical image-optimizer remote code execution with SVG files and a
+  Server Actions denial of service; sharp 0.35.5 and source-map-js 1.2.3
+  through the lockfile; `npm audit --omit=dev` reports 0). Checked: the typecheck, and
   the tour at every size diffed against the baseline taken before the
   round.
